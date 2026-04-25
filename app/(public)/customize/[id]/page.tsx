@@ -87,6 +87,7 @@ export default function CustomizePage({ params }: { params: { id: string } }) {
             <PanjabiCanvas 
               color={selectedColor.hex} 
               fabricType={selectedFabric.type} 
+              collarStyle={collarStyle}
               onRenderComplete={setPreviewDataUrl}
             />
             

@@ -3,14 +3,16 @@
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { placeOrder } from '@/lib/actions/orders';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
   const [paymentMethod, setPaymentMethod] = useState('bkash');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   if (items.length === 0) {
-    router.push('/cart');
+    if (typeof window !== 'undefined') router.push('/cart');
     return null;
   }
 
@@ -19,12 +21,33 @@ export default function CheckoutPage() {
   const total = subtotal + delivery;
   const advance = Math.round(total * 0.3);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Simulate order placement
-    const orderId = `PS-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(1000 + Math.random() * 9000)}`;
-    clearCart();
-    router.push(`/order-confirmation/${orderId}`);
+    setIsSubmitting(true);
+    
+    try {
+      const formData = new FormData(e.currentTarget);
+      const orderData = {
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        address: formData.get('address'),
+        city: formData.get('city'),
+        items,
+        subtotal,
+        delivery,
+        total,
+        paymentMethod,
+      };
+
+      const orderNumber = await placeOrder(orderData);
+      clearCart();
+      router.push(`/order-confirmation/${orderNumber}`);
+    } catch (error) {
+      console.error(error);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -44,15 +67,15 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
-                <input required type="text" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                <input required name="name" type="text" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Phone (01XXXXXXXXX)</label>
-                <input required type="tel" pattern="^01[3-9]\d{8}$" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                <input required name="phone" type="tel" pattern="^01[3-9]\d{8}$" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold text-gray-700 mb-1">Email (Optional)</label>
-                <input type="email" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+                <input name="email" type="email" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
               </div>
             </div>
           </div>
@@ -65,11 +88,11 @@ export default function CheckoutPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">Full Address</label>
-                <textarea required rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none" />
+                <textarea required name="address" rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-1">City/District</label>
-                <select required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white">
+                <select required name="city" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white">
                   <option value="">Select District...</option>
                   <option value="Dhaka">Dhaka</option>
                   <option value="Chittagong">Chittagong</option>
@@ -98,7 +121,7 @@ export default function CheckoutPage() {
                 {paymentMethod === 'bkash' && (
                   <div className="mt-4 pl-8">
                     <p className="text-sm mb-2 text-gray-600">Send <b>৳{advance}</b> to <b>01XXXXXXXXX</b> (Personal)</p>
-                    <input type="text" placeholder="Enter Transaction ID" required className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-pink-500 outline-none" />
+                    <input type="text" name="transactionId" placeholder="Enter Transaction ID" required className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-pink-500 outline-none" />
                   </div>
                 )}
               </label>
@@ -111,7 +134,7 @@ export default function CheckoutPage() {
                 {paymentMethod === 'nagad' && (
                   <div className="mt-4 pl-8">
                     <p className="text-sm mb-2 text-gray-600">Send <b>৳{advance}</b> to <b>01XXXXXXXXX</b> (Personal)</p>
-                    <input type="text" placeholder="Enter Transaction ID" required className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-orange-500 outline-none" />
+                    <input type="text" name="transactionId" placeholder="Enter Transaction ID" required className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-orange-500 outline-none" />
                   </div>
                 )}
               </label>
@@ -159,8 +182,12 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <button type="submit" className="w-full bg-primary hover:bg-[#8B2222] text-white font-bold text-lg py-4 rounded-xl shadow-md transition-colors">
-              Place Order
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className={`w-full bg-primary hover:bg-[#8B2222] text-white font-bold text-lg py-4 rounded-xl shadow-md transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isSubmitting ? 'Placing Order...' : 'Place Order'}
             </button>
             <p className="text-center text-xs text-gray-400 mt-4">
               By placing your order, you agree to our Terms & Conditions.
