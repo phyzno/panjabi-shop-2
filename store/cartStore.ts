@@ -16,7 +16,7 @@ export interface CartItem {
   lengthStyle: string;
   sizeType: 'standard' | 'custom';
   standardSize?: string;
-  measurements?: any;
+  measurements?: Record<string, number>;
   specialInstructions?: string;
   fabricPrice: number;
   stitchingCharge: number;

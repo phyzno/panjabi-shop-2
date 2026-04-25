@@ -71,37 +71,75 @@ export async function renderPanjabiTexture(
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.6;
     
-    // Approximate neck region coordinates (x: 250 to 350, y: 100 to 180)
-    // Adjust these based on the actual PNG alignment
+    // Approximate neck region coordinates (Adjusted for high neckline)
     const centerX = 300;
-    const neckTop = 95;
-    
-    ctx.beginPath();
+    const neckTop = 45; 
     
     if (config.collarStyle === 'V-Neck') {
-      // Draw a deep V shape
-      ctx.moveTo(centerX - 35, neckTop);
-      ctx.lineTo(centerX, neckTop + 80);
-      ctx.lineTo(centerX + 35, neckTop);
-      // Fill it with a lighter color to look like skin/undershirt, or just draw the border
-      ctx.fillStyle = '#E8E0D5';
+      // Draw a more realistic V-neck with shadow
+      ctx.beginPath();
+      ctx.moveTo(centerX - 55, neckTop);
+      ctx.lineTo(centerX, neckTop + 90);
+      ctx.lineTo(centerX + 55, neckTop);
+      
+      // Skin/Inner tone with a subtle gradient
+      const neckGrad = ctx.createLinearGradient(centerX, neckTop, centerX, neckTop + 65);
+      neckGrad.addColorStop(0, '#D4B895'); // Darker top
+      neckGrad.addColorStop(1, '#F5E0C3'); // Lighter bottom
+      ctx.fillStyle = neckGrad;
       ctx.fill();
+      
+      // Border and shadow
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
       ctx.stroke();
-    } else if (config.collarStyle === 'Round Neck') {
-      // Draw a scooped round neck
-      ctx.arc(centerX, neckTop, 40, 0, Math.PI, false);
-      ctx.fillStyle = '#E8E0D5';
+      
+      // Inner shadow for depth
+      ctx.beginPath();
+      ctx.moveTo(centerX - 42, neckTop);
+      ctx.lineTo(centerX, neckTop + 15);
+      ctx.lineTo(centerX + 42, neckTop);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fill();
+    } else if (config.collarStyle === 'Round Neck') {
+      // Scooped round neck with depth
+      ctx.beginPath();
+      ctx.arc(centerX, neckTop - 10, 55, 0.1 * Math.PI, 0.9 * Math.PI, false);
+      ctx.lineTo(centerX - 55, neckTop - 10);
+      
+      const neckGrad = ctx.createLinearGradient(centerX, neckTop, centerX, neckTop + 55);
+      neckGrad.addColorStop(0, '#D4B895');
+      neckGrad.addColorStop(1, '#F5E0C3');
+      ctx.fillStyle = neckGrad;
+      ctx.fill();
+      
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
       ctx.stroke();
     } else if (config.collarStyle === 'Mandarin') {
-      // Draw a short standing collar
-      ctx.moveTo(centerX - 35, neckTop);
-      ctx.quadraticCurveTo(centerX, neckTop + 20, centerX + 35, neckTop);
-      ctx.lineTo(centerX + 35, neckTop - 15);
-      ctx.quadraticCurveTo(centerX, neckTop + 5, centerX - 35, neckTop - 15);
+      // Mandarin/Chinese collar stands up
+      ctx.beginPath();
+      ctx.moveTo(centerX - 55, neckTop + 15);
+      ctx.quadraticCurveTo(centerX, neckTop + 45, centerX + 55, neckTop + 15);
+      ctx.lineTo(centerX + 55, neckTop - 25);
+      ctx.quadraticCurveTo(centerX, neckTop - 5, centerX - 55, neckTop - 25);
       ctx.closePath();
-      ctx.fillStyle = config.color; // Same as fabric
+      
+      // Use a gradient of the fabric color to simulate lighting
+      const collarGrad = ctx.createLinearGradient(centerX - 55, neckTop, centerX + 55, neckTop);
+      collarGrad.addColorStop(0, darkenColor(config.color, 20));
+      collarGrad.addColorStop(0.5, config.color);
+      collarGrad.addColorStop(1, darkenColor(config.color, 20));
+      
+      ctx.fillStyle = collarGrad;
       ctx.fill();
+      
+      // Add a highlight line on top
+      ctx.strokeStyle = lightenColor(config.color, 40);
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1;
       ctx.stroke();
     }
     

@@ -2,6 +2,21 @@
 
 import { createClient } from '@/utils/supabase/server'
 
+interface CartItem {
+  productId: string;
+  productName: string;
+  color: string;
+  colorName: string;
+  fabricName: string;
+  fabricType: string;
+  collarStyle: string;
+  sizeType: string;
+  standardSize?: string;
+  specialInstructions?: string;
+  previewDataUrl?: string;
+  total: number;
+}
+
 export async function placeOrder(orderData: {
   name: string;
   phone: string;
@@ -11,7 +26,7 @@ export async function placeOrder(orderData: {
   delivery: number;
   total: number;
   paymentMethod: string;
-  items: Record<string, any>[];
+  items: CartItem[];
 }) {
   const supabase = await createClient()
 
@@ -44,7 +59,7 @@ export async function placeOrder(orderData: {
   }
 
   // 2. Insert order items
-  const itemsToInsert = orderData.items.map((item: Record<string, any>) => ({
+  const itemsToInsert = orderData.items.map((item: CartItem) => ({
     order_id: order.id,
     product_id: item.productId === 'new' ? null : item.productId,
     product_name: item.productName,

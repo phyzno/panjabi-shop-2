@@ -34,6 +34,7 @@ export function Footer() {
               <li><Link href="/about" className="text-gray-400 hover:text-[#C9A84C] transition-colors">About Us</Link></li>
               <li><Link href="/track-order" className="text-gray-400 hover:text-[#C9A84C] transition-colors">Track Order</Link></li>
               <li><Link href="/faq" className="text-gray-400 hover:text-[#C9A84C] transition-colors">FAQ</Link></li>
+              <li><Link href="/admin" className="text-gray-400 hover:text-[#C9A84C] transition-colors font-bold border-t border-gray-800 pt-3 mt-3 block">Admin Panel</Link></li>
             </ul>
           </div>
 
