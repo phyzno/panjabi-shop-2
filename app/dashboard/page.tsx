@@ -15,11 +15,20 @@ export default async function DashboardPage() {
     return redirect('/login')
   }
 
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
+  let orders = []
+  try {
+    const { data: fetchedOrders, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    
+    if (!error && fetchedOrders) {
+      orders = fetchedOrders
+    }
+  } catch (err) {
+    console.error('Dashboard data fetch error:', err)
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">
