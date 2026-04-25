@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { signOut } from '@/lib/actions/auth'
 import Link from 'next/link'
-import { ShoppingBag, Ruler, User as UserIcon, LogOut } from 'lucide-react'
+import { ShoppingBag, Ruler, User as UserIcon, LogOut, BarChart3 } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
