@@ -55,7 +55,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
 
   const handleAddToCart = () => {
     addItem({
-      productId: params.id,
+      productId: id,
       productName: 'Custom Panjabi',
       color: selectedColor.hex,
       colorName: selectedColor.name,

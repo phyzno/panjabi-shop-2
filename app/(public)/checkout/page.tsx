@@ -28,10 +28,10 @@ export default function CheckoutPage() {
     try {
       const formData = new FormData(e.currentTarget);
       const orderData = {
-        name: formData.get('name'),
-        phone: formData.get('phone'),
-        address: formData.get('address'),
-        city: formData.get('city'),
+        name: formData.get('name') as string,
+        phone: formData.get('phone') as string,
+        address: formData.get('address') as string,
+        city: formData.get('city') as string,
         items,
         subtotal,
         delivery,

@@ -120,7 +120,7 @@ export function PanjabiCanvas({
           >
             Download
           </button>
-          {typeof navigator !== 'undefined' && navigator.share && (
+          {typeof navigator !== 'undefined' && !!navigator.share && (
             <button 
               onClick={handleShare}
               className="hover:text-gray-900 transition-colors"
