@@ -1,11 +1,12 @@
 import { signup } from '@/lib/actions/auth'
 import Link from 'next/link'
 
-export default function RegisterPage({
+export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: { message: string; error: string }
+  searchParams: Promise<{ message: string; error: string }>
 }) {
+  const { error } = await searchParams;
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mx-auto py-24">
       <h1 className="text-3xl font-heading font-bold text-primary mb-8 text-center">Create Account</h1>
@@ -39,9 +40,9 @@ export default function RegisterPage({
         <button className="bg-primary hover:bg-primary/90 text-white rounded-lg px-4 py-3 font-medium transition-colors shadow-md">
           Sign Up
         </button>
-        {searchParams?.error && (
+        {error && (
           <p className="p-4 bg-red-50 text-red-700 text-center rounded-lg text-sm">
-            {searchParams.error}
+            {error}
           </p>
         )}
         <div className="text-center text-sm text-muted-foreground">

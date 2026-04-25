@@ -42,7 +42,13 @@ export default function HomePage() {
           {/* Overlapping images placeholder for hero - actual webp should be used here */}
           <div className="relative w-3/4 max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
              <div className="absolute inset-0 bg-[#1A1A1A]/10 mix-blend-multiply" />
-             <Image src="/assets/punjabi/1-1.webp" alt="Premium Panjabi" fill className="object-cover" />
+             <Image 
+               src="/assets/punjabi/1-1.webp" 
+               alt="Premium Panjabi" 
+               fill 
+               sizes="(max-width: 768px) 100vw, 50vw"
+               className="object-cover" 
+             />
           </div>
           <div className="absolute bottom-10 right-10 md:right-auto md:left-10 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl flex items-center gap-4 z-10 animate-bounce" style={{animationDuration: '3s'}}>
             <div className="flex -space-x-3">
@@ -62,15 +68,25 @@ export default function HomePage() {
       <section className="py-20 px-4 container mx-auto">
         <h2 className="font-heading text-4xl text-center mb-12">Our Collections</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {['Panjabi', 'Payjama', 'Sets', 'Readymade'].map((category, i) => (
-            <Link key={category} href={`/shop?category=${category.toLowerCase()}`} className="group relative h-[400px] rounded-2xl overflow-hidden shadow-md">
+          {[
+            { name: 'Panjabi', img: '1-1.webp' },
+            { name: 'Payjama', img: '1-2.webp' },
+            { name: 'Sets', img: '1-29.webp' },
+            { name: 'Readymade', img: '1-31.webp' }
+          ].map((cat) => (
+            <Link key={cat.name} href={`/shop?category=${cat.name.toLowerCase()}`} className="group relative h-[400px] rounded-2xl overflow-hidden shadow-md">
               <div className="absolute inset-0 bg-gray-200">
-                {/* Fallback image */}
-                <Image src={`/assets/punjabi/1-${29+i}.webp`} alt={category} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                <Image 
+                  src={`/assets/punjabi/${cat.img}`} 
+                  alt={cat.name} 
+                  fill 
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105" 
+                />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               <div className="absolute bottom-0 w-full p-8 transition-all duration-300 group-hover:pb-10 border-b-4 border-transparent group-hover:border-[#C9A84C]">
-                <h3 className="font-heading text-2xl text-white mb-2">{category}</h3>
+                <h3 className="font-heading text-2xl text-white mb-2">{cat.name}</h3>
                 <span className="text-white/80 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">Explore Collection →</span>
               </div>
             </Link>

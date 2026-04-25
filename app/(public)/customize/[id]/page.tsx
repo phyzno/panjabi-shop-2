@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { PanjabiCanvas } from '@/components/customizer/PanjabiCanvas';
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,8 @@ const colors = [
 
 const standardSizes = ['S', 'M', 'L', 'XL'];
 
-export default function CustomizePage({ params }: { params: { id: string } }) {
+export default function CustomizePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 

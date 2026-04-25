@@ -1,11 +1,12 @@
 import { login } from '@/lib/actions/auth'
 import Link from 'next/link'
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { message: string; error: string }
+  searchParams: Promise<{ message: string; error: string }>
 }) {
+  const { message, error } = await searchParams;
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mx-auto py-24">
       <h1 className="text-3xl font-heading font-bold text-primary mb-8 text-center">Login</h1>
@@ -39,14 +40,14 @@ export default function LoginPage({
         <button className="bg-primary hover:bg-primary/90 text-white rounded-lg px-4 py-3 font-medium transition-colors shadow-md">
           Sign In
         </button>
-        {searchParams?.message && (
+        {message && (
           <p className="p-4 bg-green-50 text-green-700 text-center rounded-lg text-sm">
-            {searchParams.message}
+            {message}
           </p>
         )}
-        {searchParams?.error && (
+        {error && (
           <p className="p-4 bg-red-50 text-red-700 text-center rounded-lg text-sm">
-            {searchParams.error}
+            {error}
           </p>
         )}
         <div className="text-center text-sm text-muted-foreground">
