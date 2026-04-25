@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { PanjabiCanvas } from '@/components/customizer/PanjabiCanvas';
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Check } from 'lucide-react';
 
 const fabrics = [

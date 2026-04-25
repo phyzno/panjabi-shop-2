@@ -15,7 +15,7 @@ export function lightenColor(hex: string, amt: number): string {
     hex = hex.slice(1);
     usePound = true;
   }
-  let num = parseInt(hex, 16);
+  const num = parseInt(hex, 16);
   let r = (num >> 16) + amt;
   if (r > 255) r = 255;
   else if (r < 0) r = 0;

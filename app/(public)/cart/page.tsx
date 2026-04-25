@@ -18,7 +18,7 @@ export default function CartPage() {
           <span className="text-6xl">🛒</span>
         </div>
         <h1 className="font-heading text-3xl font-bold mb-4">Your cart is empty</h1>
-        <p className="text-gray-500 mb-8">Looks like you haven't added anything to your cart yet.</p>
+        <p className="text-gray-500 mb-8">Looks like you haven&apos;t added anything to your cart yet.</p>
         <Link href="/shop" className="bg-primary hover:bg-[#8B2222] text-white px-8 py-3 rounded-lg font-medium transition-colors">
           Browse Collection
         </Link>

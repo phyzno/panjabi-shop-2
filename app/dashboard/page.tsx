@@ -48,7 +48,7 @@ export default async function DashboardPage() {
 
           {!orders || orders.length === 0 ? (
             <div className="bg-white border border-border rounded-2xl p-12 text-center shadow-sm">
-              <p className="text-muted-foreground mb-6">You haven't placed any orders yet.</p>
+              <p className="text-muted-foreground mb-6">You haven&apos;t placed any orders yet.</p>
               <Link href="/shop" className="inline-block bg-primary text-white px-8 py-3 rounded-xl font-medium shadow-md">
                 Start Shopping
               </Link>

@@ -1,9 +1,18 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
 
-export async function placeOrder(orderData: any) {
+export async function placeOrder(orderData: {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  subtotal: number;
+  delivery: number;
+  total: number;
+  paymentMethod: string;
+  items: Record<string, any>[];
+}) {
   const supabase = await createClient()
 
   const {
@@ -35,7 +44,7 @@ export async function placeOrder(orderData: any) {
   }
 
   // 2. Insert order items
-  const itemsToInsert = orderData.items.map((item: any) => ({
+  const itemsToInsert = orderData.items.map((item: Record<string, any>) => ({
     order_id: order.id,
     product_id: item.productId === 'new' ? null : item.productId,
     product_name: item.productName,
