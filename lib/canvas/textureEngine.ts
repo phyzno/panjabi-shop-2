@@ -58,4 +58,53 @@ export async function renderPanjabiTexture(
 
   // STEP 7 — Restore transparency outside garment
   ctx.globalCompositeOperation = 'destination-in';
-  ctx
+  ctx.drawImage(img, 0, 0, 600, 600);
+  ctx.globalCompositeOperation = 'source-over';
+
+  // STEP 8 — Draw simulated collar style
+  if (config.collarStyle && config.collarStyle !== 'Band Collar') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Calculate a slightly darker tone for shadows and lines
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.6;
+    
+    // Approximate neck region coordinates (x: 250 to 350, y: 100 to 180)
+    // Adjust these based on the actual PNG alignment
+    const centerX = 300;
+    const neckTop = 95;
+    
+    ctx.beginPath();
+    
+    if (config.collarStyle === 'V-Neck') {
+      // Draw a deep V shape
+      ctx.moveTo(centerX - 35, neckTop);
+      ctx.lineTo(centerX, neckTop + 80);
+      ctx.lineTo(centerX + 35, neckTop);
+      // Fill it with a lighter color to look like skin/undershirt, or just draw the border
+      ctx.fillStyle = '#E8E0D5';
+      ctx.fill();
+      ctx.stroke();
+    } else if (config.collarStyle === 'Round Neck') {
+      // Draw a scooped round neck
+      ctx.arc(centerX, neckTop, 40, 0, Math.PI, false);
+      ctx.fillStyle = '#E8E0D5';
+      ctx.fill();
+      ctx.stroke();
+    } else if (config.collarStyle === 'Mandarin') {
+      // Draw a short standing collar
+      ctx.moveTo(centerX - 35, neckTop);
+      ctx.quadraticCurveTo(centerX, neckTop + 20, centerX + 35, neckTop);
+      ctx.lineTo(centerX + 35, neckTop - 15);
+      ctx.quadraticCurveTo(centerX, neckTop + 5, centerX - 35, neckTop - 15);
+      ctx.closePath();
+      ctx.fillStyle = config.color; // Same as fabric
+      ctx.fill();
+      ctx.stroke();
+    }
+    
+    ctx.restore();
+  }
+}

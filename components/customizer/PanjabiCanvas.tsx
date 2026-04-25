@@ -9,6 +9,7 @@ interface PanjabiCanvasProps {
   fabricType: string;
   fabricOpacity?: number;
   colorIntensity?: number;
+  collarStyle?: string;
   onRenderComplete?: (dataUrl: string) => void;
 }
 
@@ -17,6 +18,7 @@ export function PanjabiCanvas({
   fabricType,
   fabricOpacity = 0.85,
   colorIntensity = 0.9,
+  collarStyle,
   onRenderComplete,
 }: PanjabiCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,6 +36,7 @@ export function PanjabiCanvas({
         fabricType,
         fabricOpacity,
         colorIntensity,
+        collarStyle,
       };
 
       try {
@@ -55,7 +58,7 @@ export function PanjabiCanvas({
     return () => {
       mounted = false;
     };
-  }, [color, fabricType, fabricOpacity, colorIntensity, onRenderComplete]);
+  }, [color, fabricType, fabricOpacity, colorIntensity, collarStyle, onRenderComplete]);
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
