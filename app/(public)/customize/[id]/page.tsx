@@ -42,7 +42,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
 
   const [selectedFabric, setSelectedFabric] = useState(fabrics[0]);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
-  const [collarStyle, setCollarStyle] = useState('Band Collar');
+  const [collarType, setCollarType] = useState<'band' | 'vneck' | 'round' | 'mandarin'>('band');
   const [sizeType, setSizeType] = useState<'standard'|'custom'>('standard');
   const [standardSize, setStandardSize] = useState('M');
   const [specialInstructions, setSpecialInstructions] = useState('');
@@ -61,7 +61,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
       colorName: selectedColor.name,
       fabricType: selectedFabric.type,
       fabricName: selectedFabric.name,
-      collarStyle,
+      collarType,
       sleeveStyle: 'Full Sleeve',
       buttonStyle: '5 Buttons',
       pocketStyle: 'No Pocket',
@@ -87,7 +87,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
             <PanjabiCanvas 
               color={selectedColor.hex} 
               fabricType={selectedFabric.type} 
-              collarStyle={collarStyle}
+              collarType={collarType}
               onRenderComplete={setPreviewDataUrl}
             />
             
@@ -98,9 +98,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
               <span className="bg-gray-100 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full border border-gray-200">
                 {selectedFabric.name}
               </span>
-              <span className="bg-gray-100 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full border border-gray-200">
-                {collarStyle}
-              </span>
+                {collarType.charAt(0).toUpperCase() + collarType.slice(1)}
             </div>
           </div>
         </div>
@@ -170,15 +168,20 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
               <div>
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Collar Style</h3>
                 <div className="flex overflow-x-auto gap-3 pb-2 snap-x">
-                  {['Band Collar', 'V-Neck', 'Round Neck', 'Mandarin'].map(style => (
+                  {[
+                    { id: 'band', name: 'Band Collar' },
+                    { id: 'vneck', name: 'V-Neck' },
+                    { id: 'round', name: 'Round Neck' },
+                    { id: 'mandarin', name: 'Mandarin' }
+                  ].map(style => (
                     <button
-                      key={style}
-                      onClick={() => setCollarStyle(style)}
+                      key={style.id}
+                      onClick={() => setCollarType(style.id as any)}
                       className={`shrink-0 snap-start px-4 py-2 rounded-lg border-2 whitespace-nowrap font-medium text-sm transition-colors ${
-                        collarStyle === style ? 'border-primary bg-primary/5 text-primary' : 'border-border text-gray-700 bg-white hover:bg-gray-50'
+                        collarType === style.id ? 'border-primary bg-primary/5 text-primary' : 'border-border text-gray-700 bg-white hover:bg-gray-50'
                       }`}
                     >
-                      {style}
+                      {style.name}
                     </button>
                   ))}
                 </div>

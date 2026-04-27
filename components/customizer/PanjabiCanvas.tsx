@@ -1,64 +1,88 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { renderPanjabiTexture, TextureConfig } from '@/lib/canvas/textureEngine';
 import { Loader2 } from 'lucide-react';
 
 interface PanjabiCanvasProps {
   color: string;
   fabricType: string;
+  collarType: 'band' | 'vneck' | 'round' | 'mandarin';
   fabricOpacity?: number;
   colorIntensity?: number;
-  collarStyle?: string;
   onRenderComplete?: (dataUrl: string) => void;
 }
 
 export function PanjabiCanvas({
   color,
   fabricType,
-  fabricOpacity = 0.85,
-  colorIntensity = 0.9,
-  collarStyle,
+  collarType,
+  fabricOpacity = 0.35,
+  colorIntensity = 0.92,
   onRenderComplete,
 }: PanjabiCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isRendering, setIsRendering] = useState(true);
+  const imageCache = useRef<Record<string, HTMLImageElement>>({});
+  const [imagesLoaded, setImagesLoaded] = useState(0); // Counter to trigger re-render
+
+  // Preload collar base images
+  useEffect(() => {
+    const images = [
+      '/assets/punjabi/collar-band.png',
+      '/assets/punjabi/collar-vneck.png',
+      '/assets/punjabi/collar-round.png',
+      '/assets/punjabi/collar-mandarin.png',
+    ];
+    images.forEach(src => {
+      if (imageCache.current[src]) return;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        imageCache.current[src] = img;
+        setImagesLoaded(prev => prev + 1);
+      };
+      img.src = src;
+    });
+  }, []);
+
+  const render = useCallback(async () => {
+    if (!canvasRef.current) return;
+    setIsRendering(true);
+    
+    // Smooth transition start
+    if (canvasRef.current) {
+      canvasRef.current.style.opacity = '0.6';
+      canvasRef.current.style.transition = 'opacity 0.15s';
+    }
+
+    const config: TextureConfig = {
+      color,
+      fabricType,
+      fabricOpacity,
+      colorIntensity,
+      collarType,
+    };
+
+    try {
+      await renderPanjabiTexture(canvasRef.current, config, imageCache.current);
+      if (onRenderComplete) {
+        onRenderComplete(canvasRef.current.toDataURL());
+      }
+    } catch (err) {
+      console.error('Failed to render canvas', err);
+    } finally {
+      setIsRendering(false);
+      // Smooth transition end
+      if (canvasRef.current) {
+        canvasRef.current.style.opacity = '1';
+      }
+    }
+  }, [color, fabricType, fabricOpacity, colorIntensity, collarType, onRenderComplete]);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const render = async () => {
-      if (!canvasRef.current) return;
-      setIsRendering(true);
-      
-      const config: TextureConfig = {
-        color,
-        fabricType,
-        fabricOpacity,
-        colorIntensity,
-        collarStyle,
-      };
-
-      try {
-        await renderPanjabiTexture(canvasRef.current, config);
-        if (mounted && onRenderComplete) {
-          onRenderComplete(canvasRef.current.toDataURL());
-        }
-      } catch (err) {
-        console.error('Failed to render canvas', err);
-      } finally {
-        if (mounted) {
-          setIsRendering(false);
-        }
-      }
-    };
-
     render();
-
-    return () => {
-      mounted = false;
-    };
-  }, [color, fabricType, fabricOpacity, colorIntensity, collarStyle, onRenderComplete]);
+  }, [render, imagesLoaded]);
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
