@@ -35,6 +35,15 @@ const colors = [
 
 const standardSizes = ['S', 'M', 'L', 'XL'];
 
+type CollarStyle = 'band' | 'vneck' | 'round' | 'mandarin';
+
+const collarStyles: { id: CollarStyle; name: string }[] = [
+  { id: 'band', name: 'Band Collar' },
+  { id: 'vneck', name: 'V-Neck' },
+  { id: 'round', name: 'Round Neck' },
+  { id: 'mandarin', name: 'Mandarin' }
+];
+
 export default function CustomizePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -61,7 +70,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
       colorName: selectedColor.name,
       fabricType: selectedFabric.type,
       fabricName: selectedFabric.name,
-      collarType,
+      collarStyle: collarType,
       sleeveStyle: 'Full Sleeve',
       buttonStyle: '5 Buttons',
       pocketStyle: 'No Pocket',
@@ -168,15 +177,10 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
               <div>
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Collar Style</h3>
                 <div className="flex overflow-x-auto gap-3 pb-2 snap-x">
-                  {[
-                    { id: 'band', name: 'Band Collar' },
-                    { id: 'vneck', name: 'V-Neck' },
-                    { id: 'round', name: 'Round Neck' },
-                    { id: 'mandarin', name: 'Mandarin' }
-                  ].map(style => (
+                  {collarStyles.map(style => (
                     <button
                       key={style.id}
-                      onClick={() => setCollarType(style.id as any)}
+                      onClick={() => setCollarType(style.id)}
                       className={`shrink-0 snap-start px-4 py-2 rounded-lg border-2 whitespace-nowrap font-medium text-sm transition-colors ${
                         collarType === style.id ? 'border-primary bg-primary/5 text-primary' : 'border-border text-gray-700 bg-white hover:bg-gray-50'
                       }`}
