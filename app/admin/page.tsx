@@ -1,26 +1,54 @@
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+"use client"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
 import { ShoppingBag, Users, BarChart3, ChevronRight } from 'lucide-react'
 
-export default async function AdminPanelPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return redirect('/login')
+export default function AdminPanelPage() {
+  const router = useRouter()
+  // Define minimal user and order types to satisfy TypeScript and ESLint
+  interface User {
+    id: string
+    email: string
+    // add other fields if needed
+  }
+  interface Order {
+    id: string
+    order_number: string
+    guest_name?: string
+    guest_phone?: string
+    status: string
+    total: number | string
+    // other fields can be added as needed
   }
 
-  // Fetch all orders (In a real app, you would use RLS or service role to ensure only admins can do this)
-  const { data: allOrders } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const [user, setUser] = useState<User | null>(null)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const totalRevenue = allOrders?.reduce((acc, order) => acc + (Number(order.total) || 0), 0) || 0
-  const pendingOrders = allOrders?.filter(o => o.status === 'pending').length || 0
+  useEffect(() => {
+    const supabase = createClient()
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace('/login')
+        return
+      }
+      setUser(user)
+      const { data: allOrders } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+      setOrders(allOrders || [])
+      setLoading(false)
+    }
+    fetchData()
+  }, [router])
+
+  if (loading) return <div className="container mx-auto px-4 py-12">Loading…</div>
+
+  const totalRevenue = orders.reduce((acc, o) => acc + (Number(o.total) || 0), 0)
+  const pendingOrders = orders.filter(o => o.status === 'pending').length
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -28,7 +56,7 @@ export default async function AdminPanelPage() {
         <h1 className="text-4xl font-heading font-bold text-primary mb-2">Admin Control Panel</h1>
         <p className="text-muted-foreground flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          System Status: Operational | Logged in as {user.email}
+          System Status: Operational | Logged in as {user?.email}
         </p>
       </div>
 
@@ -41,7 +69,7 @@ export default async function AdminPanelPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{allOrders?.length || 0}</p>
+              <p className="text-2xl font-bold">{orders.length}</p>
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -59,9 +87,7 @@ export default async function AdminPanelPage() {
               <p className="text-2xl font-bold">৳{totalRevenue.toLocaleString()}</p>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Lifetime sales data
-          </div>
+          <div className="text-xs text-muted-foreground">Lifetime sales data</div>
         </div>
 
         <div className="bg-white border border-border rounded-2xl p-6 shadow-sm">
@@ -74,9 +100,7 @@ export default async function AdminPanelPage() {
               <p className="text-2xl font-bold">--</p>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            From database profiles
-          </div>
+          <div className="text-xs text-muted-foreground">From database profiles</div>
         </div>
       </div>
 
@@ -98,21 +122,19 @@ export default async function AdminPanelPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {allOrders?.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-mono text-sm font-bold text-primary">{order.order_number}</td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium">{order.guest_name || 'Registered User'}</div>
-                    <div className="text-xs text-muted-foreground">{order.guest_phone || user.email}</div>
+                    <div className="text-xs text-muted-foreground">{order.guest_phone || user?.email}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${
                       order.status === 'delivered' ? 'bg-green-100 text-green-700' :
                       order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                       'bg-blue-100 text-blue-700'
-                    }`}>
-                      {order.status}
-                    </span>
+                    }`}>{order.status}</span>
                   </td>
                   <td className="px-6 py-4 font-bold text-sm">৳{order.total}</td>
                   <td className="px-6 py-4 text-right">
@@ -122,7 +144,7 @@ export default async function AdminPanelPage() {
                   </td>
                 </tr>
               ))}
-              {(!allOrders || allOrders.length === 0) && (
+              {orders.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     No orders found in the database.
