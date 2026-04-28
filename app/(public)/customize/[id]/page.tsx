@@ -6,14 +6,46 @@ import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 
-const fabrics = [
-  { id: 'plain', name: 'Premium Cotton', type: 'plain', price: 180 },
-  { id: 'linen', name: 'Linen Blend', type: 'linen', price: 220 },
-  { id: 'silk', name: 'Silk Blend', type: 'silk', price: 350 },
-  { id: 'check', name: 'Cotton Check', type: 'check', price: 200 },
-  { id: 'stripe', name: 'Striped Cotton', type: 'stripe', price: 190 },
-  { id: 'embroidery', name: 'Embroidered Muslin', type: 'embroidery', price: 420 },
+const FABRICS = [
+  { 
+    id: 'plain', 
+    label: 'Premium Cotton',
+    description: 'Soft & breathable',
+    pricePerYard: 180
+  },
+  { 
+    id: 'linen', 
+    label: 'Linen Blend',
+    description: 'Cool & lightweight',
+    pricePerYard: 220
+  },
+  { 
+    id: 'silk', 
+    label: 'Silk Blend',
+    description: 'Lustrous premium',
+    pricePerYard: 350
+  },
+  { 
+    id: 'check', 
+    label: 'Cotton Check',
+    description: 'Classic pattern',
+    pricePerYard: 200
+  },
+  { 
+    id: 'stripe', 
+    label: 'Striped Cotton',
+    description: 'Elegant stripes',
+    pricePerYard: 190
+  },
+  { 
+    id: 'embroidery', 
+    label: 'Embroidered Muslin',
+    description: 'Traditional craft',
+    pricePerYard: 420
+  },
 ];
+
+import { FabricSwatch } from '@/components/customizer/FabricSwatch';
 
 const colors = [
   { id: 'royalblue', hex: '#1B3A6B', name: 'Royal Blue' },
@@ -49,7 +81,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
-  const [selectedFabric, setSelectedFabric] = useState(fabrics[0]);
+  const [selectedFabric, setSelectedFabric] = useState(FABRICS[0].id);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
   const [collarType, setCollarType] = useState<'band' | 'vneck' | 'round' | 'mandarin'>('band');
   const [sizeType, setSizeType] = useState<'standard'|'custom'>('standard');
@@ -58,7 +90,8 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
   const [previewDataUrl, setPreviewDataUrl] = useState('');
 
   const fabricYards = 2.5;
-  const fabricPrice = fabricYards * selectedFabric.price;
+  const fabricObj = FABRICS.find(f => f.id === selectedFabric)!;
+  const fabricPrice = fabricYards * fabricObj.pricePerYard;
   const stitchingCharge = 450;
   const total = fabricPrice + stitchingCharge;
 
@@ -68,8 +101,8 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
       productName: 'Custom Panjabi',
       color: selectedColor.hex,
       colorName: selectedColor.name,
-      fabricType: selectedFabric.type,
-      fabricName: selectedFabric.name,
+      fabricType: fabricObj.id,
+      fabricName: fabricObj.label,
       collarStyle: collarType,
       sleeveStyle: 'Full Sleeve',
       buttonStyle: '5 Buttons',
@@ -95,7 +128,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
           <div className="sticky top-24">
             <PanjabiCanvas 
               color={selectedColor.hex} 
-              fabricType={selectedFabric.type} 
+              fabricType={selectedFabric} 
               collarType={collarType}
               onRenderComplete={setPreviewDataUrl}
             />
@@ -105,7 +138,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
                 {selectedColor.name}
               </span>
               <span className="bg-gray-100 text-gray-800 text-sm font-medium px-4 py-1.5 rounded-full border border-gray-200">
-                {selectedFabric.name}
+                {fabricObj.label}
               </span>
                 {collarType.charAt(0).toUpperCase() + collarType.slice(1)}
             </div>
@@ -121,23 +154,54 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
               <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">1</span>
               Fabric Type
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {fabrics.map(fabric => (
+            <div className="grid grid-cols-3 gap-3">
+              {FABRICS.map(fabric => (
                 <button
                   key={fabric.id}
-                  onClick={() => setSelectedFabric(fabric)}
-                  className={`flex flex-col items-center p-3 rounded-xl border-2 transition-all ${
-                    selectedFabric.id === fabric.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30 bg-white'
-                  }`}
+                  onClick={() => setSelectedFabric(fabric.id)}
+                  className={`
+                    relative p-4 rounded-xl border-2 transition-all duration-200
+                    flex flex-col items-center gap-2 text-center
+                    ${selectedFabric === fabric.id 
+                      ? 'border-[#6B1E2E] bg-[#FDF0F2] shadow-md scale-[1.02]' 
+                      : 'border-[#E8E0D5] bg-white hover:border-[#C9A84C] hover:shadow-sm'
+                    }
+                  `}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gray-200 mb-3 overflow-hidden relative">
-                    {/* Simplified mock pattern visualizer instead of real canvas for thumbnails */}
-                    <div className="absolute inset-0 opacity-20" style={{backgroundColor: selectedColor.hex}}></div>
-                    {fabric.type === 'check' && <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_49%,#000_49%,#000_51%,transparent_51%)] bg-[length:10px_10px]"></div>}
-                    {fabric.type === 'stripe' && <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_49%,#000_49%,#000_51%,transparent_51%)] bg-[length:10px_10px]"></div>}
+                  {/* Real fabric texture swatch */}
+                  <div className="relative">
+                    <FabricSwatch 
+                      fabricType={fabric.id}
+                      color="#6B7FA3"
+                      size={72}
+                    />
+                    {/* Selected checkmark overlay */}
+                    {selectedFabric === fabric.id && (
+                      <div className="absolute inset-0 flex items-center justify-center
+                        bg-[#6B1E2E]/20 rounded-full">
+                        <svg width="20" height="20" viewBox="0 0 24 24" 
+                          fill="none" stroke="white" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm font-medium text-center">{fabric.name}</span>
-                  {selectedFabric.id === fabric.id && <Check size={16} className="text-primary mt-1" />}
+                  {/* Fabric name */}
+                  <span className={`text-xs font-semibold leading-tight
+                    ${selectedFabric === fabric.id 
+                      ? 'text-[#6B1E2E]' 
+                      : 'text-[#1A1A1A]'
+                    }`}>
+                    {fabric.label}
+                  </span>
+                  {/* Description */}
+                  <span className="text-[10px] text-[#9B8A70] leading-tight">
+                    {fabric.description}
+                  </span>
+                  {/* Price */}
+                  <span className="text-[10px] font-medium text-[#C9A84C]">
+                    ৳{fabric.pricePerYard}/yard
+                  </span>
                 </button>
               ))}
             </div>
@@ -292,7 +356,7 @@ export default function CustomizePage({ params }: { params: Promise<{ id: string
           
           <button
             onClick={handleAddToCart}
-            className="w-full md:w-auto bg-gradient-to-r from-[#D4AF37] to-[#C9A84C] hover:from-[#b5953e] hover:to-[#aa8d3e] text-[#1A1A1A] font-bold text-lg px-12 py-4 rounded-xl shadow-lg transform transition-all active:scale-95"
+            className="w-full md:w-auto bg-linear-to-r from-[#D4AF37] to-[#C9A84C] hover:from-[#b5953e] hover:to-[#aa8d3e] text-[#1A1A1A] font-bold text-lg px-12 py-4 rounded-xl shadow-lg transform transition-all active:scale-95"
           >
             Add to Cart
           </button>

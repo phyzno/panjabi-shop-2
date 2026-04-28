@@ -43,96 +43,128 @@ export function generateFabricPattern(
 
   switch (type) {
     case 'plain': {
+      // 4x4, subtle grid weave
       offscreen.width = 4;
       offscreen.height = 4;
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 4, 4);
-      octx.fillStyle = 'rgba(0, 0, 0, 0.06)';
-      octx.fillRect(0, 0, 2, 2);
-      octx.fillRect(2, 2, 2, 2);
-      break;
-    }
-    case 'check': {
-      offscreen.width = 20;
-      offscreen.height = 20;
-      octx.fillStyle = baseColor;
-      octx.fillRect(0, 0, 20, 20);
-      octx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-      octx.fillRect(0, 0, 10, 10);
-      octx.fillRect(10, 10, 10, 10);
-      octx.fillStyle = 'rgba(0, 0, 0, 0.12)';
-      octx.fillRect(0, 9.5, 20, 1);
-      octx.fillRect(9.5, 0, 1, 20);
-      break;
-    }
-    case 'stripe': {
-      offscreen.width = 12;
-      offscreen.height = 12;
-      octx.fillStyle = baseColor;
-      octx.fillRect(0, 0, 12, 12);
-      octx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-      octx.fillRect(0, 0, 6, 12);
-      octx.fillStyle = 'rgba(0, 0, 0, 0.06)';
-      octx.fillRect(5.5, 0, 1, 12);
+      // Subtle vertical lines
+      octx.strokeStyle = 'rgba(0,0,0,0.05)';
+      octx.lineWidth = 1;
+      octx.beginPath();
+      octx.moveTo(1, 0); octx.lineTo(1, 4);
+      octx.moveTo(3, 0); octx.lineTo(3, 4);
+      octx.stroke();
+      // Subtle horizontal lines
+      octx.beginPath();
+      octx.moveTo(0, 1); octx.lineTo(4, 1);
+      octx.moveTo(0, 3); octx.lineTo(4, 3);
+      octx.stroke();
       break;
     }
     case 'linen': {
+      // 6x6, cross-hatch diagonal
       offscreen.width = 6;
       offscreen.height = 6;
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 6, 6);
-      for (let i = 0; i < 3; i++) {
-        octx.fillStyle = `rgba(0, 0, 0, ${0.06 + Math.random() * 0.04})`;
-        octx.fillRect(Math.random() * 6, 0, 1, 6);
-        octx.fillStyle = `rgba(255, 255, 255, ${0.06 + Math.random() * 0.04})`;
-        octx.fillRect(0, Math.random() * 6, 6, 1);
+      // 45° lines
+      octx.strokeStyle = 'rgba(0,0,0,0.07)';
+      octx.lineWidth = 1;
+      for (let i = -6; i < 12; i += 2) {
+        octx.beginPath();
+        octx.moveTo(i, 0);
+        octx.lineTo(i + 6, 6);
+        octx.stroke();
+      }
+      // 135° lines
+      octx.strokeStyle = 'rgba(0,0,0,0.07)';
+      for (let i = -6; i < 12; i += 2) {
+        octx.beginPath();
+        octx.moveTo(i + 6, 0);
+        octx.lineTo(i, 6);
+        octx.stroke();
       }
       break;
     }
     case 'silk': {
-      offscreen.width = 16;
-      offscreen.height = 16;
-      const grad = octx.createLinearGradient(0, 0, 16, 16);
-      grad.addColorStop(0, baseColor);
-      grad.addColorStop(0.5, lightenColor(baseColor, 30));
-      grad.addColorStop(0.8, baseColor);
-      grad.addColorStop(1, darkenColor(baseColor, 20));
+      // 20x20, diagonal gradient sheen
+      offscreen.width = 20;
+      offscreen.height = 20;
+      const grad = octx.createLinearGradient(0, 0, 20, 20);
+      grad.addColorStop(0, lightenColor(baseColor, 25));
+      grad.addColorStop(0.4, baseColor);
+      grad.addColorStop(0.7, darkenColor(baseColor, 15));
+      grad.addColorStop(1, baseColor);
       octx.fillStyle = grad;
-      octx.fillRect(0, 0, 16, 16);
+      octx.fillRect(0, 0, 20, 20);
       break;
     }
-    case 'dots': {
-      offscreen.width = 14;
-      offscreen.height = 14;
+    case 'check': {
+      // 16x16, plaid check
+      offscreen.width = 16;
+      offscreen.height = 16;
       octx.fillStyle = baseColor;
-      octx.fillRect(0, 0, 14, 14);
+      octx.fillRect(0, 0, 16, 16);
+      // White squares
+      octx.fillStyle = 'rgba(255,255,255,0.20)';
+      octx.fillRect(0, 0, 8, 8);
+      octx.fillRect(8, 8, 8, 8);
+      // Thin cross lines
+      octx.strokeStyle = 'rgba(255,255,255,0.15)';
+      octx.lineWidth = 1;
       octx.beginPath();
-      octx.arc(7, 7, 2.5, 0, Math.PI * 2);
-      octx.fillStyle = 'rgba(255, 255, 255, 0.28)';
-      octx.fill();
+      octx.moveTo(8, 0); octx.lineTo(8, 16);
+      octx.moveTo(0, 8); octx.lineTo(16, 8);
+      octx.stroke();
+      break;
+    }
+    case 'stripe': {
+      // 10x10, vertical stripe
+      offscreen.width = 10;
+      offscreen.height = 10;
+      octx.fillStyle = baseColor;
+      octx.fillRect(0, 0, 10, 10);
+      // Left half lighter
+      octx.fillStyle = lightenColor(baseColor, 15);
+      octx.fillRect(0, 0, 5, 10);
+      // 1px dark line at edge
+      octx.strokeStyle = 'rgba(0,0,0,0.15)';
+      octx.lineWidth = 1;
+      octx.beginPath();
+      octx.moveTo(5, 0); octx.lineTo(5, 10);
+      octx.stroke();
       break;
     }
     case 'embroidery': {
-      offscreen.width = 24;
-      offscreen.height = 24;
+      // 20x20, diamond + dots + cross
+      offscreen.width = 20;
+      offscreen.height = 20;
       octx.fillStyle = baseColor;
-      octx.fillRect(0, 0, 24, 24);
-      octx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      octx.fillRect(0, 0, 20, 20);
+      // Diamond outline
+      octx.strokeStyle = 'rgba(255,255,255,0.25)';
       octx.lineWidth = 1;
       octx.beginPath();
-      octx.moveTo(12, 0);
-      octx.lineTo(24, 12);
-      octx.lineTo(12, 24);
-      octx.lineTo(0, 12);
+      octx.moveTo(10, 2);
+      octx.lineTo(18, 10);
+      octx.lineTo(10, 18);
+      octx.lineTo(2, 10);
       octx.closePath();
       octx.stroke();
-      octx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+      // Corner dots
+      octx.fillStyle = 'rgba(255,255,255,0.20)';
+      [ [3,3], [17,3], [3,17], [17,17] ].forEach(([x,y]) => {
+        octx.beginPath();
+        octx.arc(x, y, 1.2, 0, Math.PI*2);
+        octx.fill();
+      });
+      // Center cross
+      octx.strokeStyle = 'rgba(255,255,255,0.15)';
       octx.beginPath();
-      octx.arc(0, 0, 1, 0, Math.PI * 2);
-      octx.arc(24, 0, 1, 0, Math.PI * 2);
-      octx.arc(0, 24, 1, 0, Math.PI * 2);
-      octx.arc(24, 24, 1, 0, Math.PI * 2);
-      octx.fill();
+      octx.moveTo(10, 6); octx.lineTo(10, 14);
+      octx.moveTo(6, 10); octx.lineTo(14, 10);
+      octx.stroke();
       break;
     }
     default: {
