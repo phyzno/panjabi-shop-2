@@ -3,7 +3,6 @@ import { Playfair_Display, DM_Sans } from "next/font/google";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
-// @ts-ignore: allow global CSS import
 import "./globals.css";
 
 const playfair = Playfair_Display({
