@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers'
-
-export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { logoutAdmin } from '@/lib/actions/admin'
+
+export const dynamic = 'force-dynamic'
 
 export default async function AdminLayout({
   children,

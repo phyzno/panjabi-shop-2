@@ -75,7 +75,7 @@ export default async function AdminProductsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-xs uppercase tracking-widest text-muted-foreground font-bold">
+              <tr className="bg-gray-50 text-xs uppercase tracking-wider text-muted-foreground font-bold">
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Type</th>
                 <th className="px-6 py-4">Category</th>

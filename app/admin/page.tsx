@@ -4,19 +4,48 @@ import { updateOrderStatus, deleteOrder } from '@/lib/actions/admin'
 
 export const dynamic = 'force-dynamic'
 
+interface Order {
+  id: string
+  order_number: string
+  guest_name?: string
+  guest_phone?: string
+  status: string
+  total: number
+}
+
 export default async function AdminPanelPage() {
-  const supabase = await createClient()
+  let orders: Order[] = []
+  let totalRevenue = 0
+  let pendingOrders = 0
+  let error: string | null = null
 
-  const { data: orders } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false })
+  try {
+    const supabase = await createClient()
 
-  const totalRevenue = (orders || []).reduce((acc, o) => acc + (Number(o.total) || 0), 0)
-  const pendingOrders = (orders || []).filter(o => o.status === 'pending').length
+    const { data, error: dbError } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (dbError) {
+      error = dbError.message
+    } else if (data) {
+      orders = data as Order[]
+      totalRevenue = orders.reduce((acc, o) => acc + (Number(o.total) || 0), 0)
+      pendingOrders = orders.filter(o => o.status === 'pending').length
+    }
+  } catch (e) {
+    error = (e instanceof Error ? e.message : String(e)) || 'Failed to load orders'
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">
+          Error loading data: {error}
+        </div>
+      )}
+
       <div className="mb-12">
         <h1 className="text-4xl font-heading font-bold text-primary mb-2">Admin Control Panel</h1>
         <p className="text-muted-foreground flex items-center gap-2">
@@ -34,7 +63,7 @@ export default async function AdminPanelPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{orders?.length || 0}</p>
+              <p className="text-2xl font-bold">{orders.length}</p>
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -78,7 +107,7 @@ export default async function AdminPanelPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 text-xs uppercase tracking-widest text-muted-foreground font-bold">
+              <tr className="bg-gray-50 text-xs uppercase tracking-wider text-muted-foreground font-bold">
                 <th className="px-6 py-4">Order ID</th>
                 <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Status</th>
@@ -87,7 +116,7 @@ export default async function AdminPanelPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {(orders || []).map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-mono text-sm font-bold text-primary">{order.order_number}</td>
                   <td className="px-6 py-4">
@@ -118,7 +147,7 @@ export default async function AdminPanelPage() {
                   </td>
                 </tr>
               ))}
-              {(!orders || orders.length === 0) && (
+              {orders.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     No orders found in the database.
