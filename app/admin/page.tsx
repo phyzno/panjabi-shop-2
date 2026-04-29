@@ -9,7 +9,7 @@ export default function AdminPanelPage() {
   // Define minimal user and order types to satisfy TypeScript and ESLint
   interface User {
     id: string
-    email: string
+    email?: string  // Made optional to match Supabase User type
     // add other fields if needed
   }
   interface Order {
