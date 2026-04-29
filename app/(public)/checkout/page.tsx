@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
@@ -8,9 +8,8 @@ import { placeOrder } from '@/lib/actions/orders';
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
-  const [paymentMethod, setPaymentMethod] = useState('bkash');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   if (items.length === 0) {
     if (typeof window !== 'undefined') router.push('/cart');
     return null;
@@ -19,12 +18,11 @@ export default function CheckoutPage() {
   const subtotal = getSubtotal();
   const delivery = subtotal > 2000 ? 0 : 60;
   const total = subtotal + delivery;
-  const advance = Math.round(total * 0.3);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const formData = new FormData(e.currentTarget);
       const orderData = {
@@ -32,11 +30,11 @@ export default function CheckoutPage() {
         phone: formData.get('phone') as string,
         address: formData.get('address') as string,
         city: formData.get('city') as string,
+        email: formData.get('email') as string || undefined,
         items,
         subtotal,
         delivery,
         total,
-        paymentMethod,
       };
 
       const orderNumber = await placeOrder(orderData);
@@ -53,12 +51,12 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-4 py-12 bg-[#FAF7F2] min-h-screen">
       <h1 className="font-heading text-4xl font-bold mb-10 text-center">Checkout</h1>
-      
+
       <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-12 max-w-6xl mx-auto">
-        
+
         {/* LEFT: Forms */}
         <div className="lg:w-[60%] space-y-8">
-          
+
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-border">
             <h2 className="font-heading text-2xl font-bold mb-6 flex items-center gap-3">
               <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">1</span>
@@ -103,51 +101,13 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-border">
-            <h2 className="font-heading text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">3</span>
-              Payment Method
-            </h2>
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 text-sm text-amber-800">
-              <p>⚠️ Custom stitched items require a 30% advance payment (৳{advance}) via bKash or Nagad before we start stitching.</p>
-            </div>
-            
-            <div className="space-y-4">
-              <label className={`block border-2 rounded-xl p-4 cursor-pointer transition-colors ${paymentMethod === 'bkash' ? 'border-pink-500 bg-pink-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <div className="flex items-center gap-3">
-                  <input type="radio" name="payment" value="bkash" checked={paymentMethod === 'bkash'} onChange={(e) => setPaymentMethod(e.target.value)} className="w-5 h-5 text-pink-500" />
-                  <span className="font-bold text-lg">bKash</span>
-                </div>
-                {paymentMethod === 'bkash' && (
-                  <div className="mt-4 pl-8">
-                    <p className="text-sm mb-2 text-gray-600">Send <b>৳{advance}</b> to <b>01XXXXXXXXX</b> (Personal)</p>
-                    <input type="text" name="transactionId" placeholder="Enter Transaction ID" required className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-pink-500 outline-none" />
-                  </div>
-                )}
-              </label>
-
-              <label className={`block border-2 rounded-xl p-4 cursor-pointer transition-colors ${paymentMethod === 'nagad' ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <div className="flex items-center gap-3">
-                  <input type="radio" name="payment" value="nagad" checked={paymentMethod === 'nagad'} onChange={(e) => setPaymentMethod(e.target.value)} className="w-5 h-5 text-orange-500" />
-                  <span className="font-bold text-lg">Nagad</span>
-                </div>
-                {paymentMethod === 'nagad' && (
-                  <div className="mt-4 pl-8">
-                    <p className="text-sm mb-2 text-gray-600">Send <b>৳{advance}</b> to <b>01XXXXXXXXX</b> (Personal)</p>
-                    <input type="text" name="transactionId" placeholder="Enter Transaction ID" required className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-orange-500 outline-none" />
-                  </div>
-                )}
-              </label>
-            </div>
-          </div>
-          
         </div>
 
         {/* RIGHT: Order Summary */}
         <div className="lg:w-[40%]">
           <div className="bg-white border border-border rounded-2xl p-8 sticky top-24 shadow-lg">
             <h2 className="font-heading text-2xl font-bold mb-6">Summary</h2>
-            
+
             <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
               {items.map(item => (
                 <div key={item.id} className="flex justify-between text-sm">
@@ -159,7 +119,7 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-            
+
             <div className="border-t border-gray-100 pt-4 space-y-3 mb-6 text-sm">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
@@ -170,20 +130,16 @@ export default function CheckoutPage() {
                 <span>{delivery === 0 ? 'Free' : `৳${delivery}`}</span>
               </div>
             </div>
-            
+
             <div className="border-t border-gray-200 pt-4 mb-8">
               <div className="flex justify-between items-end mb-2">
                 <span className="font-bold text-lg">Total</span>
                 <span className="font-heading text-3xl font-bold text-primary">৳{total}</span>
               </div>
-              <div className="flex justify-between items-end text-sm text-gray-500">
-                <span>Advance Required</span>
-                <span className="font-bold text-amber-600">৳{advance}</span>
-              </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isSubmitting}
               className={`w-full bg-primary hover:bg-[#8B2222] text-white font-bold text-lg py-4 rounded-xl shadow-md transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
@@ -194,7 +150,7 @@ export default function CheckoutPage() {
             </p>
           </div>
         </div>
-        
+
       </form>
     </div>
   );

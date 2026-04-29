@@ -1,54 +1,19 @@
-"use client"
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
-import { ShoppingBag, Users, BarChart3, ChevronRight } from 'lucide-react'
+import { createClient } from '@/utils/supabase/server'
+import { ShoppingBag, BarChart3, Users, Trash2, CheckCircle } from 'lucide-react'
+import { updateOrderStatus, deleteOrder } from '@/lib/actions/admin'
 
-export default function AdminPanelPage() {
-  const router = useRouter()
-  // Define minimal user and order types to satisfy TypeScript and ESLint
-  interface User {
-    id: string
-    email?: string  // Made optional to match Supabase User type
-    // add other fields if needed
-  }
-  interface Order {
-    id: string
-    order_number: string
-    guest_name?: string
-    guest_phone?: string
-    status: string
-    total: number | string
-    // other fields can be added as needed
-  }
+export const dynamic = 'force-dynamic'
 
-  const [user, setUser] = useState<User | null>(null)
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+export default async function AdminPanelPage() {
+  const supabase = await createClient()
 
-  useEffect(() => {
-    const supabase = createClient()
-    const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.replace('/login')
-        return
-      }
-      setUser(user)
-      const { data: allOrders } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-      setOrders(allOrders || [])
-      setLoading(false)
-    }
-    fetchData()
-  }, [router])
+  const { data: orders } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false })
 
-  if (loading) return <div className="container mx-auto px-4 py-12">Loading…</div>
-
-  const totalRevenue = orders.reduce((acc, o) => acc + (Number(o.total) || 0), 0)
-  const pendingOrders = orders.filter(o => o.status === 'pending').length
+  const totalRevenue = (orders || []).reduce((acc, o) => acc + (Number(o.total) || 0), 0)
+  const pendingOrders = (orders || []).filter(o => o.status === 'pending').length
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -56,7 +21,7 @@ export default function AdminPanelPage() {
         <h1 className="text-4xl font-heading font-bold text-primary mb-2">Admin Control Panel</h1>
         <p className="text-muted-foreground flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          System Status: Operational | Logged in as {user?.email}
+          System Status: Operational | Logged in as admin
         </p>
       </div>
 
@@ -69,7 +34,7 @@ export default function AdminPanelPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{orders.length}</p>
+              <p className="text-2xl font-bold">{orders?.length || 0}</p>
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
@@ -118,16 +83,16 @@ export default function AdminPanelPage() {
                 <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4 text-right">Action</th>
+                <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {orders.map((order) => (
+              {(orders || []).map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-mono text-sm font-bold text-primary">{order.order_number}</td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium">{order.guest_name || 'Registered User'}</div>
-                    <div className="text-xs text-muted-foreground">{order.guest_phone || user?.email}</div>
+                    <div className="text-xs text-muted-foreground">{order.guest_phone || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${
@@ -137,14 +102,23 @@ export default function AdminPanelPage() {
                     }`}>{order.status}</span>
                   </td>
                   <td className="px-6 py-4 font-bold text-sm">৳{order.total}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="p-2 hover:bg-white rounded-lg transition-colors group">
-                      <ChevronRight size={20} className="text-muted-foreground group-hover:text-primary" />
-                    </button>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <form action={updateOrderStatus.bind(null, order.id, 'delivered')}>
+                        <button type="submit" title="Mark Delivered" className="p-2 hover:bg-green-50 rounded-lg transition-colors">
+                          <CheckCircle size={16} className="text-green-600" />
+                        </button>
+                      </form>
+                      <form action={deleteOrder.bind(null, order.id)}>
+                        <button type="submit" title="Delete Order" className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                          <Trash2 size={16} className="text-red-600" />
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}
-              {orders.length === 0 && (
+              {(!orders || orders.length === 0) && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                     No orders found in the database.

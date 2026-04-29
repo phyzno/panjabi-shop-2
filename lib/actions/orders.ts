@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { sendOrderEmail } from '@/lib/email'
 
 interface CartItem {
   productId: string;
@@ -20,12 +21,12 @@ interface CartItem {
 export async function placeOrder(orderData: {
   name: string;
   phone: string;
+  email?: string;
   address: string;
   city: string;
   subtotal: number;
   delivery: number;
   total: number;
-  paymentMethod: string;
   items: CartItem[];
 }) {
   const supabase = await createClient()
@@ -46,8 +47,7 @@ export async function placeOrder(orderData: {
       subtotal: orderData.subtotal,
       delivery_charge: orderData.delivery,
       total: orderData.total,
-      advance_required: Math.round(orderData.total * 0.3),
-      payment_method: orderData.paymentMethod,
+      payment_method: 'cash_on_call',
       status: 'pending',
     })
     .select()
@@ -72,7 +72,7 @@ export async function placeOrder(orderData: {
     standard_size: item.standardSize,
     special_instructions: item.specialInstructions,
     preview_image_url: item.previewDataUrl,
-    unit_price: item.total, // Simplified for now
+    unit_price: item.total,
     total_price: item.total,
   }))
 
@@ -82,7 +82,23 @@ export async function placeOrder(orderData: {
 
   if (itemsError) {
     console.error('Items Error:', itemsError)
-    // We might want to delete the order here if items fail, but Supabase doesn't have native nested inserts in one call easily without a function
+  }
+
+  // 3. Send email notification
+  try {
+    await sendOrderEmail({
+      orderNumber: order.order_number,
+      customerName: orderData.name,
+      customerPhone: orderData.phone,
+      customerEmail: orderData.email,
+      address: orderData.address,
+      city: orderData.city,
+      items: orderData.items,
+      total: orderData.total,
+    })
+  } catch (emailError) {
+    console.error('Email sending failed:', emailError)
+    // Don't fail the order if email fails
   }
 
   return order.order_number

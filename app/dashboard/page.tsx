@@ -4,6 +4,8 @@ import { signOut } from '@/lib/actions/auth'
 import Link from 'next/link'
 import { ShoppingBag, Ruler, User as UserIcon, LogOut, BarChart3 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   try {
     const supabase = await createClient()
