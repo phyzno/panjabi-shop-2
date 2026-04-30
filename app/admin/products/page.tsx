@@ -103,9 +103,9 @@ export default async function AdminProductsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex gap-2 justify-end">
-                      <button className="p-2 hover:bg-blue-50 rounded-lg transition-colors">
+                      <a href={`/admin/products/edit/${product.id}`} className="p-2 hover:bg-blue-50 rounded-lg transition-colors inline-block">
                         <Pencil size={16} className="text-blue-600" />
-                      </button>
+                      </a>
                       <form action={deleteProduct.bind(null, product.id)}>
                         <button type="submit" className="p-2 hover:bg-red-50 rounded-lg transition-colors">
                           <Trash2 size={16} className="text-red-600" />

@@ -112,3 +112,53 @@ export async function deleteCollar(collarId: string) {
   await supabase.from('design_options').delete().eq('id', collarId)
   redirect('/admin/collars')
 }
+
+// Update actions
+export async function updateProduct(productId: string, formData: FormData) {
+  const supabase = await createClient()
+  const imageUrls = (formData.get('image_urls') as string || '').split(',').map(s => s.trim()).filter(Boolean)
+
+  await supabase.from('products').update({
+    type: formData.get('type') as string,
+    category: formData.get('category') as string || null,
+    name: formData.get('name') as string,
+    name_bn: formData.get('name_bn') as string || null,
+    description: formData.get('description') as string || null,
+    base_price: parseFloat(formData.get('base_price') as string),
+    stitching_charge: parseFloat(formData.get('stitching_charge') as string) || 450,
+    image_urls: imageUrls.length > 0 ? imageUrls : null,
+    is_active: formData.get('is_active') === 'true',
+    updated_at: new Date().toISOString(),
+  }).eq('id', productId)
+  redirect('/admin/products')
+}
+
+export async function updateFabric(fabricId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  await supabase.from('fabrics').update({
+    name: formData.get('name') as string,
+    name_bn: formData.get('name_bn') as string || null,
+    fabric_type: formData.get('fabric_type') as string,
+    description: formData.get('description') as string || null,
+    price_per_yard: parseFloat(formData.get('price_per_yard') as string),
+    color_hex: formData.get('color_hex') as string || null,
+    image_url: formData.get('image_url') as string || null,
+    in_stock: formData.get('in_stock') === 'true',
+    updated_at: new Date().toISOString(),
+  }).eq('id', fabricId)
+  redirect('/admin/fabrics')
+}
+
+export async function updateCollar(collarId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  await supabase.from('design_options').update({
+    name: formData.get('name') as string,
+    name_bn: formData.get('name_bn') as string || null,
+    image_url: formData.get('image_url') as string || null,
+    price_addition: parseFloat(formData.get('price_addition') as string) || 0,
+    updated_at: new Date().toISOString(),
+  }).eq('id', collarId)
+  redirect('/admin/collars')
+}
