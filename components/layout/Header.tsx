@@ -1,15 +1,33 @@
 "use client";
 
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, LogOut, BarChart3 } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const totalItems = useCartStore((state) => state.getTotalItems());
   const pathname = usePathname();
+
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -22,7 +40,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-border shadow-sm">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Mobile Menu Button */}
-        <button 
+        <button
           className="md:hidden p-2 -ml-2 text-foreground"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
@@ -51,9 +69,42 @@ export function Header() {
 
         {/* Icons */}
         <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="p-2 text-foreground hover:text-primary transition-colors">
-            <User size={20} />
-          </Link>
+          {loading ? (
+            <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+          ) : user ? (
+            <div className="relative group">
+              <button className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold">
+                {user.email?.charAt(0).toUpperCase()}
+              </button>
+              <div className="absolute right-0 top-12 w-48 bg-white border border-border rounded-xl shadow-lg py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <Link href="/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">
+                  My Dashboard
+                </Link>
+                <Link href="/dashboard/orders" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">
+                  My Orders
+                </Link>
+                <Link href="/dashboard/measurements" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">
+                  My Measurements
+                </Link>
+                <div className="my-1 border-t border-border" />
+                <button
+                  onClick={async () => {
+                    const supabase = createBrowserClient();
+                    await supabase.auth.signOut();
+                    window.location.href = '/';
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link href="/login" className="p-2 text-foreground hover:text-primary transition-colors" title="Sign In">
+              <User size={20} />
+            </Link>
+          )}
           <Link href="/cart" className="p-2 text-foreground hover:text-primary transition-colors relative">
             <ShoppingCart size={20} />
             {totalItems > 0 && (
@@ -67,7 +118,7 @@ export function Header() {
 
       {/* Mobile Nav */}
       {isMenuOpen && (
-        <nav className="md:hidden bg-white border-b border-border py-4 px-4 flex flex-col gap-4 shadow-lg absolute w-full left-0 top-16">
+        <nav className="md:hidden bg-white border-t border-border py-4 px-4 flex flex-col gap-4 shadow-lg absolute w-full left-0 top-16">
           {navLinks.map((link) => (
             <Link
               key={link.name}
@@ -80,6 +131,23 @@ export function Header() {
               {link.name}
             </Link>
           ))}
+          {user && (
+            <>
+              <Link href="/dashboard" className="text-lg font-medium py-2 border-b border-gray-100 text-foreground" onClick={() => setIsMenuOpen(false)}>
+                My Dashboard
+              </Link>
+              <button
+                onClick={async () => {
+                  const supabase = createBrowserClient();
+                  await supabase.auth.signOut();
+                  window.location.href = '/';
+                }}
+                className="text-left text-lg font-medium py-2 text-red-600"
+              >
+                Sign Out
+              </button>
+            </>
+          )}
         </nav>
       )}
     </header>
