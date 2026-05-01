@@ -1,12 +1,21 @@
 "use client";
 
 import Link from 'next/link';
-import { ShoppingCart, User, Menu, X, LogOut } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, LogOut, Ruler } from 'lucide-react';
 import { useCartStore } from '@/store/cartStore';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -73,34 +82,46 @@ export function Header() {
           {loading ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
-            <div className="relative group">
-              <button className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold">
-                {user.email?.charAt(0).toUpperCase()}
-              </button>
-              <div className="absolute right-0 top-12 w-48 bg-white border border-border rounded-xl shadow-lg py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <Link href="/dashboard" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">
-                  My Dashboard
-                </Link>
-                <Link href="/dashboard/orders" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">
-                  My Orders
-                </Link>
-                <Link href="/dashboard/measurements" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">
-                  My Measurements
-                </Link>
-                <div className="my-1 border-t border-border" />
-                <button
+            <DropdownMenu>
+              <DropdownMenuTrigger render={
+                <button className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity">
+                  {user.email?.charAt(0).toUpperCase()}
+                </button>
+              } />
+              <DropdownMenuContent align="end" className="w-56 mt-2">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">My Account</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem render={<Link href="/dashboard" className="w-full" />}>
+                  <User className="mr-2 size-4" />
+                  <span>My Dashboard</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/dashboard/orders" className="w-full" />}>
+                  <ShoppingCart className="mr-2 size-4" />
+                  <span>My Orders</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem render={<Link href="/dashboard/measurements" className="w-full" />}>
+                  <Ruler className="mr-2 size-4" />
+                  <span>My Measurements</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600 focus:text-red-600 cursor-pointer"
                   onClick={async () => {
                     const supabase = createClient();
                     await supabase.auth.signOut();
                     window.location.href = '/';
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
                 >
-                  <LogOut size={16} />
-                  Sign Out
-                </button>
-              </div>
-            </div>
+                  <LogOut className="mr-2 size-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link href="/login" className="p-2 text-foreground hover:text-primary transition-colors" title="Sign In">
               <User size={20} />

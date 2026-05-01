@@ -1,7 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { getUserProfile, getCurrentUser } from '@/lib/actions/auth'
 import Link from 'next/link'
-import { Package, Ruler, Heart, Gift, ShoppingBag, Scissors, Truck } from 'lucide-react'
+import { Package, Ruler, Gift, ShoppingBag, Scissors, Truck } from 'lucide-react'
+import { WishlistStat } from '@/components/dashboard/WishlistStat'
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -13,13 +14,19 @@ export default async function DashboardPage() {
   const { count: orderCount } = await supabase
     .from('orders')
     .select('*', { count: 'exact', head: true })
-    .eq('user_email', user?.email || '')
+    .eq('user_id', user?.id || '')
+
+  // Get measurement count
+  const { count: measurementCount } = await supabase
+    .from('measurements')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user?.id || '')
 
   // Get recent orders
   const { data: recentOrders } = await supabase
     .from('orders')
-    .select('id, created_at, status, total_amount')
-    .eq('user_email', user?.email || '')
+    .select('id, created_at, status, total')
+    .eq('user_id', user?.id || '')
     .order('created_at', { ascending: false })
     .limit(5)
 
@@ -38,29 +45,23 @@ export default async function DashboardPage() {
 
         {/* Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow p-6">
+          <Link href="/dashboard/orders" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-2">
               <Package className="w-6 h-6 text-[#6B1E2E]" />
               <span className="text-sm text-gray-500">My Orders</span>
             </div>
             <p className="text-2xl font-bold text-gray-900">{orderCount || 0}</p>
-          </div>
+          </Link>
 
-          <div className="bg-white rounded-xl shadow p-6">
+          <Link href="/dashboard/measurements" className="bg-white rounded-xl shadow p-6 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3 mb-2">
               <Ruler className="w-6 h-6 text-[#6B1E2E]" />
               <span className="text-sm text-gray-500">Saved Measurements</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">--</p>
-          </div>
+            <p className="text-2xl font-bold text-gray-900">{measurementCount || 0}</p>
+          </Link>
 
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <Heart className="w-6 h-6 text-[#6B1E2E]" />
-              <span className="text-sm text-gray-500">Wishlist</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">--</p>
-          </div>
+          <WishlistStat />
 
           <div className="bg-white rounded-xl shadow p-6">
             <div className="flex items-center gap-3 mb-2">
@@ -101,7 +102,7 @@ export default async function DashboardPage() {
                       }`}>
                         {order.status}
                       </span>
-                      <p className="font-medium">৳{order.total_amount}</p>
+                      <p className="font-medium">৳{order.total}</p>
                     </div>
                   </div>
                 ))}

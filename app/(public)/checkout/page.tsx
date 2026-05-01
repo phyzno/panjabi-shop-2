@@ -5,10 +5,19 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { placeOrder } from '@/lib/actions/orders';
 
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string>('');
 
   if (items.length === 0) {
     if (typeof window !== 'undefined') router.push('/cart');
@@ -29,7 +38,7 @@ export default function CheckoutPage() {
         name: formData.get('name') as string,
         phone: formData.get('phone') as string,
         address: formData.get('address') as string,
-        city: formData.get('city') as string,
+        city: selectedCity, // Use the state instead of formData
         email: formData.get('email') as string || undefined,
         items,
         subtotal,
@@ -48,6 +57,18 @@ export default function CheckoutPage() {
     }
   };
 
+  const districts = [
+    'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Rangpur', 'Mymensingh',
+    'Bagerhat', 'Bandarban', 'Barguna', 'Barishal', 'Bhola', 'Bogra', 'Brahmanbaria', 'Chandpur',
+    'Chapainawabganj', 'Chuadanga', 'Cumilla', 'Cox\'s Bazar', 'Dinajpur', 'Faridpur', 'Feni',
+    'Gaibandha', 'Gazipur', 'Gopalganj', 'Habiganj', 'Jamalpur', 'Jashore', 'Jhalokati', 'Jhenaidah',
+    'Joypurhat', 'Khagrachhari', 'Kishoreganj', 'Kurigram', 'Kushtia', 'Lakshmipur', 'Lalmonirhat',
+    'Madaripur', 'Magura', 'Manikganj', 'Maulvibazar', 'Meherpur', 'Munshiganj', 'Naogaon', 'Narail',
+    'Narayanganj', 'Narsingdi', 'Natore', 'Netrokona', 'Nilphamari', 'Noakhali', 'Pabna', 'Panchagarh',
+    'Patuakhali', 'Pirojpur', 'Rajbari', 'Rangamati', 'Satkhira', 'Shariatpur', 'Sherpur', 'Sirajganj',
+    'Sunamganj', 'Tangail', 'Thakurgaon'
+  ];
+
   return (
     <div className="container mx-auto px-4 py-12 bg-[#FAF7F2] min-h-screen">
       <h1 className="font-heading text-4xl font-bold mb-10 text-center">Checkout</h1>
@@ -59,44 +80,48 @@ export default function CheckoutPage() {
 
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-border">
             <h2 className="font-heading text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">1</span>
+              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-sans">1</span>
               Contact Details
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
-                <input required name="name" type="text" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700" htmlFor="name">Full Name</label>
+                <input required id="name" name="name" type="text" placeholder="John Doe" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Phone (01XXXXXXXXX)</label>
-                <input required name="phone" type="tel" pattern="^01[3-9]\d{8}$" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700" htmlFor="phone">Phone (01XXXXXXXXX)</label>
+                <input required id="phone" name="phone" type="tel" pattern="^01[3-9]\d{8}$" placeholder="01712345678" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Email (Optional)</label>
-                <input name="email" type="email" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+              <div className="md:col-span-2 space-y-2">
+                <label className="text-sm font-bold text-gray-700" htmlFor="email">Email (Optional)</label>
+                <input id="email" name="email" type="email" placeholder="john@example.com" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
               </div>
             </div>
           </div>
 
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-border">
             <h2 className="font-heading text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm">2</span>
+              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-sans">2</span>
               Delivery Address
             </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Full Address</label>
-                <textarea required name="address" rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none" />
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700" htmlFor="address">Full Address</label>
+                <textarea required id="address" name="address" rows={3} placeholder="House, Road, Area, Thana..." className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all" />
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">City/District</label>
-                <select required name="city" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white">
-                  <option value="">Select District...</option>
-                  <option value="Dhaka">Dhaka</option>
-                  <option value="Chittagong">Chittagong</option>
-                  <option value="Sylhet">Sylhet</option>
-                  <option value="Rajshahi">Rajshahi</option>
-                </select>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">City/District</label>
+                <Select required value={selectedCity} onValueChange={(val) => setSelectedCity(val || '')}>
+                  <SelectTrigger className="w-full h-12 bg-white border-gray-300">
+                    <SelectValue placeholder="Select District..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    {districts.sort().map(city => (
+                      <SelectItem key={city} value={city}>{city}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" required name="city" value={selectedCity} />
               </div>
             </div>
           </div>

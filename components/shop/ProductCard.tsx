@@ -1,6 +1,10 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
+import { useWishlistStore } from '@/store/wishlistStore';
+import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   id: string;
@@ -12,24 +16,35 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ id, name, category, price, imageUrl, isStitched }: ProductCardProps) {
+  const { toggleItem, isInWishlist } = useWishlistStore();
+  const active = isInWishlist(id);
+
   return (
     <div className="group flex flex-col relative bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
       {/* Wishlist Button */}
-      <button className="absolute top-3 right-3 z-10 p-2 bg-white/70 backdrop-blur-md rounded-full text-gray-500 hover:text-[#EF4444] hover:bg-white transition-colors">
-        <Heart size={18} />
+      <button 
+        onClick={() => toggleItem(id)}
+        className={cn(
+          "absolute top-3 right-3 z-10 p-2 rounded-full transition-all duration-300",
+          active 
+            ? "bg-red-50 text-[#EF4444] shadow-sm" 
+            : "bg-white/70 backdrop-blur-md text-gray-500 hover:text-[#EF4444] hover:bg-white"
+        )}
+      >
+        <Heart size={18} fill={active ? "currentColor" : "none"} />
       </button>
 
       {/* Category Badge */}
       <div className="absolute top-3 left-3 z-10">
         <span className="bg-[#1A1A1A]/80 backdrop-blur-md text-white text-xs font-semibold px-2 py-1 rounded">
-          {category.charAt(0).toUpperCase() + category.slice(1)}
+          {category ? category.charAt(0).toUpperCase() + category.slice(1) : 'General'}
         </span>
       </div>
 
       {/* Image Container */}
       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden">
         <Image 
-          src={imageUrl} 
+          src={imageUrl || '/assets/punjabi/1-1.webp'} 
           alt={name} 
           fill 
           className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -50,7 +65,7 @@ export function ProductCard({ id, name, category, price, imageUrl, isStitched }:
       {/* Details */}
       <div className="p-4 flex flex-col flex-grow">
         <h3 className="font-heading text-lg font-bold text-[#1A1A1A] mb-1 line-clamp-1">{name}</h3>
-        <p className="text-[#6B6B6B] text-sm mb-3">From ৳{price.toLocaleString()}</p>
+        <p className="text-[#6B6B6B] text-sm mb-3">From ৳{price?.toLocaleString()}</p>
         
         <div className="mt-auto pt-3 flex items-center justify-between border-t border-gray-100">
           {isStitched ? (

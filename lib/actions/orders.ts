@@ -18,6 +18,26 @@ interface CartItem {
   total: number;
 }
 
+export async function getUserOrders() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching orders:', error)
+    return []
+  }
+
+  return data || []
+}
+
 export async function placeOrder(orderData: {
   name: string;
   phone: string;
