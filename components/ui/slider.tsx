@@ -1,15 +1,19 @@
+import * as React from "react"
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
 
 import { cn } from "@/lib/utils"
 
-function Slider({
+const Slider = React.forwardRef<
+  HTMLDivElement,
+  SliderPrimitive.Root.Props
+>(({
   className,
   defaultValue,
   value,
   min = 0,
   max = 100,
   ...props
-}: SliderPrimitive.Root.Props) {
+}, ref) => {
   const _values = Array.isArray(value)
     ? value
     : Array.isArray(defaultValue)
@@ -18,6 +22,7 @@ function Slider({
 
   return (
     <SliderPrimitive.Root
+      ref={ref}
       className={cn("data-horizontal:w-full data-vertical:h-full", className)}
       data-slot="slider"
       defaultValue={defaultValue}
@@ -47,6 +52,7 @@ function Slider({
       </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   )
-}
+})
+Slider.displayName = "Slider"
 
 export { Slider }

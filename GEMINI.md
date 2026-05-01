@@ -1,4 +1,4 @@
-# Punjabi Shop - Project Context
+# Punjabi Shop - Project Context (Gemini CLI)
 
 ## Overarching Goal
 Build a custom Panjabi e-commerce website for the Bangladeshi market. Supports both panjabi and shirt customization with Bengali language support. Admin panel needs full CRUD for products, fabrics, collars, and order management.
