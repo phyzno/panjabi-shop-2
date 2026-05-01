@@ -1,7 +1,6 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { loginAdmin } from '@/lib/actions/admin'
 import { Suspense } from 'react'
 
 function LoginForm() {
@@ -20,7 +19,7 @@ function LoginForm() {
             {error}
           </div>
         )}
-        <form action={loginAdmin} className="space-y-6">
+        <form action="/api/admin/login" method="POST" className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Username</label>
             <input name="username" type="text" required defaultValue="admin" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />

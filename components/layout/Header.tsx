@@ -16,7 +16,7 @@ export function Header() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createBrowserClient();
+    const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setLoading(false);
@@ -89,7 +89,7 @@ export function Header() {
                 <div className="my-1 border-t border-border" />
                 <button
                   onClick={async () => {
-                    const supabase = createBrowserClient();
+                    const supabase = createClient();
                     await supabase.auth.signOut();
                     window.location.href = '/';
                   }}
@@ -138,7 +138,7 @@ export function Header() {
               </Link>
               <button
                 onClick={async () => {
-                  const supabase = createBrowserClient();
+                  const supabase = createClient();
                   await supabase.auth.signOut();
                   window.location.href = '/';
                 }}

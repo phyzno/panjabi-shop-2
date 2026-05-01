@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { logoutAdmin } from '@/lib/actions/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,7 +28,7 @@ export default async function ProtectedAdminLayout({
               <a href="/admin/collars" className="text-sm font-medium text-muted-foreground hover:text-primary">Collars</a>
             </nav>
           </div>
-          <form action={logoutAdmin}>
+          <form action="/api/admin/logout" method="POST">
             <button className="text-sm text-red-600 hover:text-red-700 font-medium">
               Logout
             </button>
