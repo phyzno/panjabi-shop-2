@@ -46,6 +46,10 @@ export default async function AdminPanelPage() {
         </div>
       )}
 
+      <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg text-sm mb-6">
+        ⚠️ Setup Required: Create a &quot;product-images&quot; bucket in Supabase Storage Dashboard and set it to Public for image uploads to work.
+      </div>
+
       <div className="mb-12">
         <h1 className="text-4xl font-heading font-bold text-primary mb-2">Admin Control Panel</h1>
         <p className="text-muted-foreground flex items-center gap-2">

@@ -39,3 +39,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code / AI artifacts
+.claude/
+.claude.json
+CLAUDE.md
+.claude
+.agents/
+.agents
+tasks/
+memory/
+memories/
+skills/
+skills-lock.json
+.claudeignore
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

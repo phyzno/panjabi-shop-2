@@ -1,15 +1,19 @@
 import { createClient } from '@/utils/supabase/server'
 import { Plus, Trash2, Pencil } from 'lucide-react'
 import { addFabric, deleteFabric } from '@/lib/actions/admin'
+import { ImageUpload } from '@/components/admin/ImageUpload'
+import Image from 'next/image'
+import { ColorPicker } from '@/components/admin/ColorPicker'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminFabricsPage() {
   const supabase = await createClient()
-  const { data: fabrics } = await supabase
+  const { data: fabrics, error } = await supabase
     .from('fabrics')
     .select('*')
     .order('created_at', { ascending: false })
+  if (error) console.error('Fabrics fetch error:', error)
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -47,12 +51,14 @@ export default async function AdminFabricsPage() {
             <input name="price_per_yard" type="number" step="0.01" required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Color Hex</label>
-            <input name="color_hex" type="text" placeholder="#000000" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <ColorPicker name="color_hex" label="Color Hex" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Image URL</label>
-            <input name="image_url" type="text" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <label className="block text-sm font-bold text-gray-700 mb-1">YouTube URL (optional)</label>
+            <input name="youtube_url" type="text" placeholder="YouTube fabric demo video URL" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+          </div>
+          <div>
+            <ImageUpload label="Fabric Image" name="image_url" />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
@@ -76,8 +82,10 @@ export default async function AdminFabricsPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 text-xs uppercase tracking-wider text-muted-foreground font-bold">
+                <th className="px-6 py-4">Image/Color</th>
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Type</th>
+                <th className="px-6 py-4">Color Hex</th>
                 <th className="px-6 py-4">Price/Yard</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Action</th>
@@ -87,10 +95,28 @@ export default async function AdminFabricsPage() {
               {(fabrics || []).map((fabric) => (
                 <tr key={fabric.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-6 h-6 rounded-full border border-gray-200"
+                        style={{ background: fabric.color_hex || '#ccc' }}
+                      />
+                      {fabric.image_url && (
+                        <Image
+                          src={fabric.image_url}
+                          alt={fabric.name}
+                          width={40}
+                          height={40}
+                          className="object-cover rounded"
+                        />
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="font-medium text-sm">{fabric.name}</div>
                     <div className="text-xs text-muted-foreground">{fabric.name_bn}</div>
                   </td>
                   <td className="px-6 py-4 text-sm">{fabric.fabric_type}</td>
+                  <td className="px-6 py-4 text-sm font-mono">{fabric.color_hex || 'N/A'}</td>
                   <td className="px-6 py-4 font-bold text-sm">৳{fabric.price_per_yard}</td>
                   <td className="px-6 py-4">
                     <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${
@@ -115,7 +141,7 @@ export default async function AdminFabricsPage() {
               ))}
               {(!fabrics || fabrics.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                     No fabrics found. Add one above.
                   </td>
                 </tr>

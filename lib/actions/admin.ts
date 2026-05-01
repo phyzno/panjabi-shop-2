@@ -4,6 +4,38 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
+// Requires 'product-images' bucket in Supabase Storage
+//  Dashboard → Storage → New bucket → name: product-images
+//  Set to Public
+
+export async function uploadImage(formData: FormData): Promise<string> {
+  const supabase = await createClient()
+  const file = formData.get('file') as File
+
+  if (!file || file.size === 0) return ''
+
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+
+  const { data, error } = await supabase.storage
+    .from('product-images')
+    .upload(fileName, file, {
+      contentType: file.type,
+      upsert: false
+    })
+
+  if (error) {
+    console.error('Upload error:', error)
+    throw new Error('Image upload failed')
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(data.path)
+
+  return urlData.publicUrl
+}
+
 export async function loginAdmin(formData: FormData) {
   const username = formData.get('username') as string
   const password = formData.get('password') as string
@@ -47,7 +79,11 @@ export async function deleteOrder(orderId: string) {
 // Product CRUD
 export async function addProduct(formData: FormData) {
   const supabase = await createClient()
-  const imageUrls = (formData.get('image_urls') as string || '').split(',').map(s => s.trim()).filter(Boolean)
+  const rawImageUrls = formData.getAll('image_url')
+  const imageUrls = rawImageUrls
+    .filter((url): url is string => typeof url === 'string')
+    .map(url => url.trim())
+    .filter(url => url !== '')
 
   await supabase.from('products').insert({
     type: formData.get('type') as string,
@@ -81,6 +117,7 @@ export async function addFabric(formData: FormData) {
     price_per_yard: parseFloat(formData.get('price_per_yard') as string),
     color_hex: formData.get('color_hex') as string || null,
     image_url: formData.get('image_url') as string || null,
+    youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
   })
   redirect('/admin/fabrics')
@@ -102,7 +139,8 @@ export async function addCollar(formData: FormData) {
     name_bn: formData.get('name_bn') as string || null,
     image_url: formData.get('image_url') as string || null,
     price_addition: parseFloat(formData.get('price_addition') as string) || 0,
-    for_product: 'panjabi',
+    for_product: formData.get('for_product') as string || 'panjabi',
+    sort_order: parseInt(formData.get('sort_order') as string) || 0,
   })
   redirect('/admin/collars')
 }
@@ -116,7 +154,11 @@ export async function deleteCollar(collarId: string) {
 // Update actions
 export async function updateProduct(productId: string, formData: FormData) {
   const supabase = await createClient()
-  const imageUrls = (formData.get('image_urls') as string || '').split(',').map(s => s.trim()).filter(Boolean)
+  const rawImageUrls = formData.getAll('image_url')
+  const imageUrls = rawImageUrls
+    .filter((url): url is string => typeof url === 'string')
+    .map(url => url.trim())
+    .filter(url => url !== '')
 
   await supabase.from('products').update({
     type: formData.get('type') as string,
@@ -144,6 +186,7 @@ export async function updateFabric(fabricId: string, formData: FormData) {
     price_per_yard: parseFloat(formData.get('price_per_yard') as string),
     color_hex: formData.get('color_hex') as string || null,
     image_url: formData.get('image_url') as string || null,
+    youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
     updated_at: new Date().toISOString(),
   }).eq('id', fabricId)
@@ -158,6 +201,8 @@ export async function updateCollar(collarId: string, formData: FormData) {
     name_bn: formData.get('name_bn') as string || null,
     image_url: formData.get('image_url') as string || null,
     price_addition: parseFloat(formData.get('price_addition') as string) || 0,
+    for_product: formData.get('for_product') as string || 'panjabi',
+    sort_order: parseInt(formData.get('sort_order') as string) || 0,
     updated_at: new Date().toISOString(),
   }).eq('id', collarId)
   redirect('/admin/collars')

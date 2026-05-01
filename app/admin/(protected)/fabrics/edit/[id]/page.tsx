@@ -1,6 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { updateFabric } from '@/lib/actions/admin'
+import { ImageUpload } from '@/components/admin/ImageUpload'
+import { ColorPicker } from '@/components/admin/ColorPicker'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -59,12 +61,14 @@ export default async function EditFabricPage({ params }: PageProps) {
             <input name="price_per_yard" type="number" step="0.01" required defaultValue={fabric.price_per_yard} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Color Hex</label>
-            <input name="color_hex" type="text" defaultValue={fabric.color_hex || ''} placeholder="#000000" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <ColorPicker name="color_hex" value={fabric.color_hex || '#000000'} label="Color Hex" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Image URL</label>
-            <input name="image_url" type="text" defaultValue={fabric.image_url || ''} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <ImageUpload label="Fabric Image" name="image_url" currentImageUrl={fabric.image_url || undefined} />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">YouTube URL (optional)</label>
+            <input name="youtube_url" type="text" defaultValue={fabric.youtube_url || ''} placeholder="YouTube fabric demo video URL" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>

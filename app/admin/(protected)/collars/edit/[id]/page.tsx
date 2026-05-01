@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { updateCollar } from '@/lib/actions/admin'
+import { ImageUpload } from '@/components/admin/ImageUpload'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -44,12 +45,23 @@ export default async function EditCollarPage({ params }: PageProps) {
             <input name="name_bn" type="text" defaultValue={collar.name_bn || ''} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Image URL</label>
-            <input name="image_url" type="text" defaultValue={collar.image_url || ''} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <ImageUpload label="Collar Image" name="image_url" currentImageUrl={collar.image_url || undefined} />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">For Product</label>
+            <select name="for_product" required defaultValue={collar.for_product || 'panjabi'} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white">
+              <option value="panjabi">Panjabi</option>
+              <option value="payjama">Payjama</option>
+              <option value="both">Both</option>
+            </select>
           </div>
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Price Addition (৳)</label>
             <input name="price_addition" type="number" step="0.01" defaultValue={collar.price_addition || 0} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Sort Order</label>
+            <input name="sort_order" type="number" defaultValue={collar.sort_order || 0} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div className="md:col-span-2 flex gap-4">
             <button type="submit" className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-[#8B2222] transition-colors">

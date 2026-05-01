@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { updateProduct } from '@/lib/actions/admin'
+import { ImageUpload } from '@/components/admin/ImageUpload'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -39,7 +40,9 @@ export default async function EditProductPage({ params }: PageProps) {
             <label className="block text-sm font-bold text-gray-700 mb-1">Type</label>
             <select name="type" required defaultValue={product.type} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white">
               <option value="panjabi">Panjabi</option>
-              <option value="shirt">Shirt</option>
+              <option value="payjama">Payjama</option>
+              <option value="set">Set</option>
+              <option value="readymade">Readymade</option>
             </select>
           </div>
           <div>
@@ -67,8 +70,11 @@ export default async function EditProductPage({ params }: PageProps) {
             <input name="stitching_charge" type="number" step="0.01" defaultValue={product.stitching_charge || 450} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-bold text-gray-700 mb-1">Image URLs (comma-separated)</label>
-            <input name="image_urls" type="text" defaultValue={(product.image_urls || []).join(', ')} placeholder="url1, url2, url3" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ImageUpload label="Main Image" name="image_url" currentImageUrl={product.image_urls?.[0]} />
+              <ImageUpload label="Image 2 (optional)" name="image_url" currentImageUrl={product.image_urls?.[1]} />
+              <ImageUpload label="Image 3 (optional)" name="image_url" currentImageUrl={product.image_urls?.[2]} />
+            </div>
           </div>
           <div className="md:col-span-2 flex items-center gap-2">
             <input name="is_active" type="checkbox" value="true" defaultChecked={product.is_active} className="w-5 h-5 text-primary" />
