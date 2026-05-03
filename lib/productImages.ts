@@ -1,5 +1,3 @@
-import { DEFAULT_PRODUCT_IMAGE } from '@/lib/catalogPlaceholders'
-
 /**
  * Resolves product image references for display:
  * - Full `http(s)` URLs → unchanged (Supabase Storage / CDN uploads from admin).
@@ -7,7 +5,7 @@ import { DEFAULT_PRODUCT_IMAGE } from '@/lib/catalogPlaceholders'
  * - Bare filenames (e.g. `1-1.webp`) → `/assets/punjabi/<filename>` for dummy/local catalog images.
  */
 export const LOCAL_PUNJABI_ASSETS = '/assets/punjabi'
-export const PRODUCT_IMAGE_PLACEHOLDER = DEFAULT_PRODUCT_IMAGE
+export const PRODUCT_IMAGE_PLACEHOLDER = `${LOCAL_PUNJABI_ASSETS}/1-1.webp`
 
 export function resolveProductImageSrc(raw: string | null | undefined): string {
   const s = typeof raw === 'string' ? raw.trim() : ''

@@ -6,7 +6,7 @@
  *   supabase/migrations/0001_add_missing_product_columns.sql
  * in Supabase → SQL Editor, or `supabase db push`.
  *
- * Dummy images: use full https URLs (see PLACEHOLDER_IMAGES below) unless you add files under public/assets/punjabi.
+ * Dummy images: paths under public/assets/punjabi (bundled WebP in repo).
  * Admin uploads: full https://...supabase.co/storage/... URLs in image_urls.
  *
  * The anon key cannot insert past RLS; use the service role only on your machine / CI, never in the browser.
@@ -14,17 +14,7 @@
 
 const { createClient } = require('@supabase/supabase-js')
 
-/** Keep in sync with lib/catalogPlaceholders.ts */
-const PLACEHOLDER_IMAGES = {
-  productCasual:
-    'https://images.unsplash.com/photo-1593030760367-fc529440fe6b?auto=format&fit=crop&w=600&q=80',
-  productPremium:
-    'https://images.unsplash.com/photo-1596755094514-f87c084fc8f9?auto=format&fit=crop&w=600&q=80',
-  productWedding:
-    'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=600&q=80',
-  productSummer:
-    'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=600&q=80',
-}
+const P = '/assets/punjabi'
 
 async function main() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -58,7 +48,7 @@ async function main() {
         name_bn: 'ক্লাসিক পাঞ্জাবি',
         base_price: 800,
         stitching_charge: 450,
-        image_urls: [PLACEHOLDER_IMAGES.productCasual, PLACEHOLDER_IMAGES.productPremium],
+        image_urls: [`${P}/1-2.webp`, `${P}/1-1.webp`],
         is_active: true,
       },
       {
@@ -68,7 +58,7 @@ async function main() {
         name_bn: 'প্রিমিয়াম নেভি পাঞ্জাবি',
         base_price: 1200,
         stitching_charge: 450,
-        image_urls: [PLACEHOLDER_IMAGES.productPremium, PLACEHOLDER_IMAGES.productCasual],
+        image_urls: [`${P}/1-1.webp`, `${P}/Blue-1-1.webp`],
         is_active: true,
       },
       {
@@ -78,7 +68,7 @@ async function main() {
         name_bn: 'ওয়েডিং পাঞ্জাবি',
         base_price: 2500,
         stitching_charge: 550,
-        image_urls: [PLACEHOLDER_IMAGES.productWedding, PLACEHOLDER_IMAGES.productPremium],
+        image_urls: [`${P}/Merun-KC-2.webp`, `${P}/1-34.webp`],
         is_active: true,
       },
       {
@@ -88,7 +78,7 @@ async function main() {
         name_bn: 'অফ হোয়াইট পাঞ্জাবি',
         base_price: 900,
         stitching_charge: 450,
-        image_urls: [PLACEHOLDER_IMAGES.productSummer],
+        image_urls: [`${P}/Off-White-1.webp`],
         is_active: true,
       },
     ])

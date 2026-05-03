@@ -20,14 +20,7 @@ const supabaseImagePatterns: NonNullable<NextConfig["images"]>["remotePatterns"]
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      ...supabaseImagePatterns,
-      {
-        protocol: "https" as const,
-        hostname: "images.unsplash.com",
-        pathname: "/**",
-      },
-    ],
+    remotePatterns: supabaseImagePatterns,
   },
 };
 

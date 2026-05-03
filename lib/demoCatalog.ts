@@ -29,8 +29,8 @@ export function getDemoCatalog(): DemoCatalogProduct[] {
       base_price: 800,
       stitching_charge: 450,
       image_urls: [
+        CATALOG_PLACEHOLDER_IMAGES.productCasualSecondary,
         CATALOG_PLACEHOLDER_IMAGES.productCasual,
-        CATALOG_PLACEHOLDER_IMAGES.productPremium,
       ],
       is_active: true,
       created_at: DEMO_TS,
@@ -44,7 +44,10 @@ export function getDemoCatalog(): DemoCatalogProduct[] {
       description: null,
       base_price: 1200,
       stitching_charge: 450,
-      image_urls: [CATALOG_PLACEHOLDER_IMAGES.productPremium],
+      image_urls: [
+        CATALOG_PLACEHOLDER_IMAGES.productCasual,
+        CATALOG_PLACEHOLDER_IMAGES.productPremium,
+      ],
       is_active: true,
       created_at: DEMO_TS,
     },
@@ -57,7 +60,10 @@ export function getDemoCatalog(): DemoCatalogProduct[] {
       description: null,
       base_price: 2500,
       stitching_charge: 550,
-      image_urls: [CATALOG_PLACEHOLDER_IMAGES.productWedding],
+      image_urls: [
+        CATALOG_PLACEHOLDER_IMAGES.productWedding,
+        CATALOG_PLACEHOLDER_IMAGES.productWeddingSecondary,
+      ],
       is_active: true,
       created_at: DEMO_TS,
     },
