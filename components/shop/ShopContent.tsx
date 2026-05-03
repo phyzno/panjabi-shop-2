@@ -52,8 +52,12 @@ export function ShopContent({ initialProducts, categories }: ShopContentProps) {
       result = result.filter(p => selectedCategories.includes(p.category));
     }
 
-    // Price filter
-    result = result.filter(p => p.base_price >= priceRange[0] && p.base_price <= priceRange[1]);
+    // Price filter (Postgres decimals may arrive as strings)
+    result = result.filter((p) => {
+      const price = Number(p.base_price);
+      if (!Number.isFinite(price)) return true;
+      return price >= priceRange[0] && price <= priceRange[1];
+    });
 
     // Sorting
     switch (sortBy) {

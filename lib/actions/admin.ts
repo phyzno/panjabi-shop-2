@@ -3,13 +3,22 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { createServiceRoleClient } from '@/utils/supabase/service'
+
+async function requireAdminSession() {
+  const cookieStore = await cookies()
+  if (cookieStore.get('admin_session')?.value !== 'true') {
+    redirect('/admin/login')
+  }
+}
 
 // Requires 'product-images' bucket in Supabase Storage
 //  Dashboard → Storage → New bucket → name: product-images
 //  Set to Public
 
 export async function uploadImage(formData: FormData): Promise<string> {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   const file = formData.get('file') as File
 
   if (!file || file.size === 0) return ''
@@ -61,7 +70,8 @@ export async function logoutAdmin() {
 
 // Order management
 export async function updateOrderStatus(orderId: string, status: string) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   await supabase
     .from('orders')
     .update({ status, updated_at: new Date().toISOString() })
@@ -70,7 +80,8 @@ export async function updateOrderStatus(orderId: string, status: string) {
 }
 
 export async function deleteOrder(orderId: string) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   await supabase.from('order_items').delete().eq('order_id', orderId)
   await supabase.from('orders').delete().eq('id', orderId)
   redirect('/admin')
@@ -78,7 +89,8 @@ export async function deleteOrder(orderId: string) {
 
 // Product CRUD
 export async function addProduct(formData: FormData) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   const rawImageUrls = formData.getAll('image_url')
   const imageUrls = rawImageUrls
     .filter((url): url is string => typeof url === 'string')
@@ -100,14 +112,16 @@ export async function addProduct(formData: FormData) {
 }
 
 export async function deleteProduct(productId: string) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   await supabase.from('products').delete().eq('id', productId)
   redirect('/admin/products')
 }
 
 // Fabric CRUD
 export async function addFabric(formData: FormData) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
 
   await supabase.from('fabrics').insert({
     name: formData.get('name') as string,
@@ -124,14 +138,16 @@ export async function addFabric(formData: FormData) {
 }
 
 export async function deleteFabric(fabricId: string) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   await supabase.from('fabrics').delete().eq('id', fabricId)
   redirect('/admin/fabrics')
 }
 
 // Collar (design_options) CRUD
 export async function addCollar(formData: FormData) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
 
   await supabase.from('design_options').insert({
     type: 'collar',
@@ -153,7 +169,8 @@ export async function deleteCollar(collarId: string) {
 
 // Update actions
 export async function updateProduct(productId: string, formData: FormData) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   const rawImageUrls = formData.getAll('image_url')
   const imageUrls = rawImageUrls
     .filter((url): url is string => typeof url === 'string')
@@ -170,13 +187,13 @@ export async function updateProduct(productId: string, formData: FormData) {
     stitching_charge: parseFloat(formData.get('stitching_charge') as string) || 450,
     image_urls: imageUrls.length > 0 ? imageUrls : null,
     is_active: formData.get('is_active') === 'true',
-    updated_at: new Date().toISOString(),
   }).eq('id', productId)
   redirect('/admin/products')
 }
 
 export async function updateFabric(fabricId: string, formData: FormData) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
 
   await supabase.from('fabrics').update({
     name: formData.get('name') as string,
@@ -188,13 +205,13 @@ export async function updateFabric(fabricId: string, formData: FormData) {
     image_url: formData.get('image_url') as string || null,
     youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
-    updated_at: new Date().toISOString(),
   }).eq('id', fabricId)
   redirect('/admin/fabrics')
 }
 
 export async function updateCollar(collarId: string, formData: FormData) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
 
   await supabase.from('design_options').update({
     name: formData.get('name') as string,
@@ -203,7 +220,6 @@ export async function updateCollar(collarId: string, formData: FormData) {
     price_addition: parseFloat(formData.get('price_addition') as string) || 0,
     for_product: formData.get('for_product') as string || 'panjabi',
     sort_order: parseInt(formData.get('sort_order') as string) || 0,
-    updated_at: new Date().toISOString(),
   }).eq('id', collarId)
   redirect('/admin/collars')
 }

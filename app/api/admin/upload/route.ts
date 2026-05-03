@@ -1,8 +1,14 @@
-import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createServiceRoleClient } from '@/utils/supabase/service'
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  if (cookieStore.get('admin_session')?.value !== 'true') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const supabase = createServiceRoleClient()
   const formData = await request.formData()
   const file = formData.get('file') as File
 

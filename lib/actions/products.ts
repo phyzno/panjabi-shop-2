@@ -2,6 +2,20 @@
 
 import { createClient } from '@/utils/supabase/server'
 
+function normalizeCategoryList(data: unknown): string[] {
+  if (data == null) return []
+  if (!Array.isArray(data)) return []
+  if (data.length === 0) return []
+  const first = data[0]
+  if (typeof first === 'string') return data as string[]
+  if (typeof first === 'object' && first !== null && 'category' in first) {
+    return (data as { category: string | null }[])
+      .map((r) => r.category)
+      .filter((c): c is string => Boolean(c))
+  }
+  return []
+}
+
 export async function getProducts(filters?: {
   categories?: string[]
   minPrice?: number
@@ -37,6 +51,8 @@ export async function getProducts(filters?: {
       default:
         query = query.order('created_at', { ascending: false })
     }
+  } else {
+    query = query.order('created_at', { ascending: false })
   }
 
   const { data, error } = await query
@@ -51,14 +67,15 @@ export async function getProducts(filters?: {
 
 export async function getProductCategories() {
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('get_unique_categories')
-  
-  if (error) {
-    // Fallback if RPC doesn't exist
-    const { data: products } = await supabase.from('products').select('category')
-    const categories = Array.from(new Set(products?.map(p => p.category).filter(Boolean)))
-    return categories
+  const { data: rpcData, error: rpcError } = await supabase.rpc('get_unique_categories')
+
+  if (!rpcError && rpcData != null) {
+    const normalized = normalizeCategoryList(rpcData)
+    if (normalized.length > 0) return normalized
   }
 
-  return data
+  const { data: products } = await supabase.from('products').select('category')
+  return Array.from(
+    new Set((products ?? []).map((p) => p.category).filter(Boolean) as string[])
+  )
 }
