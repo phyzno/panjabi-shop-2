@@ -1,6 +1,8 @@
 'use client'
-import { useState, useRef } from 'react'
+
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import { resolveProductImageSrc } from '@/lib/productImages'
 
 interface ImageUploadProps {
   currentImageUrl?: string
@@ -15,10 +17,24 @@ export function ImageUpload({
   label = 'Product Image',
   name = 'image_url'
 }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string | null>(currentImageUrl || null)
+  /** Value persisted to DB: Storage URL (admin upload) or legacy dummy filename/path */
+  const [storedValue, setStoredValue] = useState<string | null>(currentImageUrl || null)
+  const [objectUrl, setObjectUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setStoredValue(currentImageUrl || null)
+  }, [currentImageUrl])
+
+  const displaySrc = objectUrl || (storedValue ? resolveProductImageSrc(storedValue) : null)
+
+  useEffect(() => {
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [objectUrl])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -33,8 +49,9 @@ export function ImageUpload({
       return
     }
 
+    if (objectUrl) URL.revokeObjectURL(objectUrl)
     const localUrl = URL.createObjectURL(file)
-    setPreview(localUrl)
+    setObjectUrl(localUrl)
     setError(null)
     setUploading(true)
 
@@ -50,10 +67,18 @@ export function ImageUpload({
       if (!res.ok) throw new Error('Upload failed')
 
       const { url } = await res.json()
+      if (typeof url !== 'string' || !url.startsWith('http')) {
+        throw new Error('Invalid upload URL')
+      }
+
+      URL.revokeObjectURL(localUrl)
+      setObjectUrl(null)
+      setStoredValue(url)
       if (onUploadComplete) onUploadComplete(url)
     } catch {
       setError('Upload failed. Try again.')
-      setPreview(currentImageUrl || null)
+      URL.revokeObjectURL(localUrl)
+      setObjectUrl(null)
     } finally {
       setUploading(false)
     }
@@ -67,13 +92,14 @@ export function ImageUpload({
         onClick={() => inputRef.current?.click()}
         className="relative w-full h-48 border-2 border-dashed border-gray-300 rounded-xl overflow-hidden cursor-pointer hover:border-[#6B1E2E] transition-colors bg-gray-50 flex items-center justify-center"
       >
-        {preview ? (
+        {displaySrc ? (
           <>
             <Image
-              src={preview}
+              src={displaySrc}
               alt="Preview"
               fill
               className="object-contain"
+              unoptimized={Boolean(objectUrl)}
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
               <span className="text-white text-sm font-medium">
@@ -115,11 +141,11 @@ export function ImageUpload({
         className="hidden"
       />
 
-      {preview && !uploading && (
+      {storedValue && !uploading && (
         <input
           type="hidden"
           name={name}
-          value={preview}
+          value={storedValue}
         />
       )}
     </div>

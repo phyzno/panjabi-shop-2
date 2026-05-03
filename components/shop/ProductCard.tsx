@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { useWishlistStore } from '@/store/wishlistStore';
 import { cn } from '@/lib/utils';
+import { resolveProductImageSrc } from '@/lib/productImages';
 
 interface ProductCardProps {
   id: string;
   name: string;
   category: string;
   price: number;
-  imageUrl: string;
+  imageUrl?: string | null;
   isStitched?: boolean;
 }
 
@@ -44,7 +45,7 @@ export function ProductCard({ id, name, category, price, imageUrl, isStitched }:
       {/* Image Container */}
       <div className="relative w-full aspect-[3/4] bg-gray-100 overflow-hidden">
         <Image 
-          src={imageUrl || '/assets/punjabi/1-1.webp'} 
+          src={resolveProductImageSrc(imageUrl)} 
           alt={name} 
           fill 
           className="object-cover transition-transform duration-500 group-hover:scale-105"

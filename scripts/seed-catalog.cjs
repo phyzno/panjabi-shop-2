@@ -2,6 +2,13 @@
  * Seeds products (and fabrics if empty) using the service role key.
  * Run: node --env-file=.env.local scripts/seed-catalog.cjs
  *
+ * First apply DB columns (if your project predates the full schema):
+ *   supabase/migrations/0001_add_missing_product_columns.sql
+ * in Supabase → SQL Editor, or `supabase db push`.
+ *
+ * Dummy images: paths under /public → stored as /assets/punjabi/<file>.webp.
+ * Admin uploads: full https://...supabase.co/storage/... URLs in image_urls.
+ *
  * The anon key cannot insert past RLS; use the service role only on your machine / CI, never in the browser.
  */
 
@@ -39,7 +46,7 @@ async function main() {
         name_bn: 'ক্লাসিক পাঞ্জাবি',
         base_price: 800,
         stitching_charge: 450,
-        image_urls: ['1-2.webp', '1-1.webp'],
+        image_urls: ['/assets/punjabi/1-2.webp', '/assets/punjabi/1-1.webp'],
         is_active: true,
       },
       {
@@ -49,7 +56,7 @@ async function main() {
         name_bn: 'প্রিমিয়াম নেভি পাঞ্জাবি',
         base_price: 1200,
         stitching_charge: 450,
-        image_urls: ['1-1.webp', 'Blue-1-1.webp'],
+        image_urls: ['/assets/punjabi/1-1.webp', '/assets/punjabi/Blue-1-1.webp'],
         is_active: true,
       },
       {
@@ -59,7 +66,7 @@ async function main() {
         name_bn: 'ওয়েডিং পাঞ্জাবি',
         base_price: 2500,
         stitching_charge: 550,
-        image_urls: ['Merun-KC-2.webp', '1-34.webp'],
+        image_urls: ['/assets/punjabi/Merun-KC-2.webp', '/assets/punjabi/1-34.webp'],
         is_active: true,
       },
       {
@@ -69,13 +76,18 @@ async function main() {
         name_bn: 'অফ হোয়াইট পাঞ্জাবি',
         base_price: 900,
         stitching_charge: 450,
-        image_urls: ['Off-White-1.webp'],
+        image_urls: ['/assets/punjabi/Off-White-1.webp'],
         is_active: true,
       },
     ])
 
     if (insErr) {
       console.error('Product seed failed:', insErr.message)
+      if (String(insErr.message).includes('image_urls')) {
+        console.error(
+          '\nAdd the missing column: open supabase/migrations/0001_add_missing_product_columns.sql in the Supabase SQL Editor and run it, then try again.\n'
+        )
+      }
       process.exit(1)
     }
     console.log('Inserted 4 sample products.')

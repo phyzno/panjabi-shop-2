@@ -3,6 +3,7 @@ import { Plus, Trash2, Pencil } from 'lucide-react'
 import { addProduct, deleteProduct } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import Image from 'next/image'
+import { resolveProductImageSrc } from '@/lib/productImages'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,19 +99,13 @@ export default async function AdminProductsPage() {
               {(products || []).map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
-                    {product.image_urls?.[0] ? (
-                      <Image
-                        src={product.image_urls[0]}
-                        alt={product.name}
-                        width={48}
-                        height={64}
-                        className="object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-12 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-                        No img
-                      </div>
-                    )}
+                    <Image
+                      src={resolveProductImageSrc(product.image_urls?.[0])}
+                      alt={product.name}
+                      width={48}
+                      height={64}
+                      className="object-cover rounded-lg"
+                    />
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-sm">{product.name}</div>

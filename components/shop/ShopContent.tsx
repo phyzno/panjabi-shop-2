@@ -216,7 +216,7 @@ export function ShopContent({ initialProducts, categories }: ShopContentProps) {
                   name={product.name}
                   category={product.category}
                   price={product.base_price}
-                  imageUrl={product.image_urls?.[0] || '/assets/punjabi/1-1.webp'}
+                  imageUrl={product.image_urls?.[0]}
                   isStitched={true}
                 />
               ))}
