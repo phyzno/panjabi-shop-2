@@ -1,5 +1,6 @@
 'use server'
 
+import { getDemoCatalog, getDemoCategoryList } from '@/lib/demoCatalog'
 import { createClient } from '@/utils/supabase/server'
 
 function normalizeCategoryList(data: unknown): string[] {
@@ -62,7 +63,8 @@ export async function getProducts(filters?: {
     return []
   }
 
-  return data || []
+  const rows = data ?? []
+  return rows.length > 0 ? rows : getDemoCatalog()
 }
 
 export async function getProductCategories() {
@@ -75,7 +77,8 @@ export async function getProductCategories() {
   }
 
   const { data: products } = await supabase.from('products').select('category')
-  return Array.from(
+  const fromDb = Array.from(
     new Set((products ?? []).map((p) => p.category).filter(Boolean) as string[])
   )
+  return fromDb.length > 0 ? fromDb : getDemoCategoryList()
 }

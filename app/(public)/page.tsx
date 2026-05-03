@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { CATALOG_PLACEHOLDER_IMAGES } from '@/lib/catalogPlaceholders';
 
 export default function HomePage() {
   return (
@@ -43,7 +44,7 @@ export default function HomePage() {
           <div className="relative w-3/4 max-w-[400px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
              <div className="absolute inset-0 bg-[#1A1A1A]/10 mix-blend-multiply" />
              <Image 
-               src="/assets/punjabi/1-1.webp" 
+               src={CATALOG_PLACEHOLDER_IMAGES.hero} 
                alt="Premium Panjabi" 
                fill 
                sizes="(max-width: 768px) 100vw, 50vw"
@@ -69,15 +70,15 @@ export default function HomePage() {
         <h2 className="font-heading text-4xl text-center mb-12">Our Collections</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
-            { name: 'Panjabi', img: '1-1.webp' },
-            { name: 'Payjama', img: '1-2.webp' },
-            { name: 'Sets', img: '1-29.webp' },
-            { name: 'Readymade', img: '1-31.webp' }
+            { name: 'Panjabi', img: CATALOG_PLACEHOLDER_IMAGES.categoryPanjabi },
+            { name: 'Payjama', img: CATALOG_PLACEHOLDER_IMAGES.categoryPayjama },
+            { name: 'Sets', img: CATALOG_PLACEHOLDER_IMAGES.categorySets },
+            { name: 'Readymade', img: CATALOG_PLACEHOLDER_IMAGES.categoryReadymade }
           ].map((cat) => (
             <Link key={cat.name} href={`/shop?category=${cat.name.toLowerCase()}`} className="group relative h-[400px] rounded-2xl overflow-hidden shadow-md">
               <div className="absolute inset-0 bg-gray-200">
                 <Image 
-                  src={`/assets/punjabi/${cat.img}`} 
+                  src={cat.img} 
                   alt={cat.name} 
                   fill 
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
