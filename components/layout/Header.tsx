@@ -83,7 +83,7 @@ export function Header() {
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger>
                 <button className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity">
                   {user.email?.charAt(0).toUpperCase()}
                 </button>
@@ -96,20 +96,20 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="w-full">
+                <DropdownMenuItem>
+                  <Link href="/dashboard" className="w-full flex items-center">
                     <User className="mr-2 size-4" />
                     <span>My Dashboard</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/orders" className="w-full">
+                <DropdownMenuItem>
+                  <Link href="/dashboard/orders" className="w-full flex items-center">
                     <ShoppingCart className="mr-2 size-4" />
                     <span>My Orders</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/measurements" className="w-full">
+                <DropdownMenuItem>
+                  <Link href="/dashboard/measurements" className="w-full flex items-center">
                     <Ruler className="mr-2 size-4" />
                     <span>My Measurements</span>
                   </Link>
