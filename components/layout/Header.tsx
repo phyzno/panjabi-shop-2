@@ -83,11 +83,11 @@ export function Header() {
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger render={
+              <DropdownMenuTrigger asChild>
                 <button className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity">
                   {user.email?.charAt(0).toUpperCase()}
                 </button>
-              } />
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 mt-2">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
@@ -96,17 +96,23 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem render={<Link href="/dashboard" className="w-full" />}>
-                  <User className="mr-2 size-4" />
-                  <span>My Dashboard</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="w-full">
+                    <User className="mr-2 size-4" />
+                    <span>My Dashboard</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/dashboard/orders" className="w-full" />}>
-                  <ShoppingCart className="mr-2 size-4" />
-                  <span>My Orders</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/orders" className="w-full">
+                    <ShoppingCart className="mr-2 size-4" />
+                    <span>My Orders</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href="/dashboard/measurements" className="w-full" />}>
-                  <Ruler className="mr-2 size-4" />
-                  <span>My Measurements</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/measurements" className="w-full">
+                    <Ruler className="mr-2 size-4" />
+                    <span>My Measurements</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 

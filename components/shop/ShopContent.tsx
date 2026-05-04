@@ -21,7 +21,7 @@ interface Product {
   name: string;
   category: string;
   base_price: number;
-  image_urls: string[] | null;
+  image_url: string | null;
 }
 
 interface ShopContentProps {
@@ -216,7 +216,7 @@ export function ShopContent({ initialProducts, categories }: ShopContentProps) {
                   name={product.name}
                   category={product.category}
                   price={product.base_price}
-                  imageUrl={product.image_urls?.[0]}
+                  imageUrl={product.image_url}
                   isStitched={true}
                 />
               ))}
