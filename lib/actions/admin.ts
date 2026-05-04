@@ -162,7 +162,8 @@ export async function addCollar(formData: FormData) {
 }
 
 export async function deleteCollar(collarId: string) {
-  const supabase = await createClient()
+  await requireAdminSession()
+  const supabase = createServiceRoleClient()
   await supabase.from('design_options').delete().eq('id', collarId)
   redirect('/admin/collars')
 }

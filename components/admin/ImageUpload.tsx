@@ -64,7 +64,10 @@ export function ImageUpload({
         body: formData
       })
 
-      if (!res.ok) throw new Error('Upload failed')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Upload failed')
+      }
 
       const { url } = await res.json()
       if (typeof url !== 'string' || !url.startsWith('http')) {
@@ -75,8 +78,8 @@ export function ImageUpload({
       setObjectUrl(null)
       setStoredValue(url)
       if (onUploadComplete) onUploadComplete(url)
-    } catch {
-      setError('Upload failed. Try again.')
+    } catch (err: any) {
+      setError(err.message || 'Upload failed. Try again.')
       URL.revokeObjectURL(localUrl)
       setObjectUrl(null)
     } finally {
