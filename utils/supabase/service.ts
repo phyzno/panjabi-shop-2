@@ -9,8 +9,13 @@ export function createServiceRoleClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!url || !key) {
+    console.error('Environment check failed in createServiceRoleClient:', {
+      hasUrl: !!url,
+      hasKey: !!key,
+      envKeysFound: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+    })
     throw new Error(
-      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Add the service role key as a server-only env var so admin catalog actions can write past RLS.'
+      `Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY. Found keys: ${Object.keys(process.env).filter(k => k.includes('SUPABASE')).join(', ')}`
     )
   }
 
