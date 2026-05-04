@@ -2,15 +2,18 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { updateProduct } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
+import { SubmitButton } from '@/components/admin/SubmitButton'
 
 interface PageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ error?: string }>
 }
 
 export const dynamic = 'force-dynamic'
 
-export default async function EditProductPage({ params }: PageProps) {
+export default async function EditProductPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const { error: urlError } = await searchParams
   const supabase = await createClient()
 
   const { data: product } = await supabase
@@ -33,6 +36,12 @@ export default async function EditProductPage({ params }: PageProps) {
         </a>
         <h1 className="text-3xl font-heading font-bold text-primary">Edit Product</h1>
       </div>
+
+      {urlError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
+          <strong>Error:</strong> {urlError}
+        </div>
+      )}
 
       <div className="bg-white border border-border rounded-2xl p-6 shadow-sm max-w-2xl">
         <form action={updateProductWithId} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,9 +80,9 @@ export default async function EditProductPage({ params }: PageProps) {
           </div>
           <div className="md:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ImageUpload label="Main Image" name="image_url" currentImageUrl={product.image_urls?.[0]} />
-              <ImageUpload label="Image 2 (optional)" name="image_url" currentImageUrl={product.image_urls?.[1]} />
-              <ImageUpload label="Image 3 (optional)" name="image_url" currentImageUrl={product.image_urls?.[2]} />
+              <ImageUpload label="Main Image" name="image_url" currentImageUrl={product.image_url} />
+              <ImageUpload label="Image 2 (optional)" name="image_url" />
+              <ImageUpload label="Image 3 (optional)" name="image_url" />
             </div>
           </div>
           <div className="md:col-span-2 flex items-center gap-2">
@@ -81,9 +90,7 @@ export default async function EditProductPage({ params }: PageProps) {
             <label className="text-sm font-medium text-gray-700">Active</label>
           </div>
           <div className="md:col-span-2 flex gap-4">
-            <button type="submit" className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-[#8B2222] transition-colors">
-              Update Product
-            </button>
+            <SubmitButton label="Update Product" />
             <a href="/admin/products" className="bg-gray-100 text-gray-700 font-bold px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors inline-block">
               Cancel
             </a>

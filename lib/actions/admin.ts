@@ -88,26 +88,39 @@ export async function deleteOrder(orderId: string) {
 
 // Product CRUD
 export async function addProduct(formData: FormData) {
+  console.log('addProduct action started')
   await requireAdminSession()
   const supabase = createServiceRoleClient()
+  
   const rawImageUrls = formData.getAll('image_url')
   const imageUrls = rawImageUrls
     .filter((url): url is string => typeof url === 'string')
     .map(url => url.trim())
     .filter(url => url !== '')
-
-  await supabase.from('products').insert({
+  
+  const productData = {
     type: formData.get('type') as string,
     category: formData.get('category') as string || null,
     name: formData.get('name') as string,
     name_bn: formData.get('name_bn') as string || null,
     description: formData.get('description') as string || null,
-    base_price: parseFloat(formData.get('base_price') as string),
+    base_price: parseFloat(formData.get('base_price') as string) || 0,
     stitching_charge: parseFloat(formData.get('stitching_charge') as string) || 450,
-    image_urls: imageUrls.length > 0 ? imageUrls : null,
+    image_url: imageUrls[0] || null, // Updated to singular to match DB
     is_active: formData.get('is_active') === 'true',
-  })
-  redirect('/admin/products')
+  }
+  
+  console.log('Attempting to insert product:', productData)
+
+  const { data, error } = await supabase.from('products').insert(productData).select()
+
+  if (error) {
+    console.error('Add Product Error:', error)
+    redirect(`/admin/products?error=${encodeURIComponent(error.message)}`)
+  }
+
+  console.log('Product added successfully:', data)
+  redirect('/admin/products?success=Product+added')
 }
 
 export async function deleteProduct(productId: string) {
@@ -119,21 +132,33 @@ export async function deleteProduct(productId: string) {
 
 // Fabric CRUD
 export async function addFabric(formData: FormData) {
+  console.log('addFabric action started')
   await requireAdminSession()
   const supabase = createServiceRoleClient()
 
-  await supabase.from('fabrics').insert({
+  const fabricData = {
     name: formData.get('name') as string,
     name_bn: formData.get('name_bn') as string || null,
     fabric_type: formData.get('fabric_type') as string,
     description: formData.get('description') as string || null,
-    price_per_yard: parseFloat(formData.get('price_per_yard') as string),
+    price_per_yard: parseFloat(formData.get('price_per_yard') as string) || 0,
     color_hex: formData.get('color_hex') as string || null,
     image_url: formData.get('image_url') as string || null,
     youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
-  })
-  redirect('/admin/fabrics')
+  }
+  
+  console.log('Attempting to insert fabric:', fabricData)
+
+  const { data, error } = await supabase.from('fabrics').insert(fabricData).select()
+
+  if (error) {
+    console.error('Add Fabric Error:', error)
+    redirect(`/admin/fabrics?error=${encodeURIComponent(error.message)}`)
+  }
+
+  console.log('Fabric added successfully:', data)
+  redirect('/admin/fabrics?success=Fabric+added')
 }
 
 export async function deleteFabric(fabricId: string) {
@@ -145,10 +170,11 @@ export async function deleteFabric(fabricId: string) {
 
 // Collar (design_options) CRUD
 export async function addCollar(formData: FormData) {
+  console.log('addCollar action started')
   await requireAdminSession()
   const supabase = createServiceRoleClient()
 
-  await supabase.from('design_options').insert({
+  const collarData = {
     type: 'collar',
     name: formData.get('name') as string,
     name_bn: formData.get('name_bn') as string || null,
@@ -156,8 +182,19 @@ export async function addCollar(formData: FormData) {
     price_addition: parseFloat(formData.get('price_addition') as string) || 0,
     for_product: formData.get('for_product') as string || 'panjabi',
     sort_order: parseInt(formData.get('sort_order') as string) || 0,
-  })
-  redirect('/admin/collars')
+  }
+  
+  console.log('Attempting to insert collar:', collarData)
+
+  const { data, error } = await supabase.from('design_options').insert(collarData).select()
+
+  if (error) {
+    console.error('Add Collar Error:', error)
+    redirect(`/admin/collars?error=${encodeURIComponent(error.message)}`)
+  }
+
+  console.log('Collar added successfully:', data)
+  redirect('/admin/collars?success=Collar+added')
 }
 
 export async function deleteCollar(collarId: string) {
@@ -169,6 +206,7 @@ export async function deleteCollar(collarId: string) {
 
 // Update actions
 export async function updateProduct(productId: string, formData: FormData) {
+  console.log('updateProduct action started for ID:', productId)
   await requireAdminSession()
   const supabase = createServiceRoleClient()
   const rawImageUrls = formData.getAll('image_url')
@@ -177,49 +215,84 @@ export async function updateProduct(productId: string, formData: FormData) {
     .map(url => url.trim())
     .filter(url => url !== '')
 
-  await supabase.from('products').update({
+  const productData = {
     type: formData.get('type') as string,
     category: formData.get('category') as string || null,
     name: formData.get('name') as string,
     name_bn: formData.get('name_bn') as string || null,
     description: formData.get('description') as string || null,
-    base_price: parseFloat(formData.get('base_price') as string),
+    base_price: parseFloat(formData.get('base_price') as string) || 0,
     stitching_charge: parseFloat(formData.get('stitching_charge') as string) || 450,
-    image_urls: imageUrls.length > 0 ? imageUrls : null,
+    image_url: imageUrls[0] || null, // Updated to singular
     is_active: formData.get('is_active') === 'true',
-  }).eq('id', productId)
-  redirect('/admin/products')
+  }
+  
+  console.log('Attempting to update product:', productData)
+
+  const { data, error } = await supabase.from('products').update(productData).eq('id', productId).select()
+
+  if (error) {
+    console.error('Update Product Error:', error)
+    redirect(`/admin/products?error=${encodeURIComponent(error.message)}`)
+  }
+
+  console.log('Product updated successfully:', data)
+  redirect('/admin/products?success=Product+updated')
 }
 
 export async function updateFabric(fabricId: string, formData: FormData) {
+  console.log('updateFabric action started for ID:', fabricId)
   await requireAdminSession()
   const supabase = createServiceRoleClient()
 
-  await supabase.from('fabrics').update({
+  const fabricData = {
     name: formData.get('name') as string,
     name_bn: formData.get('name_bn') as string || null,
     fabric_type: formData.get('fabric_type') as string,
     description: formData.get('description') as string || null,
-    price_per_yard: parseFloat(formData.get('price_per_yard') as string),
+    price_per_yard: parseFloat(formData.get('price_per_yard') as string) || 0,
     color_hex: formData.get('color_hex') as string || null,
     image_url: formData.get('image_url') as string || null,
     youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
-  }).eq('id', fabricId)
+  }
+  
+  console.log('Attempting to update fabric:', fabricData)
+
+  const { data, error } = await supabase.from('fabrics').update(fabricData).eq('id', fabricId).select()
+
+  if (error) {
+    console.error('Update Fabric Error:', error)
+    return { error: error.message }
+  }
+
+  console.log('Fabric updated successfully:', data)
   redirect('/admin/fabrics')
 }
 
 export async function updateCollar(collarId: string, formData: FormData) {
+  console.log('updateCollar action started for ID:', collarId)
   await requireAdminSession()
   const supabase = createServiceRoleClient()
 
-  await supabase.from('design_options').update({
+  const collarData = {
     name: formData.get('name') as string,
     name_bn: formData.get('name_bn') as string || null,
     image_url: formData.get('image_url') as string || null,
     price_addition: parseFloat(formData.get('price_addition') as string) || 0,
     for_product: formData.get('for_product') as string || 'panjabi',
     sort_order: parseInt(formData.get('sort_order') as string) || 0,
-  }).eq('id', collarId)
+  }
+  
+  console.log('Attempting to update collar:', collarData)
+
+  const { data, error } = await supabase.from('design_options').update(collarData).eq('id', collarId).select()
+
+  if (error) {
+    console.error('Update Collar Error:', error)
+    return { error: error.message }
+  }
+
+  console.log('Collar updated successfully:', data)
   redirect('/admin/collars')
 }

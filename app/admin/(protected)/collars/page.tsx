@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { Plus, Trash2, Pencil } from 'lucide-react'
 import { addCollar, deleteCollar } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
+import { SubmitButton } from '@/components/admin/SubmitButton'
 import Image from 'next/image'
 
 export const dynamic = 'force-dynamic'
@@ -55,9 +56,7 @@ export default async function AdminCollarsPage() {
             <input name="sort_order" type="number" defaultValue="0" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none" />
           </div>
           <div className="md:col-span-2">
-            <button type="submit" className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-[#8B2222] transition-colors">
-              Add Collar
-            </button>
+            <SubmitButton label="Add Collar" />
           </div>
         </form>
       </div>

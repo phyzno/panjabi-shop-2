@@ -2,12 +2,18 @@ import { createClient } from '@/utils/supabase/server'
 import { Plus, Trash2, Pencil } from 'lucide-react'
 import { addProduct, deleteProduct } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
+import { SubmitButton } from '@/components/admin/SubmitButton'
 import Image from 'next/image'
 import { resolveProductImageSrc } from '@/lib/productImages'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminProductsPage() {
+interface PageProps {
+  searchParams: Promise<{ error?: string; success?: string }>
+}
+
+export default async function AdminProductsPage({ searchParams }: PageProps) {
+  const { error: urlError, success } = await searchParams
   const supabase = await createClient()
   const { data: products, error } = await supabase
     .from('products')
@@ -20,6 +26,18 @@ export default async function AdminProductsPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-heading font-bold text-primary">Manage Products</h1>
       </div>
+
+      {urlError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
+          <strong>Error:</strong> {urlError}
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6 text-sm">
+          {success}
+        </div>
+      )}
 
       {/* Add Product Form */}
       <div className="bg-white border border-border rounded-2xl p-6 shadow-sm mb-8">
@@ -72,9 +90,7 @@ export default async function AdminProductsPage() {
             <label className="text-sm font-medium text-gray-700">Active</label>
           </div>
           <div className="md:col-span-2">
-            <button type="submit" className="bg-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-[#8B2222] transition-colors">
-              Add Product
-            </button>
+            <SubmitButton label="Add Product" />
           </div>
         </form>
       </div>
@@ -100,7 +116,7 @@ export default async function AdminProductsPage() {
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <Image
-                      src={resolveProductImageSrc(product.image_urls?.[0])}
+                      src={resolveProductImageSrc(product.image_url)}
                       alt={product.name}
                       width={48}
                       height={64}
