@@ -16,8 +16,9 @@ export async function POST(request: NextRequest) {
   let supabase
   try {
     supabase = createServiceRoleClient()
-  } catch (err: any) {
-    console.error('Failed to create Supabase service client:', err.message)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    console.error('Failed to create Supabase service client:', message)
     return NextResponse.json(
       { error: 'Server configuration error: Missing API keys' },
       { status: 500 }
