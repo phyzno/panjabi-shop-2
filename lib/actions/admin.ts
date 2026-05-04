@@ -116,7 +116,7 @@ export async function addProduct(formData: FormData) {
 
   if (error) {
     console.error('Add Product Error:', error)
-    redirect(`/admin/products?error=${encodeURIComponent(error.message)}`)
+    throw new Error(error.message)
   }
 
   console.log('Product added successfully:', data)
@@ -154,7 +154,7 @@ export async function addFabric(formData: FormData) {
 
   if (error) {
     console.error('Add Fabric Error:', error)
-    redirect(`/admin/fabrics?error=${encodeURIComponent(error.message)}`)
+    throw new Error(error.message)
   }
 
   console.log('Fabric added successfully:', data)
@@ -190,7 +190,7 @@ export async function addCollar(formData: FormData) {
 
   if (error) {
     console.error('Add Collar Error:', error)
-    redirect(`/admin/collars?error=${encodeURIComponent(error.message)}`)
+    throw new Error(error.message)
   }
 
   console.log('Collar added successfully:', data)
@@ -233,7 +233,7 @@ export async function updateProduct(productId: string, formData: FormData) {
 
   if (error) {
     console.error('Update Product Error:', error)
-    redirect(`/admin/products?error=${encodeURIComponent(error.message)}`)
+    throw new Error(error.message)
   }
 
   console.log('Product updated successfully:', data)
@@ -263,11 +263,11 @@ export async function updateFabric(fabricId: string, formData: FormData) {
 
   if (error) {
     console.error('Update Fabric Error:', error)
-    return { error: error.message }
+    throw new Error(error.message)
   }
 
   console.log('Fabric updated successfully:', data)
-  redirect('/admin/fabrics')
+  redirect('/admin/fabrics?success=Fabric+updated')
 }
 
 export async function updateCollar(collarId: string, formData: FormData) {
@@ -290,9 +290,9 @@ export async function updateCollar(collarId: string, formData: FormData) {
 
   if (error) {
     console.error('Update Collar Error:', error)
-    return { error: error.message }
+    throw new Error(error.message)
   }
 
   console.log('Collar updated successfully:', data)
-  redirect('/admin/collars')
+  redirect('/admin/collars?success=Collar+updated')
 }
