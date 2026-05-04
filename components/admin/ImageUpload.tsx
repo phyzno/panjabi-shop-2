@@ -78,8 +78,9 @@ export function ImageUpload({
       setObjectUrl(null)
       setStoredValue(url)
       if (onUploadComplete) onUploadComplete(url)
-    } catch (err: any) {
-      setError(err.message || 'Upload failed. Try again.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upload failed. Try again.'
+      setError(message)
       URL.revokeObjectURL(localUrl)
       setObjectUrl(null)
     } finally {
