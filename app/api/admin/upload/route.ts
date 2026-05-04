@@ -3,21 +3,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/utils/supabase/service'
 
 export async function POST(request: NextRequest) {
+  console.log('Upload API hit')
   const cookieStore = await cookies()
-  if (cookieStore.get('admin_session')?.value !== 'true') {
+  const session = cookieStore.get('admin_session')?.value
+  console.log('Admin session:', session)
+
+  if (session !== 'true') {
+    console.warn('Unauthorized upload attempt')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = createServiceRoleClient()
+  let supabase
+  try {
+    supabase = createServiceRoleClient()
+  } catch (err: any) {
+    console.error('Failed to create Supabase service client:', err.message)
+    return NextResponse.json(
+      { error: 'Server configuration error: Missing API keys' },
+      { status: 500 }
+    )
+  }
   const formData = await request.formData()
   const file = formData.get('file') as File
 
   if (!file) {
+    console.warn('No file in form data')
     return NextResponse.json(
       { error: 'No file provided' },
       { status: 400 }
     )
   }
+
+  console.log('File metadata:', { name: file.name, size: file.size, type: file.type })
 
   const fileExt = file.name.split('.').pop()
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
@@ -33,15 +50,25 @@ export async function POST(request: NextRequest) {
     })
 
   if (error) {
+    console.error('Supabase Storage Error:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: `Storage error: ${error.message}` },
       { status: 500 }
     )
   }
 
+  console.log('Upload successful:', data)
   const { data: urlData } = supabase.storage
     .from('product-images')
     .getPublicUrl(data.path)
+
+  if (!urlData?.publicUrl) {
+    console.error('Failed to get public URL for path:', data.path)
+    return NextResponse.json(
+      { error: 'Failed to generate public URL' },
+      { status: 500 }
+    )
+  }
 
   return NextResponse.json({ url: urlData.publicUrl })
 }

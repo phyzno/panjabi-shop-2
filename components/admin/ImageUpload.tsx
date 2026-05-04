@@ -44,8 +44,8 @@ export function ImageUpload({
       setError('Please select an image file')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be less than 5MB')
+    if (file.size > 4 * 1024 * 1024) {
+      setError('Image must be less than 4MB (Vercel limit)')
       return
     }
 
@@ -65,8 +65,14 @@ export function ImageUpload({
       })
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || 'Upload failed')
+        let errorMessage = 'Upload failed'
+        try {
+          const data = await res.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server returned ${res.status}: ${res.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       const { url } = await res.json()
