@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PanjabiCanvas } from '@/components/customizer/PanjabiCanvas';
 import { useCartStore } from '@/store/cartStore';
 import { useRouter } from 'next/navigation';
@@ -27,10 +27,26 @@ const colors = [
 
 const standardSizes = ['S', 'M', 'L', 'XL'];
 
+export interface DBFabric {
+  id: string;
+  name: string;
+  fabric_type?: string;
+  description?: string | null;
+  price_per_yard: number;
+  image_url?: string | null;
+}
+
+export interface DBCollar {
+  id: string;
+  name: string;
+  price_addition: number;
+  image_url?: string | null;
+}
+
 export interface CustomizeClientProps {
   productId: string;
-  fabrics: any[];
-  collars: any[];
+  fabrics: DBFabric[];
+  collars: DBCollar[];
 }
 
 export function CustomizeClient({ productId, fabrics, collars }: CustomizeClientProps) {
@@ -54,8 +70,10 @@ export function CustomizeClient({ productId, fabrics, collars }: CustomizeClient
   const stitchingCharge = 450;
   const total = fabricPrice + collarPrice + stitchingCharge;
 
+  type CanvasCollarType = 'band' | 'vneck' | 'round' | 'mandarin';
+
   // Determine a valid collarType string for the 3D canvas which only supports specific values
-  const canvasCollarType = React.useMemo(() => {
+  const canvasCollarType = useMemo<CanvasCollarType>(() => {
     if (!collarObj) return 'band';
     const nameLower = (collarObj.name || '').toLowerCase();
     if (nameLower.includes('v-neck') || nameLower.includes('vneck')) return 'vneck';
@@ -101,7 +119,7 @@ export function CustomizeClient({ productId, fabrics, collars }: CustomizeClient
           <PanjabiCanvas 
             color={selectedColor.hex} 
             fabricType={fabricObj?.fabric_type || 'plain'} 
-            collarType={canvasCollarType as any}
+            collarType={canvasCollarType}
             onRenderComplete={setPreviewDataUrl}
           />
           
