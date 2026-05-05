@@ -13,7 +13,7 @@ export default async function AdminCollarsPage() {
     .from('design_options')
     .select('*')
     .eq('type', 'collar')
-    .order('created_at', { ascending: false })
+    .order('sort_order', { ascending: true })
   if (error) console.error('Collars fetch error:', error)
 
   return (
