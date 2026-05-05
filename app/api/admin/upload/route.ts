@@ -54,9 +54,9 @@ export async function POST(request: NextRequest) {
     console.error('Supabase Storage Error Details:', {
       message: error.message,
       name: error.name,
-      // @ts-expect-error
+      // @ts-expect-error - Supabase error may contain details
       details: error.details,
-      // @ts-expect-error
+      // @ts-expect-error - Supabase error may contain hint
       hint: error.hint
     })
     return NextResponse.json(
