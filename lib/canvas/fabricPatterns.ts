@@ -49,7 +49,7 @@ export function generateFabricPattern(
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 4, 4);
       // Subtle vertical lines
-      octx.strokeStyle = 'rgba(0,0,0,0.05)';
+      octx.strokeStyle = 'rgba(0,0,0,0.1)';
       octx.lineWidth = 1;
       octx.beginPath();
       octx.moveTo(1, 0); octx.lineTo(1, 4);
@@ -69,7 +69,7 @@ export function generateFabricPattern(
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 6, 6);
       // 45° lines
-      octx.strokeStyle = 'rgba(0,0,0,0.07)';
+      octx.strokeStyle = 'rgba(0,0,0,0.15)';
       octx.lineWidth = 1;
       for (let i = -6; i < 12; i += 2) {
         octx.beginPath();
@@ -78,7 +78,7 @@ export function generateFabricPattern(
         octx.stroke();
       }
       // 135° lines
-      octx.strokeStyle = 'rgba(0,0,0,0.07)';
+      octx.strokeStyle = 'rgba(0,0,0,0.15)';
       for (let i = -6; i < 12; i += 2) {
         octx.beginPath();
         octx.moveTo(i + 6, 0);
@@ -92,9 +92,9 @@ export function generateFabricPattern(
       offscreen.width = 20;
       offscreen.height = 20;
       const grad = octx.createLinearGradient(0, 0, 20, 20);
-      grad.addColorStop(0, lightenColor(baseColor, 25));
+      grad.addColorStop(0, lightenColor(baseColor, 40));
       grad.addColorStop(0.4, baseColor);
-      grad.addColorStop(0.7, darkenColor(baseColor, 15));
+      grad.addColorStop(0.7, darkenColor(baseColor, 25));
       grad.addColorStop(1, baseColor);
       octx.fillStyle = grad;
       octx.fillRect(0, 0, 20, 20);
@@ -107,11 +107,11 @@ export function generateFabricPattern(
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 16, 16);
       // White squares
-      octx.fillStyle = 'rgba(255,255,255,0.20)';
+      octx.fillStyle = 'rgba(255,255,255,0.30)';
       octx.fillRect(0, 0, 8, 8);
       octx.fillRect(8, 8, 8, 8);
       // Thin cross lines
-      octx.strokeStyle = 'rgba(255,255,255,0.15)';
+      octx.strokeStyle = 'rgba(255,255,255,0.25)';
       octx.lineWidth = 1;
       octx.beginPath();
       octx.moveTo(8, 0); octx.lineTo(8, 16);
@@ -126,10 +126,10 @@ export function generateFabricPattern(
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 10, 10);
       // Left half lighter
-      octx.fillStyle = lightenColor(baseColor, 15);
+      octx.fillStyle = lightenColor(baseColor, 25);
       octx.fillRect(0, 0, 5, 10);
       // 1px dark line at edge
-      octx.strokeStyle = 'rgba(0,0,0,0.15)';
+      octx.strokeStyle = 'rgba(0,0,0,0.25)';
       octx.lineWidth = 1;
       octx.beginPath();
       octx.moveTo(5, 0); octx.lineTo(5, 10);
@@ -143,7 +143,7 @@ export function generateFabricPattern(
       octx.fillStyle = baseColor;
       octx.fillRect(0, 0, 20, 20);
       // Diamond outline
-      octx.strokeStyle = 'rgba(255,255,255,0.25)';
+      octx.strokeStyle = 'rgba(255,255,255,0.40)';
       octx.lineWidth = 1;
       octx.beginPath();
       octx.moveTo(10, 2);
@@ -153,17 +153,74 @@ export function generateFabricPattern(
       octx.closePath();
       octx.stroke();
       // Corner dots
-      octx.fillStyle = 'rgba(255,255,255,0.20)';
+      octx.fillStyle = 'rgba(255,255,255,0.35)';
       [ [3,3], [17,3], [3,17], [17,17] ].forEach(([x,y]) => {
         octx.beginPath();
-        octx.arc(x, y, 1.2, 0, Math.PI*2);
+        octx.arc(x, y, 1.5, 0, Math.PI*2);
         octx.fill();
       });
       // Center cross
-      octx.strokeStyle = 'rgba(255,255,255,0.15)';
+      octx.strokeStyle = 'rgba(255,255,255,0.30)';
       octx.beginPath();
       octx.moveTo(10, 6); octx.lineTo(10, 14);
       octx.moveTo(6, 10); octx.lineTo(14, 10);
+      octx.stroke();
+      break;
+    }
+    case 'jacquard': {
+      offscreen.width = 30;
+      offscreen.height = 30;
+      octx.fillStyle = baseColor;
+      octx.fillRect(0, 0, 30, 30);
+      // Leaf motif
+      octx.fillStyle = 'rgba(255,255,255,0.15)';
+      octx.beginPath();
+      octx.ellipse(15, 15, 8, 4, Math.PI / 4, 0, Math.PI * 2);
+      octx.fill();
+      octx.beginPath();
+      octx.ellipse(15, 15, 8, 4, -Math.PI / 4, 0, Math.PI * 2);
+      octx.fill();
+      // Small dots around
+      octx.fillStyle = 'rgba(0,0,0,0.1)';
+      [ [5,5], [25,5], [5,25], [25,25] ].forEach(([x,y]) => {
+        octx.beginPath();
+        octx.arc(x, y, 2, 0, Math.PI*2);
+        octx.fill();
+      });
+      break;
+    }
+    case 'dots': {
+      offscreen.width = 16;
+      offscreen.height = 16;
+      octx.fillStyle = baseColor;
+      octx.fillRect(0, 0, 16, 16);
+      octx.fillStyle = 'rgba(255,255,255,0.4)';
+      octx.beginPath();
+      octx.arc(4, 4, 2.5, 0, Math.PI*2);
+      octx.fill();
+      octx.beginPath();
+      octx.arc(12, 12, 2.5, 0, Math.PI*2);
+      octx.fill();
+      break;
+    }
+    case 'wave': {
+      offscreen.width = 20;
+      offscreen.height = 20;
+      octx.fillStyle = baseColor;
+      octx.fillRect(0, 0, 20, 20);
+      octx.strokeStyle = 'rgba(0,0,0,0.2)';
+      octx.lineWidth = 1.5;
+      octx.beginPath();
+      octx.moveTo(0, 10);
+      octx.bezierCurveTo(5, 5, 15, 15, 20, 10);
+      octx.stroke();
+      octx.beginPath();
+      octx.moveTo(0, 20);
+      octx.bezierCurveTo(5, 15, 15, 25, 20, 20);
+      octx.stroke();
+      octx.beginPath();
+      octx.moveTo(0, 0);
+      octx.bezierCurveTo(5, -5, 15, 5, 20, 0);
       octx.stroke();
       break;
     }

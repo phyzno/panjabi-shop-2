@@ -43,6 +43,24 @@ const FABRICS = [
     description: 'Traditional craft',
     pricePerYard: 420
   },
+  { 
+    id: 'jacquard', 
+    label: 'Jacquard Weave',
+    description: 'Rich textured motif',
+    pricePerYard: 550
+  },
+  { 
+    id: 'dots', 
+    label: 'Polka Dot',
+    description: 'Playful dotted pattern',
+    pricePerYard: 210
+  },
+  { 
+    id: 'wave', 
+    label: 'Wavy Texture',
+    description: 'Modern abstract design',
+    pricePerYard: 280
+  },
 ];
 
 import { FabricSwatch } from '@/components/customizer/FabricSwatch';

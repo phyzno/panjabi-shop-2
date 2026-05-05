@@ -115,9 +115,6 @@ export function PanjabiCanvas({
       <div className="absolute top-4 left-4 z-10 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-800 shadow-sm border border-gray-100">
         Front View
       </div>
-      <div className="absolute top-4 right-4 z-10 bg-gray-100/50 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-gray-400 shadow-sm border border-gray-200 cursor-not-allowed">
-        3D View — Coming Soon
-      </div>
 
       <canvas
         ref={canvasRef}
