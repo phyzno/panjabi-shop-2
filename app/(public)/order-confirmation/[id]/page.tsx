@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-export default function OrderConfirmationPage({ params }: { params: { id: string } }) {
-  const orderId = params.id;
+export default async function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: orderId } = await params;
 
   return (
     <div className="container mx-auto px-4 py-16 flex flex-col items-center justify-center min-h-[70vh]">

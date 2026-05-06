@@ -12,7 +12,6 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
@@ -87,12 +86,12 @@ export function Header() {
                 {user.email?.charAt(0).toUpperCase()}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 mt-2">
-                <DropdownMenuLabel>
+                <div className="px-1.5 py-1">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">My Account</p>
                     <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                   </div>
-                </DropdownMenuLabel>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem render={<Link href="/dashboard" className="w-full" />}>
                   <User className="mr-2 size-4" />

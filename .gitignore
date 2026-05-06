@@ -60,3 +60,5 @@ skills-lock.json
 *.swp
 *.swo
 *~
+
+.vercel
