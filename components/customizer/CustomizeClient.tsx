@@ -88,7 +88,7 @@ export function CustomizeClient({ productId, fabrics, collars }: CustomizeClient
       productName: 'Custom Panjabi',
       color: selectedColor.hex,
       colorName: selectedColor.name,
-      fabricType: fabricObj ? fabricObj.fabric_type : 'plain',
+      fabricType: fabricObj?.fabric_type || 'plain',
       fabricName: fabricObj ? fabricObj.name : 'Custom',
       collarStyle: collarObj ? collarObj.name : 'Band Collar',
       sleeveStyle: 'Full Sleeve',
