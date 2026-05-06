@@ -83,10 +83,8 @@ export function Header() {
             <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
           ) : user ? (
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <button className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity">
-                  {user.email?.charAt(0).toUpperCase()}
-                </button>
+              <DropdownMenuTrigger className="w-8 h-8 rounded-full bg-[#6B1E2E] text-white flex items-center justify-center text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity outline-none">
+                {user.email?.charAt(0).toUpperCase()}
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 mt-2">
                 <DropdownMenuLabel>
