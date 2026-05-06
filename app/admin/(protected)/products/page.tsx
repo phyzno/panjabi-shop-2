@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { Plus, Trash2, Pencil } from 'lucide-react'
+import { InstantDeleteButton } from '@/components/admin/InstantDeleteButton'
 import { addProduct, deleteProduct } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { SubmitButton } from '@/components/admin/SubmitButton'
@@ -143,11 +144,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                       <a href={`/admin/products/edit/${product.id}`} className="p-2 hover:bg-blue-50 rounded-lg transition-colors inline-block">
                         <Pencil size={16} className="text-blue-600" />
                       </a>
-                      <form action={deleteProduct.bind(null, product.id)}>
-                        <button type="submit" className="cursor-pointer p-2 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 size={16} className="text-red-600" />
-                        </button>
-                      </form>
+                      <InstantDeleteButton action={deleteProduct.bind(null, product.id)} />
                     </div>
                   </td>
                 </tr>

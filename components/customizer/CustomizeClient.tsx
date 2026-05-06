@@ -119,6 +119,7 @@ export function CustomizeClient({ productId, fabrics, collars }: CustomizeClient
           <PanjabiCanvas 
             color={selectedColor.hex} 
             fabricType={fabricObj?.fabric_type || 'plain'} 
+            fabricImageUrl={fabricObj?.image_url || undefined}
             collarType={canvasCollarType}
             onRenderComplete={setPreviewDataUrl}
           />

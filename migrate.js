@@ -25,10 +25,7 @@ const products = [
     name_bn: 'ক্লাসিক পাঞ্জাবি',
     base_price: 800,
     stitching_charge: 450,
-    image_urls: [
-      CATALOG_PLACEHOLDER_IMAGES.productCasualSecondary,
-      CATALOG_PLACEHOLDER_IMAGES.productCasual,
-    ],
+    image_url: CATALOG_PLACEHOLDER_IMAGES.productCasualSecondary,
     is_active: true,
   },
   {
@@ -38,10 +35,7 @@ const products = [
     name_bn: 'প্রিমিয়াম নেভি পাঞ্জাবি',
     base_price: 1200,
     stitching_charge: 450,
-    image_urls: [
-      CATALOG_PLACEHOLDER_IMAGES.productCasual,
-      CATALOG_PLACEHOLDER_IMAGES.productPremium,
-    ],
+    image_url: CATALOG_PLACEHOLDER_IMAGES.productCasual,
     is_active: true,
   },
   {
@@ -51,10 +45,7 @@ const products = [
     name_bn: 'ওয়েডিং পাঞ্জাবি',
     base_price: 2500,
     stitching_charge: 550,
-    image_urls: [
-      CATALOG_PLACEHOLDER_IMAGES.productWedding,
-      CATALOG_PLACEHOLDER_IMAGES.productWeddingSecondary,
-    ],
+    image_url: CATALOG_PLACEHOLDER_IMAGES.productWedding,
     is_active: true,
   },
   {
@@ -64,7 +55,7 @@ const products = [
     name_bn: 'অফ হোয়াইট পাঞ্জাবি',
     base_price: 900,
     stitching_charge: 450,
-    image_urls: [CATALOG_PLACEHOLDER_IMAGES.productSummer],
+    image_url: CATALOG_PLACEHOLDER_IMAGES.productSummer,
     is_active: true,
   },
 ];

@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 interface PanjabiCanvasProps {
   color: string;
   fabricType: string;
+  fabricImageUrl?: string;
   collarType: 'band' | 'vneck' | 'round' | 'mandarin';
   fabricOpacity?: number;
   colorIntensity?: number;
@@ -16,6 +17,7 @@ interface PanjabiCanvasProps {
 export function PanjabiCanvas({
   color,
   fabricType,
+  fabricImageUrl,
   collarType,
   fabricOpacity = 0.35,
   colorIntensity = 0.92,
@@ -59,6 +61,7 @@ export function PanjabiCanvas({
     const config: TextureConfig = {
       color,
       fabricType,
+      fabricImageUrl,
       fabricOpacity,
       colorIntensity,
       collarType,

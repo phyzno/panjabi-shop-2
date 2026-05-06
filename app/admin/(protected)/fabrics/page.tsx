@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { Plus, Trash2, Pencil } from 'lucide-react'
+import { InstantDeleteButton } from '@/components/admin/InstantDeleteButton'
 import { addFabric, deleteFabric } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
 import { SubmitButton } from '@/components/admin/SubmitButton'
@@ -129,11 +130,7 @@ export default async function AdminFabricsPage() {
                       <a href={`/admin/fabrics/edit/${fabric.id}`} className="p-2 hover:bg-blue-50 rounded-lg transition-colors inline-block">
                         <Pencil size={16} className="text-blue-600" />
                       </a>
-                      <form action={deleteFabric.bind(null, fabric.id)}>
-                        <button type="submit" className="cursor-pointer p-2 hover:bg-red-50 rounded-lg transition-colors">
-                          <Trash2 size={16} className="text-red-600" />
-                        </button>
-                      </form>
+                      <InstantDeleteButton action={deleteFabric.bind(null, fabric.id)} />
                     </div>
                   </td>
                 </tr>

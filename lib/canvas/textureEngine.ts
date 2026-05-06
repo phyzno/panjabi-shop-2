@@ -1,6 +1,7 @@
 export interface TextureConfig {
   color: string;           // hex color e.g. "#1B3A6B"
   fabricType: string;      // "plain" | "check" | "stripe" | "linen" | "silk" | "dots" | "embroidery"
+  fabricImageUrl?: string;
   collarType: 'band' | 'vneck' | 'round' | 'mandarin';
   fabricOpacity?: number;   // 0.0 to 1.0, default 0.35
   colorIntensity?: number;  // 0.0 to 1.0, default 0.92
@@ -60,9 +61,34 @@ export async function renderPanjabiTexture(
   ctx.globalAlpha = 1;
   
   // STEP 5 — Apply FABRIC TEXTURE using multiply
-  const pattern = generateFabricPattern(
-    ctx, config.fabricType, config.color
-  );
+  let pattern: CanvasPattern | null = null;
+  
+  if (config.fabricImageUrl) {
+    let patternImg = imageCache[config.fabricImageUrl];
+    if (!patternImg) {
+      patternImg = await new Promise<HTMLImageElement>((res, rej) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = config.fabricImageUrl!;
+      });
+      imageCache[config.fabricImageUrl] = patternImg;
+    }
+    
+    // Scale image down to a seamless 150x150 tile pattern so it doesn't look like a giant photo
+    const pCanvas = document.createElement('canvas');
+    pCanvas.width = 150;
+    pCanvas.height = 150;
+    const pCtx = pCanvas.getContext('2d');
+    if (pCtx) {
+      pCtx.drawImage(patternImg, 0, 0, 150, 150);
+      pattern = ctx.createPattern(pCanvas, 'repeat');
+    }
+  } else {
+    pattern = generateFabricPattern(ctx, config.fabricType, config.color) || null;
+  }
+
   if (pattern) {
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = config.fabricOpacity ?? 0.35;
