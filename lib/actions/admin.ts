@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { createServiceRoleClient } from '@/utils/supabase/service'
 
 async function requireAdminSession() {
@@ -120,6 +121,7 @@ export async function addProduct(formData: FormData) {
   }
 
   console.log('Product added successfully:', data)
+  revalidatePath('/admin/products')
   redirect('/admin/products?success=Product+added')
 }
 
@@ -127,6 +129,7 @@ export async function deleteProduct(productId: string) {
   await requireAdminSession()
   const supabase = createServiceRoleClient()
   await supabase.from('products').delete().eq('id', productId)
+  revalidatePath('/admin/products')
   redirect('/admin/products')
 }
 
@@ -158,6 +161,7 @@ export async function addFabric(formData: FormData) {
   }
 
   console.log('Fabric added successfully:', data)
+  revalidatePath('/admin/fabrics')
   redirect('/admin/fabrics?success=Fabric+added')
 }
 
@@ -165,6 +169,7 @@ export async function deleteFabric(fabricId: string) {
   await requireAdminSession()
   const supabase = createServiceRoleClient()
   await supabase.from('fabrics').delete().eq('id', fabricId)
+  revalidatePath('/admin/fabrics')
   redirect('/admin/fabrics')
 }
 
@@ -194,6 +199,7 @@ export async function addCollar(formData: FormData) {
   }
 
   console.log('Collar added successfully:', data)
+  revalidatePath('/admin/collars')
   redirect('/admin/collars?success=Collar+added')
 }
 
@@ -201,6 +207,7 @@ export async function deleteCollar(collarId: string) {
   await requireAdminSession()
   const supabase = createServiceRoleClient()
   await supabase.from('design_options').delete().eq('id', collarId)
+  revalidatePath('/admin/collars')
   redirect('/admin/collars')
 }
 
@@ -237,6 +244,7 @@ export async function updateProduct(productId: string, formData: FormData) {
   }
 
   console.log('Product updated successfully:', data)
+  revalidatePath('/admin/products')
   redirect('/admin/products?success=Product+updated')
 }
 
@@ -267,6 +275,7 @@ export async function updateFabric(fabricId: string, formData: FormData) {
   }
 
   console.log('Fabric updated successfully:', data)
+  revalidatePath('/admin/fabrics')
   redirect('/admin/fabrics?success=Fabric+updated')
 }
 
@@ -294,5 +303,6 @@ export async function updateCollar(collarId: string, formData: FormData) {
   }
 
   console.log('Collar updated successfully:', data)
+  revalidatePath('/admin/collars')
   redirect('/admin/collars?success=Collar+updated')
 }

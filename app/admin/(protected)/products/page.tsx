@@ -144,7 +144,7 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
                         <Pencil size={16} className="text-blue-600" />
                       </a>
                       <form action={deleteProduct.bind(null, product.id)}>
-                        <button type="submit" className="p-2 hover:bg-red-50 rounded-lg transition-colors">
+                        <button type="submit" className="cursor-pointer p-2 hover:bg-red-50 rounded-lg transition-colors">
                           <Trash2 size={16} className="text-red-600" />
                         </button>
                       </form>
