@@ -94,23 +94,17 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Link href="/dashboard" className="w-full flex items-center">
-                    <User className="mr-2 size-4" />
-                    <span>My Dashboard</span>
-                  </Link>
+                <DropdownMenuItem render={<Link href="/dashboard" className="w-full" />}>
+                  <User className="mr-2 size-4" />
+                  <span>My Dashboard</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Link href="/dashboard/orders" className="w-full flex items-center">
-                    <ShoppingCart className="mr-2 size-4" />
-                    <span>My Orders</span>
-                  </Link>
+                <DropdownMenuItem render={<Link href="/dashboard/orders" className="w-full" />}>
+                  <ShoppingCart className="mr-2 size-4" />
+                  <span>My Orders</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Link href="/dashboard/measurements" className="w-full flex items-center">
-                    <Ruler className="mr-2 size-4" />
-                    <span>My Measurements</span>
-                  </Link>
+                <DropdownMenuItem render={<Link href="/dashboard/measurements" className="w-full" />}>
+                  <Ruler className="mr-2 size-4" />
+                  <span>My Measurements</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
