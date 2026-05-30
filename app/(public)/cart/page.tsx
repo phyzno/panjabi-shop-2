@@ -45,7 +45,7 @@ export default function CartPage() {
                 </div>
                 <p className="text-gray-500 text-sm mb-4 leading-relaxed">
                   {item.colorName} · {item.fabricName} · {item.collarStyle} · 
-                  Size: {item.sizeType === 'standard' ? item.standardSize : 'Custom'}
+                  Size: {(item.sizeType === 'preset' || item.sizeType === 'standard') ? item.standardSize : 'Custom'}
                 </p>
                 
                 <div className="mt-auto flex justify-between items-center pt-4 border-t border-gray-100">

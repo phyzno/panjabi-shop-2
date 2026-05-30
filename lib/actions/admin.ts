@@ -5,6 +5,13 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createServiceRoleClient } from '@/utils/supabase/service'
 
+function getImageUrls(formData: FormData) {
+  return formData
+    .getAll('image_url')
+    .map((value) => (typeof value === 'string' ? value.trim() : ''))
+    .filter(Boolean)
+}
+
 async function requireAdminSession() {
   const cookieStore = await cookies()
   if (cookieStore.get('admin_session')?.value !== 'true') {
@@ -92,22 +99,18 @@ export async function addProduct(formData: FormData) {
   console.log('addProduct action started')
   await requireAdminSession()
   const supabase = createServiceRoleClient()
-  
-  const rawImageUrls = formData.getAll('image_url')
-  const imageUrls = rawImageUrls
-    .filter((url): url is string => typeof url === 'string')
-    .map(url => url.trim())
-    .filter(url => url !== '')
-  
+
+  const imageUrls = getImageUrls(formData)
+
   const productData = {
     type: formData.get('type') as string,
-    category: formData.get('category') as string || null,
-    name: formData.get('name') as string,
-    name_bn: formData.get('name_bn') as string || null,
-    description: formData.get('description') as string || null,
+    category: (formData.get('category') as string || '').trim() || null,
+    name: (formData.get('name') as string || '').trim(),
+    name_bn: (formData.get('name_bn') as string || '').trim() || null,
+    description: (formData.get('description') as string || '').trim() || null,
     base_price: parseFloat(formData.get('base_price') as string) || 0,
     stitching_charge: parseFloat(formData.get('stitching_charge') as string) || 450,
-    image_url: imageUrls[0] || null, // Updated to singular to match DB
+    image_urls: imageUrls,
     is_active: formData.get('is_active') === 'true',
   }
   
@@ -147,6 +150,7 @@ export async function addFabric(formData: FormData) {
     price_per_yard: parseFloat(formData.get('price_per_yard') as string) || 0,
     color_hex: formData.get('color_hex') as string || null,
     image_url: formData.get('image_url') as string || null,
+    original_image_url: formData.get('original_image_url') as string || null,
     youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
   }
@@ -216,21 +220,18 @@ export async function updateProduct(productId: string, formData: FormData) {
   console.log('updateProduct action started for ID:', productId)
   await requireAdminSession()
   const supabase = createServiceRoleClient()
-  const rawImageUrls = formData.getAll('image_url')
-  const imageUrls = rawImageUrls
-    .filter((url): url is string => typeof url === 'string')
-    .map(url => url.trim())
-    .filter(url => url !== '')
+
+  const imageUrls = getImageUrls(formData)
 
   const productData = {
     type: formData.get('type') as string,
-    category: formData.get('category') as string || null,
-    name: formData.get('name') as string,
-    name_bn: formData.get('name_bn') as string || null,
-    description: formData.get('description') as string || null,
+    category: (formData.get('category') as string || '').trim() || null,
+    name: (formData.get('name') as string || '').trim(),
+    name_bn: (formData.get('name_bn') as string || '').trim() || null,
+    description: (formData.get('description') as string || '').trim() || null,
     base_price: parseFloat(formData.get('base_price') as string) || 0,
     stitching_charge: parseFloat(formData.get('stitching_charge') as string) || 450,
-    image_url: imageUrls[0] || null, // Updated to singular
+    image_urls: imageUrls,
     is_active: formData.get('is_active') === 'true',
   }
   
@@ -261,6 +262,7 @@ export async function updateFabric(fabricId: string, formData: FormData) {
     price_per_yard: parseFloat(formData.get('price_per_yard') as string) || 0,
     color_hex: formData.get('color_hex') as string || null,
     image_url: formData.get('image_url') as string || null,
+    original_image_url: formData.get('original_image_url') as string || null,
     youtube_url: formData.get('youtube_url') as string || null,
     in_stock: formData.get('in_stock') === 'true',
   }

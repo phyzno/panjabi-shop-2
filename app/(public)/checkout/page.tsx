@@ -1,182 +1,421 @@
-'use client';
+"use client";
 
-import { useCartStore } from '@/store/cartStore';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { placeOrder } from '@/lib/actions/orders';
-
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { ShoppingBag, Truck, CreditCard, ShieldCheck, Loader2, Wallet, User } from "lucide-react";
+import Link from "next/link";
+import { useCartStore } from "@/store/cartStore";
+import { createOrder } from "@/lib/actions/checkout.actions";
+import { useAuthStore } from "@/store/authStore";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getSubtotal, clearCart } = useCartStore();
+  const { items, getSubTotal, clearCart } = useCartStore();
+  const { user } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
+  // Form States
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    deliveryLocation: "inside_dhaka", // inside_dhaka অথবা outside_dhaka
+    paymentMethod: "cod", // cod = Cash on Delivery
+  });
+
+  // (Optional UX Boost) ইউজার লগ-ইন করা থাকলে তার নাম ও ফোন নম্বর ফর্মে অটো-ফিল করে দিতে পারেন:
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.user_metadata?.full_name || prev.name,
+        phone: user.user_metadata?.phone || prev.phone,
+      }));
+    }
+  }, [user]);
+
+  // Hydration Error হ্যান্ডেল করার জন্য
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  // কার্ট খালি থাকলে শপ পেজে রিডাইরেক্ট করা
   if (items.length === 0) {
-    if (typeof window !== 'undefined') router.push('/cart');
-    return null;
+    return (
+      <div className="min-h-screen bg-[#F8F9F5] pt-32 pb-20 flex flex-col items-center justify-center text-center px-4">
+        <div className="w-20 h-20 bg-[#EBECE3] rounded-full flex items-center justify-center mb-4">
+          <ShoppingBag className="w-8 h-8 text-[#1C221A]/30" />
+        </div>
+        <h1 className="font-heading text-2xl font-bold uppercase tracking-wider text-[#17210C] mb-2">
+          Your Cart is Empty
+        </h1>
+        <p className="font-sans text-sm text-[#1C221A]/60 mb-6">
+          You need to add products to your cart before checking out.
+        </p>
+        <button
+          onClick={() => router.push("/shop")}
+          className="rounded-full bg-[#4A5D23] px-6 py-3 font-sans text-xs font-medium uppercase tracking-[0.2em] text-white"
+        >
+          Return to Shop
+        </button>
+      </div>
+    );
   }
 
-  const subtotal = getSubtotal();
-  const delivery = subtotal > 2000 ? 0 : 60;
-  const total = subtotal + delivery;
+  // ডেলিভারি চার্জ হিসাব (ছবির সাথে মিল রেখে আপডেট করা হয়েছে)
+  const deliveryCharge = formData.deliveryLocation === "inside_dhaka" ? 60 : 120;
+  const subTotal = getSubTotal();
+  const discount = 0;
+  const grandTotal = subTotal + deliveryCharge - discount;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const setDeliveryLocation = (location: string) => {
+    setFormData((prev) => ({ ...prev, deliveryLocation: location }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    try {
-      const formData = new FormData(e.currentTarget);
-      const orderData = {
-        name: formData.get('name') as string,
-        phone: formData.get('phone') as string,
-        address: formData.get('address') as string,
-        city: selectedCity, // Use the state instead of formData
-        email: formData.get('email') as string || undefined,
-        items,
-        subtotal,
-        delivery,
-        total,
-      };
+    if (!formData.name || !formData.phone || !formData.address) {
+      setError("Please fill in all required fields.");
+      setIsSubmitting(false);
+      return;
+    }
 
-      const orderNumber = await placeOrder(orderData);
+    // 👈 পেলোডে নতুন ফিল্ডগুলো যুক্ত করা হলো
+    // page.tsx (শুধুমাত্র handleSubmit এর ভেতরের payload অংশটুকু)
+
+    const payload = {
+      userId: user?.id || null,
+      customerName: formData.name,
+      customerPhone: formData.phone,
+      customerAddress: formData.address,
+      deliveryCharge,
+      discount,
+      paymentMethod: formData.paymentMethod as "cod" | "online",
+      items: items.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        productType: item.productType,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        stitchingCharge: item.stitchingCharge || 0,
+        totalPrice: item.totalPrice,
+        sizeMode: item.sizeMode || null,
+        sizeValue: item.sizeValue || null,
+        fabricId: item.fabricId || null,
+        fabricName: item.fabricName || null,
+        yardage: item.yardage || null,
+        customMeasurements: item.customMeasurements || null,
+        collarType: item.collarType || null,
+      })),
+    };
+
+    const result = await createOrder(payload);
+
+    if (result.success) {
       clearCart();
-      router.push(`/order-confirmation/${orderNumber}`);
-    } catch (error) {
-      console.error(error);
-      alert('Failed to place order. Please try again.');
-    } finally {
+      router.push(`/checkout/success?orderId=${result.orderId}`);
+    } else {
+      setError(result.error || "Something went wrong. Please try again.");
       setIsSubmitting(false);
     }
   };
 
-  const districts = [
-    'Dhaka', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barisal', 'Rangpur', 'Mymensingh',
-    'Bagerhat', 'Bandarban', 'Barguna', 'Barishal', 'Bhola', 'Bogra', 'Brahmanbaria', 'Chandpur',
-    'Chapainawabganj', 'Chuadanga', 'Cumilla', 'Cox\'s Bazar', 'Dinajpur', 'Faridpur', 'Feni',
-    'Gaibandha', 'Gazipur', 'Gopalganj', 'Habiganj', 'Jamalpur', 'Jashore', 'Jhalokati', 'Jhenaidah',
-    'Joypurhat', 'Khagrachhari', 'Kishoreganj', 'Kurigram', 'Kushtia', 'Lakshmipur', 'Lalmonirhat',
-    'Madaripur', 'Magura', 'Manikganj', 'Maulvibazar', 'Meherpur', 'Munshiganj', 'Naogaon', 'Narail',
-    'Narayanganj', 'Narsingdi', 'Natore', 'Netrokona', 'Nilphamari', 'Noakhali', 'Pabna', 'Panchagarh',
-    'Patuakhali', 'Pirojpur', 'Rajbari', 'Rangamati', 'Satkhira', 'Shariatpur', 'Sherpur', 'Sirajganj',
-    'Sunamganj', 'Tangail', 'Thakurgaon'
-  ];
-
   return (
-    <div className="container mx-auto px-4 py-12 bg-[#FAF7F2] min-h-screen">
-      <h1 className="font-heading text-4xl font-bold mb-10 text-center">Checkout</h1>
+    <div className="bg-[#F8F9F5] min-h-screen pt-15 md:pt-24 pb-20 select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="font-heading text-2xl md:text-3xl font-bold uppercase tracking-widest text-[#17210C] mb-10 border-b border-[#D4D7C9]/40 pb-4">
+          Checkout Process
+        </h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-12 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 items-start">
+          {/* Left: Shipping & Billing Form */}
+          <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 rounded-2xl border border-[#D4D7C9]/40 shadow-sm space-y-8">
+            <div>
+              <h2 className="font-heading text-base font-bold uppercase tracking-wider text-[#17210C] flex items-center gap-2 mb-6">
+                <Truck className="w-5 h-5 text-[#4A5D23]" /> Delivery Details
+              </h2>
 
-        {/* LEFT: Forms */}
-        <div className="lg:w-[60%] space-y-8">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-xs font-sans mb-6">
+                  {error}
+                </div>
+              )}
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-border">
-            <h2 className="font-heading text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-sans">1</span>
-              Contact Details
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700" htmlFor="name">Full Name</label>
-                <input required id="name" name="name" type="text" placeholder="John Doe" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700" htmlFor="phone">Phone (01XXXXXXXXX)</label>
-                <input required id="phone" name="phone" type="tel" pattern="^01[3-9]\d{8}$" placeholder="01712345678" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
-              </div>
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-bold text-gray-700" htmlFor="email">Email (Optional)</label>
-                <input id="email" name="email" type="email" placeholder="john@example.com" className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
-              </div>
-            </div>
-          </div>
+              <div className="space-y-5 font-sans text-xs">
 
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-border">
-            <h2 className="font-heading text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-sans">2</span>
-              Delivery Address
-            </h2>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700" htmlFor="address">Full Address</label>
-                <textarea required id="address" name="address" rows={3} placeholder="House, Road, Area, Thana..." className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none transition-all" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">City/District</label>
-                <Select required value={selectedCity} onValueChange={(val) => setSelectedCity(val || '')}>
-                  <SelectTrigger className="w-full h-12 bg-white border-gray-300">
-                    <SelectValue placeholder="Select District..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-80">
-                    {districts.sort().map(city => (
-                      <SelectItem key={city} value={city}>{city}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input type="hidden" required name="city" value={selectedCity} />
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* RIGHT: Order Summary */}
-        <div className="lg:w-[40%]">
-          <div className="bg-white border border-border rounded-2xl p-8 sticky top-24 shadow-lg">
-            <h2 className="font-heading text-2xl font-bold mb-6">Summary</h2>
-
-            <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2">
-              {items.map(item => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <div className="flex-1 pr-4">
-                    <p className="font-bold text-gray-800 line-clamp-1">{item.productName}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{item.fabricName}</p>
+                {/* Optional Login Banner for Guest Users */}
+                {!user && (
+                  <div className="mb-6 bg-[#F8F9F5] border border-[#D4D7C9] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-in fade-in duration-300">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white border border-[#D4D7C9] flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+                        <User className="w-4 h-4 text-[#4A5D23]" />
+                      </div>
+                      <div>
+                        <p className="font-heading text-sm font-bold text-[#17210C]">Checking out as a Guest</p>
+                        <p className="font-sans text-[11px] text-[#1C221A]/60 mt-0.5 leading-relaxed">
+                          To save this order to your profile and track easily, log in before placing the order.
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/login?redirect=/checkout"
+                      className="shrink-0 flex items-center justify-center px-5 py-2.5 bg-white border-2 border-[#D4D7C9]/60 text-[#17210C] text-[12px] uppercase tracking-widest rounded-lg hover:border-[#4A5D23] hover:text-[#4A5D23] transition-colors"
+                    >
+                      Log In Now
+                    </Link>
                   </div>
-                  <span className="font-medium">৳{item.total}</span>
+                )}
+
+                {/* Shipping Area Cards */}
+                <div>
+                  <label className="block uppercase tracking-wider text-[#1C221A]/70 font-medium mb-3">Shipping Area *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryLocation("inside_dhaka")}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${formData.deliveryLocation === "inside_dhaka"
+                        ? "border-[#4A5D23] bg-[#F8F9F5] shadow-sm"
+                        : "border-[#D4D7C9]/50 bg-white hover:border-[#4A5D23]/40"
+                        }`}
+                    >
+                      <span className="font-heading font-extrabold uppercase tracking-widest text-[#17210C] mb-1 text-[13px]">
+                        Inside Dhaka
+                      </span>
+                      <span className="font-sans text-[11px] text-[#1C221A]/70 font-medium">
+                        ৳ 60 | 2-3 Days
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeliveryLocation("outside_dhaka")}
+                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer ${formData.deliveryLocation === "outside_dhaka"
+                        ? "border-[#4A5D23] bg-[#F8F9F5] shadow-sm"
+                        : "border-[#D4D7C9]/50 bg-white hover:border-[#4A5D23]/40"
+                        }`}
+                    >
+                      <span className="font-heading font-extrabold uppercase tracking-widest text-[#17210C] mb-1 text-[13px]">
+                        Outside Dhaka
+                      </span>
+                      <span className="font-sans text-[11px] text-[#1C221A]/70 font-medium">
+                        ৳ 120 | 3-5 Days
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Personal Info */}
+                <div>
+                  <label className="block uppercase tracking-wider text-[#1C221A]/70 font-medium mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Enter your full name"
+                    className="w-full bg-[#F8F9F5] border border-[#D4D7C9] px-4 py-3 rounded-xl focus:outline-none focus:border-[#4A5D23] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block uppercase tracking-wider text-[#1C221A]/70 font-medium mb-2">Phone Number *</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="e.g. 01XXXXXXXXX"
+                    className="w-full bg-[#F8F9F5] border border-[#D4D7C9] px-4 py-3 rounded-xl focus:outline-none focus:border-[#4A5D23] transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block uppercase tracking-wider text-[#1C221A]/70 font-medium mb-2">Full Shipping Address *</label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    rows={4}
+                    placeholder="House no, Road no, Area, City..."
+                    className="w-full bg-[#F8F9F5] border border-[#D4D7C9] px-4 py-3 rounded-xl focus:outline-none focus:border-[#4A5D23] transition-colors resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method Section (Moved to Bottom) */}
+            <div className="pt-6 border-t border-[#D4D7C9]/40">
+              <label className="block uppercase tracking-wider text-[#1C221A]/70 font-medium mb-4 text-xs">
+                Select Payment Method *
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Active: Cash on Delivery */}
+                <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-[#4A5D23] bg-[#F8F9F5] shadow-sm relative overflow-hidden">
+                  <div className="w-10 h-10 shrink-0 bg-white rounded-full flex items-center justify-center border border-[#D4D7C9]/60">
+                    <Truck className="w-5 h-5 text-[#4A5D23]" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="block font-heading font-extrabold uppercase tracking-widest text-[#17210C] text-[12px] mb-0.5">
+                      Cash on Delivery
+                    </span>
+                    <span className="block font-sans text-[10px] text-[#1C221A]/60">
+                      Ponno hate peye taka porishodh
+                    </span>
+                  </div>
+                  {/* Active Indicator Dot */}
+                  <div className="absolute top-3 right-3 w-3 h-3 bg-[#4A5D23] rounded-full border-2 border-white shadow-sm"></div>
+                </div>
+
+                {/* Disabled: Digital Payment */}
+                <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-[#D4D7C9]/40 bg-white opacity-60 cursor-not-allowed">
+                  <div className="w-10 h-10 shrink-0 bg-[#F8F9F5] rounded-full flex items-center justify-center border border-[#D4D7C9]/40">
+                    <Wallet className="w-5 h-5 text-[#1C221A]/40" />
+                  </div>
+                  <div>
+                    <span className="block font-heading font-extrabold uppercase tracking-widest text-[#1C221A]/50 text-[12px] mb-0.5">
+                      Digital Payment
+                    </span>
+                    <span className="block font-sans text-[10px] text-[#1C221A]/40">
+                      bKash, Nagad (Coming Soon)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#D4D7C9]/40 flex items-center gap-3 text-[#4A5D23] bg-[#F8F9F5]/50 p-4 rounded-xl">
+              <ShieldCheck className="w-5 h-5 shrink-0" />
+              <p className="font-sans text-[11px] leading-relaxed text-[#1C221A]/60">
+                Your data is secure. By placing the order you agree with our terms of service and tailoring conditions.
+              </p>
+            </div>
+          </form>
+
+          {/* Right: Order Summary */}
+          <div className="bg-white p-6 rounded-2xl border border-[#D4D7C9]/40 shadow-sm space-y-6 lg:sticky top-24">
+            <h2 className="font-heading text-base font-bold uppercase tracking-wider text-[#17210C] flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-[#4A5D23]" /> Order Summary
+            </h2>
+
+            {/* Items List */}
+            <div className="divide-y divide-[#D4D7C9]/30 max-h-[320px] overflow-y-auto custom-scrollbar pr-1">
+              {items.map((item) => (
+                <div key={item.cartItemId} className="flex justify-between items-start py-3 gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-heading text-xs font-bold uppercase text-[#17210C] truncate">
+                      {item.productName}
+                    </h4>
+
+                    {/* বেসিক ইনফো: পরিমাণ এবং সাইজ/ইয়ার্ড */}
+                    <p className="font-sans text-[10px] text-[#1C221A]/50 uppercase tracking-wider mt-0.5">
+                      Qty: {item.quantity} | {item.productType === 'custom_fabric_only' ? `Yards: ${item.yardage}` : `Size: ${item.sizeValue || "Custom"}`}
+                    </p>
+
+                    {/* 👈 নতুন যোগ করা ডিটেইলস (শুধু টেইলরড বা কাস্টম প্রোডাক্টের জন্য) */}
+                    {item.productType === 'custom_tailored' && (
+                      <div className="mt-2 space-y-1.5">
+
+                        {/* কলার টাইপ */}
+                        {item.collarType && (
+                          <p className="font-sans text-[10px] text-[#1C221A]/70 flex items-center gap-1">
+                            <span className="font-medium text-[#4A5D23]">Collar:</span> {item.collarType}
+                          </p>
+                        )}
+
+                        {/* কাপড়ের নাম */}
+                        {item.fabricName && (
+                          <p className="font-sans text-[10px] text-[#1C221A]/70 flex items-center gap-1 truncate">
+                            <span className="font-medium text-[#4A5D23]">Fabric:</span> {item.fabricName}
+                          </p>
+                        )}
+
+                        {/* কাস্টম মেজারমেন্ট ব্রেকডাউন */}
+                        {item.customMeasurements && (
+                          <div className="text-[9px] text-[#1C221A]/60 font-sans bg-[#F8F9F5] p-1.5 rounded-md border border-[#D4D7C9]/30 grid grid-cols-2 gap-x-2">
+                            <span>L: {item.customMeasurements.length}&quot;</span>
+                            <span>C: {item.customMeasurements.chest}&quot;</span>
+                            <span>Sh: {item.customMeasurements.shoulder}&quot;</span>
+                            <span>Sl: {item.customMeasurements.sleeve}&quot;</span>
+                          </div>
+                        )}
+
+                        {/* টেইলরিং কস্ট (Stitching Charge) */}
+                        {(item.stitchingCharge ?? 0) > 0 && (
+                          <p className="font-sans text-[10px] text-[#1C221A]/70 mt-1 flex items-center justify-between bg-[#F8F9F5] p-1.5 rounded-md border border-[#D4D7C9]/30">
+                            <span className="font-medium text-[#4A5D23]">Stitching Charge:</span>
+                            <span>৳ {item.stitchingCharge?.toLocaleString('en-IN')}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ডানদিকের টোটাল প্রাইস */}
+                  <span className="font-sans text-xs text-[#17210C] shrink-0 mt-0.5">
+                    ৳ {item.totalPrice.toLocaleString("en-IN")}
+                  </span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-gray-100 pt-4 space-y-3 mb-6 text-sm">
-              <div className="flex justify-between text-gray-600">
+            {/* Calculations */}
+            <div className="border-t border-[#D4D7C9]/40 pt-4 space-y-3 font-sans text-xs text-[#1C221A]/70">
+              <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>৳{subtotal}</span>
+                <span className="text-[#17210C]">৳ {subTotal.toLocaleString("en-IN")}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between transition-all duration-300">
                 <span>Delivery Charge</span>
-                <span>{delivery === 0 ? 'Free' : `৳${delivery}`}</span>
+                <span className="text-[#17210C]">৳ {deliveryCharge}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount</span>
+                  <span>- ৳ {discount}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-[#D4D7C9]/40 pt-3 text-sm text-[#17210C]">
+                <span className="uppercase tracking-wider">Grand Total</span>
+                <span className="text-[#C25934] text-base transition-all duration-300">
+                  ৳ {grandTotal.toLocaleString("en-IN")}
+                </span>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4 mb-8">
-              <div className="flex justify-between items-end mb-2">
-                <span className="font-bold text-lg">Total</span>
-                <span className="font-heading text-3xl font-bold text-primary">৳{total}</span>
-              </div>
-            </div>
-
+            {/* Submit Button */}
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={isSubmitting}
-              className={`w-full bg-primary hover:bg-[#8B2222] text-white font-bold text-lg py-4 rounded-xl shadow-md transition-colors ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className="w-full h-14 bg-[#4A5D23] text-white hover:bg-[#3D4C1D] disabled:bg-[#EBECE3] disabled:text-[#1C221A]/40 rounded-full font-sans text-xs uppercase tracking-[0.2em] shadow-[0_12px_30px_rgba(74,93,35,0.2)] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              {isSubmitting ? 'Placing Order...' : 'Place Order'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing Order...</span>
+                </>
+              ) : (
+                <span>Confirm & Place Order</span>
+              )}
             </button>
-            <p className="text-center text-xs text-gray-400 mt-4">
-              By placing your order, you agree to our Terms & Conditions.
-            </p>
           </div>
         </div>
-
-      </form>
+      </div>
     </div>
   );
 }

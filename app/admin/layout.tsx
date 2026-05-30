@@ -1,13 +1,10 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
-export default function AdminLayout({
+export default function AdminRootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return (
-    <div className="min-h-screen bg-[#FAF7F2]">
-      {children}
-    </div>
-  )
+  // এখানে কোনো সাইডবার থাকবে না, যাতে লগ-ইন পেজ পুরো স্ক্রিন পায়
+  return <>{children}</>;
 }

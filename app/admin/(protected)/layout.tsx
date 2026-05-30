@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import AdminSidebar from "@/components/admin/AdminSidebar";
 
 export const dynamic = 'force-dynamic'
 
@@ -16,26 +17,16 @@ export default async function ProtectedAdminLayout({
   }
 
   return (
-    <>
-      <header className="bg-white border-b border-border sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <a href="/admin" className="font-heading text-xl font-bold text-primary">Admin Panel</a>
-            <nav className="hidden md:flex gap-4">
-              <a href="/admin" className="text-sm font-medium text-muted-foreground hover:text-primary">Orders</a>
-              <a href="/admin/products" className="text-sm font-medium text-muted-foreground hover:text-primary">Products</a>
-              <a href="/admin/fabrics" className="text-sm font-medium text-muted-foreground hover:text-primary">Fabrics</a>
-              <a href="/admin/collars" className="text-sm font-medium text-muted-foreground hover:text-primary">Collars</a>
-            </nav>
-          </div>
-          <form action="/api/admin/logout" method="POST">
-            <button className="text-sm text-red-600 hover:text-red-700 font-medium">
-              Logout
-            </button>
-          </form>
+    <div className="min-h-screen bg-background flex flex-col md:flex-row text-foreground">
+      {/* বামপাশের নেভিগেশন সাইডবার (শুধুমাত্র প্রোটেক্টেড পেজের জন্য) */}
+      <AdminSidebar />
+
+      {/* ডানপাশের মূল কন্টেন্ট এরিয়া */}
+      <main className="flex-grow p-6 md:p-10 lg:p-12 overflow-y-auto h-screen bg-secondary/10">
+        <div className="max-w-7xl mx-auto w-full">
+          {children}
         </div>
-      </header>
-      {children}
-    </>
+      </main>
+    </div>
   )
 }

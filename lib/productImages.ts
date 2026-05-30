@@ -14,3 +14,22 @@ export function resolveProductImageSrc(raw: string | null | undefined): string {
   if (s.startsWith('/')) return s
   return `${LOCAL_PUNJABI_ASSETS}/${s.replace(/^\/+/, '')}`
 }
+
+export function getProductImageUrls(product?: {
+  image_urls?: string[] | null
+  image_url?: string | null
+} | null): string[] {
+  if (product?.image_urls && Array.isArray(product.image_urls)) {
+    return product.image_urls.filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+  }
+
+  const fallback = typeof product?.image_url === 'string' ? product.image_url.trim() : ''
+  return fallback ? [fallback] : []
+}
+
+export function getPrimaryProductImageUrl(product?: {
+  image_urls?: string[] | null
+  image_url?: string | null
+} | null): string {
+  return getProductImageUrls(product)[0] ?? PRODUCT_IMAGE_PLACEHOLDER
+}

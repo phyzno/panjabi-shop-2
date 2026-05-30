@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { sendResetEmail } from '@/lib/actions/auth'
+import { Loader2, Mail, CheckCircle2, AlertCircle } from 'lucide-react'
 
 export default function ForgotPasswordForm({
   error,
@@ -16,52 +16,58 @@ export default function ForgotPasswordForm({
   async function handleSubmit(formData: FormData) {
     setIsSubmitting(true)
     await sendResetEmail(formData)
+    setIsSubmitting(false)
   }
 
   return (
-    <>
+    <div className="space-y-6">
+      {/* Messages */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-6">
-          {decodeURIComponent(error)}
+        <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-[11px] font-sans flex items-center gap-2 animate-in slide-in-from-top-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <p>{decodeURIComponent(error)}</p>
         </div>
       )}
 
       {message && (
-        <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm mb-6">
-          {decodeURIComponent(message)}
+        <div className="bg-green-50 border border-green-100 text-green-700 rounded-xl p-4 text-[11px] font-sans flex items-start gap-2 animate-in slide-in-from-top-2">
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">{decodeURIComponent(message)}</p>
         </div>
       )}
 
-      <form action={handleSubmit} className="space-y-6">
+      <form action={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
+          <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-2 ml-1">
+            Email Address
           </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6B1E2E] focus:border-transparent outline-none transition"
-            placeholder="you@example.com"
-          />
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C221A]/30" />
+            <input
+              name="email"
+              type="email"
+              required
+              className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl pl-11 pr-4 py-3.5 focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] outline-none font-sans text-sm transition-all"
+              placeholder="name@example.com"
+            />
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-[#6B1E2E] text-white py-3 rounded-xl font-medium hover:bg-[#5a1826] transition-colors disabled:opacity-50"
+          className="w-full bg-[#4A5D23] text-white py-4 rounded-full font-sans text-[14px] uppercase tracking-[0.2em] shadow-[0_8px_25px_rgba(74,93,35,0.25)] hover:bg-[#3D4C1D] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
         >
-          {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Sending Link...</span>
+            </>
+          ) : (
+            <span>Send Reset Link</span>
+          )}
         </button>
       </form>
-
-      <p className="text-center text-sm text-gray-600 mt-6">
-        Remember your password?{' '}
-        <Link href="/login" className="text-[#6B1E2E] font-medium hover:underline">
-          Sign in →
-        </Link>
-      </p>
-    </>
+    </div>
   )
 }

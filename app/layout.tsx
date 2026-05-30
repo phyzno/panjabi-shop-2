@@ -1,42 +1,39 @@
-import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Caudex, Sniglet } from 'next/font/google'
+import AuthProvider from '@/components/providers/AuthProvider';
+import '@/app/globals.css'
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-});
+const caudex = Caudex({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-caudex',
+})
 
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-});
+const sniglet = Sniglet({
+  subsets: ['latin'],
+  weight: ['400', '800'],
+  variable: '--font-sniglet',
+})
 
 export const metadata: Metadata = {
-  title: "Home | Panjabi Shop — Custom Panjabi Bangladesh",
-  description: "Premium custom Panjabi stitched to your exact measurements.",
-};
+  title: 'Home | Panjabi Shop — Custom Panjabi Bangladesh',
+  description: 'Premium custom Panjabi stitched to your exact measurements.',
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${playfair.variable} ${dmSans.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`}
+        className={`${caudex.variable} ${sniglet.variable} font-sans antialiased bg-background text-foreground min-h-screen flex flex-col`}
       >
-        <AnnouncementBar />
-        <Header />
-        <main className="grow">
+        <AuthProvider>
           {children}
-        </main>
-        <Footer />
+        </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

@@ -1,5 +1,8 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -8,8 +11,26 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error && data.user) {
+      // === Bulletproof Sync: Neon DB-তে ইউজার সেভ করা ===
+      try {
+        const existingUser = await db.select().from(users).where(eq(users.id, data.user.id)).limit(1);
+        
+        if (existingUser.length === 0) {
+          await db.insert(users).values({
+            id: data.user.id,
+            email: data.user.email!,
+            name: data.user.user_metadata?.full_name || '',
+            phone: data.user.user_metadata?.phone || '',
+            role: 'customer'
+          });
+        }
+      } catch (dbError) {
+        console.error("Callback Neon DB Sync Error:", dbError);
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

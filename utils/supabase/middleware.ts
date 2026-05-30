@@ -41,3 +41,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request })
   }
 }
+
+export async function middleware(request: NextRequest) {
+  // updateSession ফাংশনটিকে কল করা হচ্ছে
+  return await updateSession(request)
+}
+
+export const config = {
+  matcher: [
+    /*
+     * নিচের রাউটগুলো ছাড়া বাকি সব রাউটে মিডলওয়্যার রান করবে:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - যেকোনো ইমেজ বা স্ট্যাটিক ফাইল (svg, png, jpg, etc.)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}

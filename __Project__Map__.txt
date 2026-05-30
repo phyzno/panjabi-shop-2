@@ -1,0 +1,261 @@
+Punjabi Shop - Project Map
+Generated from current filesystem snapshot on 2026-05-21
+
+Notes
+- This map reflects the current workspace state.
+- `.git`, `.next`, and `node_modules` were traversed but intentionally collapsed for readability.
+
+Punjabi-Shop/
+|-- .git/ [collapsed: 266 dirs, 889 files]
+|-- .next/ [collapsed: 107 dirs, 228 files]
+|-- .vercel/
+|   |-- README.txt
+|   \-- repo.json
+|-- app/
+|   |-- favicon.ico
+|   |-- globals.css
+|   |-- layout.tsx
+|   |-- (auth)/
+|   |   |-- layout.tsx
+|   |   |-- (protected)/
+|   |   |   |-- layout.tsx
+|   |   |   \-- dashboard/
+|   |   |       |-- page.tsx
+|   |   |       |-- measurements/
+|   |   |       |   |-- MeasurementForm.tsx
+|   |   |       |   \-- page.tsx
+|   |   |       \-- orders/
+|   |   |           \-- page.tsx
+|   |   |-- forgot-password/
+|   |   |   |-- ForgotPasswordForm.tsx
+|   |   |   \-- page.tsx
+|   |   |-- login/
+|   |   |   |-- LoginForm.tsx
+|   |   |   \-- page.tsx
+|   |   \-- signup/
+|   |       |-- page.tsx
+|   |       \-- SignupForm.tsx
+|   |-- (public)/
+|   |   |-- page.tsx
+|   |   |-- about/
+|   |   |   \-- page.tsx
+|   |   |-- cart/
+|   |   |   \-- page.tsx
+|   |   |-- checkout/
+|   |   |   \-- page.tsx
+|   |   |-- customize/
+|   |   |   \-- [id]/
+|   |   |       \-- page.tsx
+|   |   |-- faq/
+|   |   |   \-- page.tsx
+|   |   |-- order-confirmation/
+|   |   |   \-- [id]/
+|   |   |       \-- page.tsx
+|   |   |-- privacy/
+|   |   |   \-- page.tsx
+|   |   |-- returns/
+|   |   |   \-- page.tsx
+|   |   |-- shipping/
+|   |   |   \-- page.tsx
+|   |   |-- shop/
+|   |   |   \-- page.tsx
+|   |   |-- terms/
+|   |   |   \-- page.tsx
+|   |   \-- track-order/
+|   |       \-- page.tsx
+|   |-- admin/
+|   |   |-- layout.tsx
+|   |   |-- (protected)/
+|   |   |   |-- layout.tsx
+|   |   |   |-- page.tsx
+|   |   |   |-- collars/
+|   |   |   |   |-- page.tsx
+|   |   |   |   \-- edit/
+|   |   |   |       \-- [id]/
+|   |   |   |           \-- page.tsx
+|   |   |   |-- fabrics/
+|   |   |   |   |-- page.tsx
+|   |   |   |   \-- edit/
+|   |   |   |       \-- [id]/
+|   |   |   |           \-- page.tsx
+|   |   |   \-- products/
+|   |   |       |-- page.tsx
+|   |   |       \-- edit/
+|   |   |           \-- [id]/
+|   |   |               \-- page.tsx
+|   |   \-- login/
+|   |       \-- page.tsx
+|   |-- api/
+|   |   |-- admin/
+|   |   |   |-- login/
+|   |   |   |   \-- route.ts
+|   |   |   |-- logout/
+|   |   |   |   \-- route.ts
+|   |   |   |-- process-texture/
+|   |   |   |   \-- route.ts
+|   |   |   \-- upload/
+|   |   |       \-- route.ts
+|   |   \-- resend-verification/
+|   |       \-- route.ts
+|   \-- auth/
+|       |-- callback/
+|       |   \-- route.ts
+|       \-- reset-password/
+|           \-- page.tsx
+|-- components/
+|   |-- admin/
+|   |   |-- ColorPicker.tsx
+|   |   |-- ImageUpload.tsx
+|   |   |-- InstantDeleteButton.tsx
+|   |   \-- SubmitButton.tsx
+|   |-- customizer/
+|   |   |-- CustomizeClient.tsx
+|   |   |-- FabricSwatch.tsx
+|   |   \-- PanjabiCanvas.tsx
+|   |-- dashboard/
+|   |   \-- WishlistStat.tsx
+|   |-- layout/
+|   |   |-- AnnouncementBar.tsx
+|   |   |-- Footer.tsx
+|   |   \-- Header.tsx
+|   |-- shop/
+|   |   |-- ProductCard.tsx
+|   |   \-- ShopContent.tsx
+|   \-- ui/
+|       |-- badge.tsx
+|       |-- button.tsx
+|       |-- card.tsx
+|       |-- checkbox.tsx
+|       |-- dialog.tsx
+|       |-- dropdown-menu.tsx
+|       |-- input.tsx
+|       |-- label.tsx
+|       |-- select.tsx
+|       |-- separator.tsx
+|       \-- slider.tsx
+|-- lib/
+|   |-- catalogPlaceholders.ts
+|   |-- demoCatalog.ts
+|   |-- email.ts
+|   |-- productImages.ts
+|   |-- utils.ts
+|   |-- actions/
+|   |   |-- admin.ts
+|   |   |-- auth.ts
+|   |   |-- measurements.ts
+|   |   |-- orders.ts
+|   |   \-- products.ts
+|   \-- canvas/
+|       |-- fabricPatterns.ts
+|       \-- textureEngine.ts
+|-- node_modules/ [collapsed: 3837 dirs, 36752 files]
+|-- public/
+|   |-- file.svg
+|   |-- globe.svg
+|   |-- next.svg
+|   |-- vercel.svg
+|   |-- window.svg
+|   \-- assets/
+|       |-- customizable-punjabi.png
+|       |-- collars/
+|       |   |-- band-collar.png
+|       |   |-- mandarin-collar.png
+|       |   |-- round-collar.png
+|       |   \-- vneck-collar.png
+|       \-- punjabi/
+|           |-- 1-1.webp
+|           |-- 1-2.webp
+|           |-- 1-29.webp
+|           |-- 1-31.webp
+|           |-- 1-34.webp
+|           |-- 3-8.webp
+|           |-- 4-11.webp
+|           |-- 6-1.webp
+|           |-- Blue-1-1.webp
+|           |-- collar-band.png
+|           |-- collar-mandarin.png
+|           |-- collar-round.png
+|           |-- collar-vneck.png
+|           |-- Merun-KC-2.webp
+|           \-- Off-White-1.webp
+|-- Punjabi Shop Resources/
+|   |-- Customizable Punjabi.png
+|   \-- Punjabi/
+|       |-- 1-1.webp
+|       |-- 1-2.webp
+|       |-- 1-29.webp
+|       |-- 1-31.webp
+|       |-- 1-34.webp
+|       |-- 3-8.webp
+|       |-- 4-11.webp
+|       |-- 6-1.webp
+|       |-- Blue-1-1.webp
+|       |-- Merun-KC-2.webp
+|       \-- Off-White-1.webp
+|-- scripts/
+|   |-- check-fabrics-2.mjs
+|   |-- check-fabrics.mjs
+|   |-- final-inspection.mjs
+|   |-- inspect-fabrics-3.mjs
+|   |-- inspect-fabrics-4.mjs
+|   |-- inspect-fabrics-5.mjs
+|   |-- inspect-other-schemas.mjs
+|   |-- inspect-profiles.mjs
+|   |-- inspect-schema.mjs
+|   |-- seed-catalog.cjs
+|   |-- test-db.mjs
+|   \-- try-fix-schema.mjs
+|-- store/
+|   |-- cartStore.ts
+|   \-- wishlistStore.ts
+|-- supabase/
+|   \-- migrations/
+|       |-- 0000_initial_schema.sql
+|       \-- 0001_add_missing_product_columns.sql
+|-- tmp/
+|   |-- reverse-engineer/
+|   |   |-- raw10-mode2-ours.jpg
+|   |   |-- raw10-mode3-ours.jpg
+|   |   |-- raw2-mode2-ours.jpg
+|   |   |-- raw2-mode3-ours.jpg
+|   |   |-- raw9-mode2-ours.jpg
+|   |   \-- raw9-mode3-ours.jpg
+|   |-- texture-debug/
+|   |   |-- candidate-preview.png
+|   |   |-- candidate.png
+|   |   |-- current-preview.png
+|   |   \-- current.png
+|   \-- texture-debug2/
+|       |-- current-preview.png
+|       |-- improved-preview.png
+|       \-- raw.png
+|-- utils/
+|   \-- supabase/
+|       |-- client.ts
+|       |-- middleware.ts
+|       |-- server.ts
+|       \-- service.ts
+|-- .env.local
+|-- .eslintrc.json
+|-- .gitignore
+|-- __Project__Map__.txt
+|-- components.json
+|-- debug_upload.py
+|-- eslint.config.mjs
+|-- middleware.ts
+|-- migrate.js
+|-- next-env.d.ts
+|-- next.config.ts
+|-- nohup.out
+|-- package-lock.json
+|-- package.json
+|-- postcss.config.mjs
+|-- PROJECT_DOCS.md
+|-- PROJECT_STRUCTURE.md
+|-- README.md
+|-- test-columns.js
+|-- test-git-track.txt
+|-- test-insert.js
+|-- test-insert2.js
+|-- texture_generator.py
+\-- tsconfig.json

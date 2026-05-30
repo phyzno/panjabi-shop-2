@@ -7,8 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-dm-sans);
-  --font-heading: var(--font-playfair);
+  
+  /* আপনার পছন্দের ফন্টগুলো এখানে ম্যাপ করা হলো */
+  --font-sans: var(--font-sniglet); 
+  --font-heading: var(--font-caudex);
+  
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -17,11 +20,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+  
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -38,6 +37,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,46 +48,65 @@
 }
 
 :root {
-  --background: #FAF7F2;
-  --foreground: #1A1A1A;
+  /* Light Mode - Olivic Royal Heritage */
+  --background: #F8F9F5; /* Soft Warm Olive White */
+  --foreground: #1C221A; /* Deep Charcoal Green/Grey */
+  
   --card: #FFFFFF;
-  --card-foreground: #1A1A1A;
+  --card-foreground: #1C221A;
+  
   --popover: #FFFFFF;
-  --popover-foreground: #1A1A1A;
-  --primary: #6B1E2E;
+  --popover-foreground: #1C221A;
+  
+  --primary: #4A5D23; /* Royal Olive Green */
   --primary-foreground: #FFFFFF;
-  --secondary: #FAF7F2;
-  --secondary-foreground: #6B1E2E;
-  --muted: #F5F0EA;
-  --muted-foreground: #6B6B6B;
-  --accent: #C9A84C;
+  
+  --secondary: #EBECE3; /* Soft Olive Tint */
+  --secondary-foreground: #4A5D23;
+  
+  --muted: #E1E4D9;
+  --muted-foreground: #5C6656;
+  
+  --accent: #C25934; /* Terracotta / Earthy Rust */
   --accent-foreground: #FFFFFF;
+  
   --destructive: #EF4444;
-  --border: #E8E0D5;
-  --input: #E8E0D5;
-  --ring: #C9A84C;
+  
+  --border: #D4D7C9;
+  --input: #D4D7C9;
+  --ring: #4A5D23; /* Focus ring on inputs */
+  
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: #1A1A1A;
-  --foreground: #FAF7F2;
-  --card: #2A2A2A;
-  --card-foreground: #FAF7F2;
-  --popover: #2A2A2A;
-  --popover-foreground: #FAF7F2;
-  --primary: #6B1E2E;
-  --primary-foreground: #FFFFFF;
-  --secondary: #2A2A2A;
-  --secondary-foreground: #FAF7F2;
-  --muted: #333333;
-  --muted-foreground: #A1A1AA;
-  --accent: #C9A84C;
-  --accent-foreground: #FFFFFF;
+  /* Dark Mode - Deep Forest & Rust */
+  --background: #111410; /* Extremely Dark Forest Green/Black */
+  --foreground: #F8F9F5; /* Soft Off-White */
+  
+  --card: #1A2018; /* Dark Olive Surface */
+  --card-foreground: #F8F9F5;
+  
+  --popover: #1A2018;
+  --popover-foreground: #F8F9F5;
+  
+  --primary: #7B914A; /* Lighter Olive for contrast in dark mode */
+  --primary-foreground: #111410;
+  
+  --secondary: #242D21;
+  --secondary-foreground: #F8F9F5;
+  
+  --muted: #2A3326;
+  --muted-foreground: #9AA392;
+  
+  --accent: #D47A55; /* Lighter Terracotta for dark mode */
+  --accent-foreground: #111410;
+  
   --destructive: #EF4444;
-  --border: #333333;
-  --input: #333333;
-  --ring: #C9A84C;
+  
+  --border: #2A3326;
+  --input: #2A3326;
+  --ring: #7B914A;
 }
 
 @layer base {
@@ -100,4 +119,51 @@
   html {
     @apply font-sans;
   }
+  
+  /* Smooth scroll behavior for the entire site */
+  html {
+    scroll-behavior: smooth;
+  }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0mm; /* এটি ব্রাউজারের ডিফল্ট URL এবং Page number হাইড করবে */
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background-color: white !important;
+  }
+  /* এক্সট্রা ব্ল্যাঙ্ক পেজ আসা রোধ করতে */
+  html, body {
+    height: 100vh;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden; 
+  }
+}
+/* another printing css proposed to review in future */
+/*
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-hidden {
+    display: none !important;
+  }
+  .print-section, .print-section * {
+    visibility: visible;
+  }
+  .print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background: white !important;
+  }
+}
+*/

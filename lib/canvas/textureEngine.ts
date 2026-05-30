@@ -1,30 +1,35 @@
+import { generateFabricPattern } from './fabricPatterns';
+import { resolveProductImageSrc } from '@/lib/productImages';
+
 export interface TextureConfig {
-  color: string;           // hex color e.g. "#1B3A6B"
-  fabricType: string;      // "plain" | "check" | "stripe" | "linen" | "silk" | "dots" | "embroidery"
+  color: string;
+  fabricType: string;
   fabricImageUrl?: string;
   collarType: 'band' | 'vneck' | 'round' | 'mandarin';
-  fabricOpacity?: number;   // 0.0 to 1.0, default 0.35
-  colorIntensity?: number;  // 0.0 to 1.0, default 0.92
+  fabricOpacity?: number;
+  colorIntensity?: number;
 }
-
-import { generateFabricPattern } from './fabricPatterns';
 
 export async function renderPanjabiTexture(
   canvas: HTMLCanvasElement,
   config: TextureConfig,
   imageCache: Record<string, HTMLImageElement> = {}
 ): Promise<void> {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-  
   const W = 600;
   const H = 600;
+  
+  // ১. মূল ক্যানভাসের বদলে একটি অফস্ক্রিন ক্যানভাস তৈরি করুন
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = W;
+  offscreenCanvas.height = H;
+  const ctx = offscreenCanvas.getContext('2d');
+  
+  if (!ctx) return;
+  
+  // ক্যানভাসের ডাইমেনশন মূল ক্যানভাসেও সেট করে রাখুন
   canvas.width = W;
   canvas.height = H;
   
-  ctx.clearRect(0, 0, W, H);
-  
-  // STEP 1 — Pick the right base image for collar type
   const collarImageMap = {
     band:     '/assets/punjabi/collar-band.png',
     vneck:    '/assets/punjabi/collar-vneck.png',
@@ -33,7 +38,17 @@ export async function renderPanjabiTexture(
   };
   const imageSrc = collarImageMap[config.collarType] ?? collarImageMap.band;
   
-  // STEP 2 — Load (from cache if possible)
+  // চেক করছি ইমেজটি কি লোকাল (blob/data) নাকি রিমোট (Cloudinary)
+  const rawUrl = config.fabricImageUrl;
+  const isLocalOrData = rawUrl?.startsWith('data:') || rawUrl?.startsWith('blob:');
+  
+  // লোকাল হলে সরাসরি rawUrl, রিমোট হলে resolveProductImageSrc দিয়ে প্রসেস করব
+  const normalizedFabricImageUrl = rawUrl && rawUrl.trim()
+    ? (isLocalOrData ? rawUrl : resolveProductImageSrc(rawUrl))
+    : undefined;
+
+  const effectiveColor = normalizedFabricImageUrl ? '#FFFFFF' : (config.color || '#FFFFFF');
+  
   let baseImg = imageCache[imageSrc];
   if (!baseImg) {
     baseImg = await new Promise<HTMLImageElement>((res, rej) => {
@@ -46,43 +61,41 @@ export async function renderPanjabiTexture(
     imageCache[imageSrc] = baseImg;
   }
   
-  // STEP 3 — Draw white base panjabi
+  // ১. সাদা বেস পাঞ্জাবি ড্র করা
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
   ctx.drawImage(baseImg, 0, 0, W, H);
   
-  // STEP 4 — Apply COLOR using multiply
-  // White fabric → takes the color perfectly
-  // Existing shadows/folds stay naturally dark
+  // ২. কালার অ্যাপ্লাই করা (Multiply মোডে)
   ctx.globalCompositeOperation = 'multiply';
   ctx.globalAlpha = config.colorIntensity ?? 0.92;
-  ctx.fillStyle = config.color;
+  ctx.fillStyle = effectiveColor;
   ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = 1;
   
-  // STEP 5 — Apply FABRIC TEXTURE using multiply
+  // ৩. ফেব্রিক টেক্সচার বা প্যাটার্ন অ্যাপ্লাই করা
   let pattern: CanvasPattern | null = null;
   
-  if (config.fabricImageUrl) {
-    let patternImg = imageCache[config.fabricImageUrl];
+  if (normalizedFabricImageUrl) {
+    let patternImg = imageCache[normalizedFabricImageUrl];
     if (!patternImg) {
       patternImg = await new Promise<HTMLImageElement>((res, rej) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => res(img);
         img.onerror = rej;
-        img.src = config.fabricImageUrl!;
+        img.src = normalizedFabricImageUrl;
       });
-      imageCache[config.fabricImageUrl] = patternImg;
+      imageCache[normalizedFabricImageUrl] = patternImg;
     }
     
-    // Scale image down to a seamless 150x150 tile pattern so it doesn't look like a giant photo
+    // Seamless ছবিটিকে ২০০x২০০ সাইজে রিসাইজ করে রিপিট করা হচ্ছে (যাতে সুতোর সাইজ রিয়েলিস্টিক লাগে)
     const pCanvas = document.createElement('canvas');
-    pCanvas.width = 150;
-    pCanvas.height = 150;
+    pCanvas.width = 200;
+    pCanvas.height = 200;
     const pCtx = pCanvas.getContext('2d');
     if (pCtx) {
-      pCtx.drawImage(patternImg, 0, 0, 150, 150);
+      pCtx.drawImage(patternImg, 0, 0, 200, 200);
       pattern = ctx.createPattern(pCanvas, 'repeat');
     }
   } else {
@@ -90,24 +103,34 @@ export async function renderPanjabiTexture(
   }
 
   if (pattern) {
+    const appliedOpacity = normalizedFabricImageUrl 
+      ? 0.60
+      : (config.fabricOpacity ?? 0.35);
+
     ctx.globalCompositeOperation = 'multiply';
-    ctx.globalAlpha = config.fabricOpacity ?? 0.35;
+    ctx.globalAlpha = appliedOpacity;
     ctx.fillStyle = pattern;
     ctx.fillRect(0, 0, W, H);
     ctx.globalAlpha = 1;
   }
   
-  // STEP 6 — Restore shadow detail from base
+  // ৪. অরিজিনাল শ্যাডো এবং ভাঁজগুলো ফিরিয়ে আনা
   ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = 0.25;
+  ctx.globalAlpha = 0.35; 
   ctx.drawImage(baseImg, 0, 0, W, H);
   ctx.globalAlpha = 1;
   
-  // STEP 7 — Restore transparency (cut to garment shape)
+  // ৫. পাঞ্জাবির শেপ অনুযায়ী মাস্কিং করা (শেপের বাইরের রং মুছে ফেলা)
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(baseImg, 0, 0, W, H);
   ctx.globalCompositeOperation = 'source-over';
-  
-  // Done. No collar overlay needed — 
-  // collar shape is already in the base image.
+
+  // --- নতুন যুক্ত করা কোড (একদম শেষে) ---
+  // ৬. মেমরিতে তৈরি হওয়া নিখুঁত ফ্রেমটি এবার মূল ক্যানভাসে বসিয়ে দিন
+  const mainCtx = canvas.getContext('2d');
+  if (mainCtx) {
+    // আগের যেকোনো অসম্পূর্ণ বা ওভারল্যাপ হওয়া ড্রয়িং ক্লিয়ার করে দিন
+    mainCtx.clearRect(0, 0, W, H);
+    mainCtx.drawImage(offscreenCanvas, 0, 0);
+  }
 }

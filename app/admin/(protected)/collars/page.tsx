@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { Plus, Trash2, Pencil } from 'lucide-react'
+import { Plus, Pencil } from 'lucide-react'
 import { InstantDeleteButton } from '@/components/admin/InstantDeleteButton'
 import { addCollar, deleteCollar } from '@/lib/actions/admin'
 import { ImageUpload } from '@/components/admin/ImageUpload'
