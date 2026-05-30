@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, ShoppingBag, Ruler, Heart, Menu, X, Scissors, Truck, LogOut } from 'lucide-react';
-import { signOut } from '@/lib/actions/auth';
+import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/authStore';
 
 const navItems = [
   { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -19,9 +20,44 @@ const quickLinks = [
   { name: 'Track Order', href: '/track-order', icon: Truck },
 ];
 
+function notifyAuthChange() {
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('panjabi-shop-auth');
+      channel.postMessage({ type: 'auth-changed', at: Date.now() });
+      channel.close();
+    }
+
+    localStorage.setItem('panjabi-shop-auth-event', String(Date.now()));
+  } catch {
+    // Auth is already cleared in this tab; cross-tab fallback can fail silently.
+  }
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isLoaded, setUser } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleLogout = async () => {
+    setIsMobileMenuOpen(false);
+    setUser(null);
+
+    const supabase = createClient();
+    await supabase.auth.signOut();
+
+    notifyAuthChange();
+    router.replace('/login');
+    router.refresh();
+  };
+
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      router.refresh();
+    }
+  }, [isLoaded, user, pathname, router]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -108,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
 
               <button 
-                onClick={async () => await signOut()}
+                onClick={handleLogout}
                 className="w-full mt-6 flex items-center justify-center gap-2 p-3.5 rounded-xl border border-red-100 bg-red-50 text-red-600 hover:bg-red-100 transition-colors font-sans text-xs uppercase tracking-wider cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
@@ -184,10 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Mobile Sign Out Button */}
             <button 
-              onClick={async () => {
-                setIsMobileMenuOpen(false);
-                await signOut();
-              }}
+              onClick={handleLogout}
               className="flex items-center gap-3 p-4 rounded-xl border border-red-100 bg-red-50 text-red-600 font-sans text-xs uppercase tracking-wider w-full mb-4"
             >
               <LogOut className="w-5 h-5 stroke-[1.5]" />

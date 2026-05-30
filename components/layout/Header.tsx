@@ -12,6 +12,20 @@ interface HeaderProps {
   activeOfferText?: string | null;
 }
 
+function notifyAuthChange() {
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      const channel = new BroadcastChannel('panjabi-shop-auth');
+      channel.postMessage({ type: 'auth-changed', at: Date.now() });
+      channel.close();
+    }
+
+    localStorage.setItem('panjabi-shop-auth-event', String(Date.now()));
+  } catch {
+    // Auth is already cleared in this tab; cross-tab fallback can fail silently.
+  }
+}
+
 export function Header({ activeOfferText }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,6 +65,7 @@ export function Header({ activeOfferText }: HeaderProps) {
   
   // ৩. ব্যাকগ্রাউন্ডে লগআউট করা
   await supabase.auth.signOut();
+  notifyAuthChange();
   
   // ৪. রিলোড ছাড়াই ফাস্ট রিডাইরেক্ট
   router.push('/login'); 

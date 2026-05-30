@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/authStore';
@@ -9,31 +9,61 @@ import { getUserWishlist } from '@/lib/actions/wishlist.actions';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
   const { setUser, setLoaded } = useAuthStore();
   const { setWishlistedIds } = useWishlistStore();
   const supabase = useMemo(() => createClient(), []);
+  const wishlistUserIdRef = useRef<string | null>(null);
 
   const syncAuthState = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user ?? null;
+    const sessionUser = session?.user ?? null;
+    const currentAuthState = useAuthStore.getState();
 
-    setUser(user);
-
-    if (user) {
-      const res = await getUserWishlist(user.id);
-      if (res.success && res.data) {
-        setWishlistedIds(res.data.map((item: any) => item.product.id));
-      }
-    } else {
-      setWishlistedIds([]);
+    if (currentAuthState.user?.id !== sessionUser?.id) {
+      setUser(sessionUser);
     }
 
-    setLoaded(true);
+    if (sessionUser && wishlistUserIdRef.current !== sessionUser.id) {
+      const res = await getUserWishlist(sessionUser.id);
+      if (res.success && res.data) {
+        const ids = res.data.map((item: any) => item.product.id);
+        const currentIds = useWishlistStore.getState().wishlistedIds;
+
+        if (ids.length !== currentIds.length || ids.some((id: number) => !currentIds.includes(id))) {
+          setWishlistedIds(ids);
+        }
+
+        wishlistUserIdRef.current = sessionUser.id;
+      }
+    } else if (!sessionUser) {
+      wishlistUserIdRef.current = null;
+      const currentIds = useWishlistStore.getState().wishlistedIds;
+      if (currentIds.length > 0) {
+        setWishlistedIds([]);
+      }
+    }
+
+    if (!currentAuthState.isLoaded) {
+      setLoaded(true);
+    }
   }, [supabase, setUser, setLoaded, setWishlistedIds]);
 
   useEffect(() => {
     syncAuthState();
   }, [pathname, syncAuthState]);
+
+  useEffect(() => {
+    if (user) return;
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        syncAuthState();
+      }
+    }, 1500);
+
+    return () => window.clearInterval(interval);
+  }, [user, syncAuthState]);
 
   useEffect(() => {
     const handlePageShow = () => syncAuthState();
@@ -44,7 +74,22 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     };
 
+    const handleAuthBroadcast = () => syncAuthState();
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'panjabi-shop-auth-event') {
+        syncAuthState();
+      }
+    };
+
+    const authChannel =
+      typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel('panjabi-shop-auth')
+        : null;
+
+    authChannel?.addEventListener('message', handleAuthBroadcast);
     window.addEventListener('pageshow', handlePageShow);
+    window.addEventListener('storage', handleStorage);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
@@ -52,7 +97,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     });
 
     return () => {
+      authChannel?.removeEventListener('message', handleAuthBroadcast);
+      authChannel?.close();
       window.removeEventListener('pageshow', handlePageShow);
+      window.removeEventListener('storage', handleStorage);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       subscription.unsubscribe();
     };

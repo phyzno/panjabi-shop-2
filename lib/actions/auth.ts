@@ -2,7 +2,6 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
@@ -56,7 +55,11 @@ export async function signInWithEmail(formData: FormData): Promise<void> {
   const password = formData.get('password') as string
   
   // ডাইনামিক রিডাইরেক্ট পাথ নেওয়া হচ্ছে (না পেলে ডিফল্ট ড্যাশবোর্ড)
-  const redirectTo = (formData.get('redirectTo') as string) || '/dashboard'
+  const requestedRedirectTo = (formData.get('redirectTo') as string) || '/dashboard'
+  const redirectTo =
+    requestedRedirectTo.startsWith('/') && !requestedRedirectTo.startsWith('//')
+      ? requestedRedirectTo
+      : '/dashboard'
 
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -69,10 +72,8 @@ export async function signInWithEmail(formData: FormData): Promise<void> {
     redirect(`/login?error=${encodeURIComponent(error.message)}${redirectParam}`)
   }
 
-  revalidatePath('/', 'layout')
-  
   // সাকসেস হলে ডাইনামিক পাথে রিডাইরেক্ট
-  redirect(redirectTo)
+  redirect(`/auth/sync?next=${encodeURIComponent(redirectTo)}`)
 }
 
 // SIGN OUT
@@ -80,7 +81,6 @@ export async function signInWithEmail(formData: FormData): Promise<void> {
 export async function signOut(): Promise<void> {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  revalidatePath('/', 'layout')
   redirect('/')
 }
 
