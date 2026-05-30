@@ -4,12 +4,10 @@ import { db } from "@/lib/db";
 import { wishlists, products, categories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { getUserProfile } from "@/lib/actions/auth";
 
 // উইশলিস্টে আইটেম যোগ বা রিমুভ করা
 export async function toggleWishlistItem(userId: string, productId: number) {
   try {
-    await getUserProfile();
     const existing = await db.select()
       .from(wishlists)
       .where(and(eq(wishlists.user_id, userId), eq(wishlists.product_id, productId)));
