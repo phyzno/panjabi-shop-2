@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import SignupForm from './SignupForm'
+import AuthRedirect from '../AuthRedirect'
 import { UserPlus } from 'lucide-react'
 import { Suspense } from 'react'
 
@@ -10,14 +11,16 @@ export const metadata = {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>
+  searchParams: Promise<{ error?: string; message?: string; redirect?: string }>
 }) {
   const resolvedParams = await searchParams
   const error = resolvedParams?.error
   const message = resolvedParams?.message
+  const redirectParam = resolvedParams?.redirect || '/dashboard'
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F8F9F5] select-none">
+      <AuthRedirect destination={redirectParam} />
       <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
         
         {/* Branding & Header */}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/authStore";
@@ -46,8 +46,6 @@ export function Header({ activeOfferText }: HeaderProps) {
   const [mounted, setMounted] = useState(false);
 
   const { user, setUser } = useAuthStore(); // সরাসরি গ্লোবাল স্টোর ব্যবহার
-  const router = useRouter(); // রিডাইরেক্ট করার জন্য
-
   const supabase = createClient();
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -66,10 +64,6 @@ export function Header({ activeOfferText }: HeaderProps) {
   // ৩. ব্যাকগ্রাউন্ডে লগআউট করা
   await supabase.auth.signOut();
   notifyAuthChange();
-  
-  // ৪. রিলোড ছাড়াই ফাস্ট রিডাইরেক্ট
-  router.push('/login'); 
-  router.refresh(); // সার্ভার সাইড কম্পোনেন্টগুলো আপডেট করার জন্য
 };
 
   // স্ক্রিনের অন্য কোথাও ক্লিক করলে যেন ডেক্সটপ ড্রপডাউন বন্ধ হয়ে যায়
@@ -402,7 +396,7 @@ export function Header({ activeOfferText }: HeaderProps) {
               Please log in to view your dashboard, track orders, and manage your custom measurements.
             </p>
             <Link
-              href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
+              href={`/login?redirect=${encodeURIComponent(pathname)}`}
               onClick={() => setShowLoginModal(false)}
               className="flex items-center justify-center w-full py-3 bg-primary text-primary-foreground rounded-xl font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg hover:opacity-90 transition-opacity cursor-pointer"
             >

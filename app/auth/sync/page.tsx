@@ -46,7 +46,6 @@ function AuthSyncClient() {
       notifyAuthChange();
 
       router.replace(getSafeNext(searchParams.get('next')));
-      router.refresh();
     };
 
     syncAndRedirect();

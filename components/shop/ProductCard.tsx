@@ -249,7 +249,7 @@ export function CollectionProductCard({
               You need to be logged in to save pieces to your curated wishlist.
             </p>
             <button 
-              onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`)} 
+              onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
               className="w-full py-3 bg-[#4A5D23] text-white rounded-xl font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg hover:bg-[#3D4C1D] transition-colors cursor-pointer"
             >
               Log In Now

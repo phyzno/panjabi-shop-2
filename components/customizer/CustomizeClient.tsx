@@ -8,6 +8,7 @@ import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calcul
 import { useCartStore } from '@/store/cartStore';
 import { addMeasurementProfile } from '@/lib/actions/measurement.actions'; // নতুন যুক্ত করা হয়েছে
 import { useAuthStore } from '@/store/authStore';
+import { getUserMeasurements } from '@/lib/actions/user.actions';
 
 // --- Mock Data ---
 const presetSizes = [
@@ -48,7 +49,8 @@ export function CustomizeClient({
   savedMeasurements
 }: CustomizeClientProps) {
   const { user, isLoaded } = useAuthStore();
-  const userId = serverUserId || user?.id;
+  const userId = user?.id || (!isLoaded ? serverUserId : null);
+  const [activeSavedMeasurements, setActiveSavedMeasurements] = useState<any[]>(savedMeasurements || []);
 
   const cartStore = useCartStore();
   const store = useCustomizerStore();
@@ -94,19 +96,55 @@ export function CustomizeClient({
 
   // Custom Measurement Input States
 
+  useEffect(() => {
+    if (!isLoaded) {
+      setActiveSavedMeasurements(savedMeasurements || []);
+      return;
+    }
+
+    if (!user?.id) {
+      setActiveSavedMeasurements([]);
+      setSaveProfileToggle(false);
+      setShowLoginModal(false);
+      store.setSelectedProfileId('');
+      return;
+    }
+
+    let isActive = true;
+
+    const syncMeasurements = async () => {
+      const res = await getUserMeasurements(user.id);
+      if (isActive) {
+        setActiveSavedMeasurements(res.success && res.data ? res.data : []);
+      }
+    };
+
+    syncMeasurements();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isLoaded, user?.id, savedMeasurements, store.setSelectedProfileId]);
+
   // Set default profile if saved measurements exist
   useEffect(() => {
     if (!isHydrated) return;
-    if (savedMeasurements && savedMeasurements.length > 0 && !store.selectedProfileId) {
-      const defaultProfile = savedMeasurements.find(p => p.is_default) || savedMeasurements[0];
+    const selectedProfileExists = activeSavedMeasurements.some(
+      (profile) => profile.id.toString() === store.selectedProfileId
+    );
+
+    if (activeSavedMeasurements.length > 0 && (!store.selectedProfileId || !selectedProfileExists)) {
+      const defaultProfile = activeSavedMeasurements.find(p => p.is_default) || activeSavedMeasurements[0];
       store.setSelectedProfileId(defaultProfile.id.toString());
+    } else if (activeSavedMeasurements.length === 0 && store.selectedProfileId) {
+      store.setSelectedProfileId('');
     }
-  }, [savedMeasurements, store.selectedProfileId]);
+  }, [activeSavedMeasurements, isHydrated, store.selectedProfileId, store.setSelectedProfileId]);
 
   // Check for duplicate profile names
   useEffect(() => {
-    if (newProfileName && savedMeasurements) {
-      const isDuplicate = savedMeasurements.some(
+    if (newProfileName) {
+      const isDuplicate = activeSavedMeasurements.some(
         (p) => p.profile_name.toLowerCase() === newProfileName.trim().toLowerCase()
       );
       if (isDuplicate) {
@@ -117,7 +155,7 @@ export function CustomizeClient({
     } else {
       setProfileNameError('');
     }
-  }, [newProfileName, savedMeasurements]);
+  }, [newProfileName, activeSavedMeasurements]);
 
   // Whenever custom measurements change, unlock the save profile button
   useEffect(() => {
@@ -128,7 +166,7 @@ export function CustomizeClient({
   const calculatedPanjabiYardage = useMemo(() => {
     // Check saved mode first
     if (store.measurementMode === 'saved') {
-      const profile = savedMeasurements?.find(p => p.id.toString() === store.selectedProfileId);
+      const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
       if (profile && profile.measurements) {
         const len = parseFloat(profile.measurements.length) || 0;
         const chest = parseFloat(profile.measurements.chest) || 0;
@@ -165,7 +203,7 @@ export function CustomizeClient({
     }
 
     return 2.5;
-  }, [store.measurementMode, store.selectedProfileId, savedMeasurements, store.sizeType, store.standardSize, store.customLength, store.customChest]);
+  }, [store.measurementMode, store.selectedProfileId, activeSavedMeasurements, store.sizeType, store.standardSize, store.customLength, store.customChest]);
 
   useEffect(() => {
     if (store.orderMode === 'fabric') {
@@ -222,7 +260,7 @@ export function CustomizeClient({
   };
 
   const goToLogin = () => {
-    window.location.href = `/login?redirect=/customize/new`;
+    window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
   };
 
   // নতুন Save Profile ফাংশন
@@ -236,7 +274,7 @@ export function CustomizeClient({
     setIsSavingProfile(true);
     const payload = {
       profile_name: newProfileName.trim(),
-      is_default: !savedMeasurements || savedMeasurements.length === 0,
+      is_default: activeSavedMeasurements.length === 0,
       measurements: {
         length: Number(store.customLength),
         chest: Number(store.customChest),
@@ -250,6 +288,10 @@ export function CustomizeClient({
       // সেভ হয়ে গেলে বাটন লক করে দিব
       if (res?.success) {
         setHasSavedCurrentProfile(true);
+        const latest = await getUserMeasurements(userId!);
+        if (latest.success && latest.data) {
+          setActiveSavedMeasurements(latest.data);
+        }
       } else {
         alert(res?.error || "Failed to save profile");
       }
@@ -264,7 +306,7 @@ export function CustomizeClient({
     if (!isFabricStockSufficient) return;
 
     if (store.orderMode === 'tailoring' && store.measurementMode === 'saved') {
-    const profile = savedMeasurements?.find(p => p.id.toString() === store.selectedProfileId);
+    const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
     if (!profile) {
       alert("Please select or create a valid measurement profile first.");
       return;
@@ -274,8 +316,8 @@ export function CustomizeClient({
     const isTailoring = store.orderMode === 'tailoring';
 
     // 2. Prepare custom measurements data based on active mode
-    const selectedProfile = store.measurementMode === 'saved' && savedMeasurements
-      ? savedMeasurements.find((p: any) => p.id.toString() === store.selectedProfileId)
+    const selectedProfile = store.measurementMode === 'saved'
+      ? activeSavedMeasurements.find((p: any) => p.id.toString() === store.selectedProfileId)
       : null;
 
     const finalCustomMeasurements = isTailoring ? (
@@ -531,7 +573,7 @@ export function CustomizeClient({
                 Log In
               </button>
             </div>
-          ) : savedMeasurements && savedMeasurements.length > 0 ? (
+          ) : activeSavedMeasurements.length > 0 ? (
             <div className="space-y-4">
               <div className="relative">
                 <select 
@@ -540,7 +582,7 @@ export function CustomizeClient({
                   className="w-full bg-white border border-[#D4D7C9] p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans appearance-none cursor-pointer text-[#17210C]"
                 >
                   <option value="" disabled>Select a profile...</option>
-                  {savedMeasurements.map((profile) => (
+                  {activeSavedMeasurements.map((profile) => (
                     <option key={profile.id} value={profile.id}>
                       {profile.profile_name} {profile.is_default ? '(Primary)' : ''}
                     </option>
@@ -553,7 +595,7 @@ export function CustomizeClient({
               {store.selectedProfileId && (
                 <div className="grid grid-cols-2 gap-3 p-4 bg-[#F8F9F5]/80 rounded-xl border border-[#D4D7C9]/40">
                   {(() => {
-                    const profile = savedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
+                    const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
                     return (
                       <>
                         <div className="flex flex-col">

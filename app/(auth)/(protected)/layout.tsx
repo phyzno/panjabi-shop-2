@@ -49,13 +49,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     notifyAuthChange();
     router.replace('/login');
-    router.refresh();
   };
 
   useEffect(() => {
     if (isLoaded && !user) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
-      router.refresh();
     }
   }, [isLoaded, user, pathname, router]);
 

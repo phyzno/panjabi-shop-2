@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import LoginForm from './LoginForm'
+import AuthRedirect from '../AuthRedirect'
 import { LogIn } from 'lucide-react'
 import { Suspense } from 'react'
 
@@ -19,6 +20,7 @@ export default async function LoginPage({
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F8F9F5] select-none">
+      <AuthRedirect destination={redirectParam} />
       <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
         
         {/* Branding & Header */}
