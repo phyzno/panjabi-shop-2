@@ -1,22 +1,41 @@
 'use server';
 
 import { db } from "@/lib/db";
-import { wishlists, products, categories } from "@/lib/db/schema";
+import { wishlists, products, categories, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/utils/supabase/server";
 
 // উইশলিস্টে আইটেম যোগ বা রিমুভ করা
 export async function toggleWishlistItem(userId: string, productId: number) {
   try {
+    const userCheck = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    
+    if (userCheck.length === 0) {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user && user.id === userId) {
+        await db.insert(users).values({
+          id: user.id,
+          email: user.email!,
+          name: user.user_metadata?.full_name || '',
+          phone: user.user_metadata?.phone || '',
+          role: 'customer'
+        });
+      } else {
+        return { success: false, error: "Unauthorized" };
+      }
+    }
+
+    // === মেইন উইশলিস্ট লজিক ===
     const existing = await db.select()
       .from(wishlists)
       .where(and(eq(wishlists.user_id, userId), eq(wishlists.product_id, productId)));
 
     if (existing.length > 0) {
-      // যদি আগে থেকেই থাকে, তবে রিমুভ করে দেবে
       await db.delete(wishlists).where(eq(wishlists.id, existing[0].id));
     } else {
-      // না থাকলে নতুন করে যোগ করবে
       await db.insert(wishlists).values({ user_id: userId, product_id: productId });
     }
 

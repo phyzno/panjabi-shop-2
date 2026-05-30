@@ -31,7 +31,8 @@ export function Header({ activeOfferText }: HeaderProps) {
   const { items, openCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
-  const { user } = useAuthStore();
+  const { user: storeUser } = useAuthStore();
+  const [user, setUser] = useState<any>(storeUser);
   const supabase = createClient();
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -40,6 +41,7 @@ export function Header({ activeOfferText }: HeaderProps) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    setUser(null);
     setIsUserDropdownOpen(false);
     setShowMobileAccount(false);
     setIsMobileMenuOpen(false);
@@ -61,6 +63,18 @@ export function Header({ activeOfferText }: HeaderProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    const syncSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(storeUser);
+      }
+    };
+    syncSession();
+  }, [storeUser, pathname]);
 
   // কার্টের আইটেম গোনার লজিক
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
