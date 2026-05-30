@@ -27,18 +27,33 @@ function TrackOrderContent() {
     }
   }, [initialId]);
 
-  // 👈 প্রিন্ট ট্রিগার এবং ক্লিনআপ লজিক (অ্যাডমিন প্যানেলের মতো)
+  // 👈 প্রিন্ট ট্রিগার এবং ডায়নামিক টাইটেল ক্লিনআপ লজিক
   useEffect(() => {
+    // ওয়েবসাইটের আসল টাইটেলটি সেভ করে রাখা হচ্ছে
+    let originalTitle = document.title;
+
     if (printingOrder) {
+      // প্রিন্ট হওয়ার ঠিক আগে টাইটেল চেঞ্জ করে অর্ডার আইডি বসানো হচ্ছে
+      document.title = `invoice-${printingOrder.id}`;
+      
       setTimeout(() => {
         window.print();
       }, 150);
     }
 
-    const handleAfterPrint = () => setPrintingOrder(null);
+    const handleAfterPrint = () => {
+      // প্রিন্ট শেষে আবার আগের টাইটেল ফিরিয়ে আনা হচ্ছে এবং স্টেট ক্লিয়ার করা হচ্ছে
+      document.title = originalTitle;
+      setPrintingOrder(null);
+    };
+
     window.addEventListener("afterprint", handleAfterPrint);
 
-    return () => window.removeEventListener("afterprint", handleAfterPrint);
+    return () => {
+      // কম্পোনেন্ট আনমাউন্ট হলে ক্লিনআপ
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
   }, [printingOrder]);
 
   const handleTrackOrder = async (idToSearch: string) => {
