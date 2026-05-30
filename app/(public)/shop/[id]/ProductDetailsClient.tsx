@@ -91,19 +91,20 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     }
 
     setIsWishlistLoading(true);
-    
-    const numericId = Number(product.id);
-    const result = await toggleWishlistItem(user.id, numericId);
-    
-    if (result.success) {
-      if (isWishlisted) {
-        removeWishlistedId(numericId);
-        removeWishlistedId(product.id.toString()); 
-      } else {
-        addWishlistedId(numericId);
+    try {
+      const res = await toggleWishlistItem(user.id, productIdNum);
+      if (res.success) {
+        if (isWishlisted) {
+          removeWishlistId(productIdNum);
+        } else {
+          addWishlistId(productIdNum);
+        }
       }
+    } catch (error) {
+      console.error('Wishlist error:', error);
+    } finally {
+      setIsWishlistLoading(false);
     }
-    setIsWishlistLoading(false);
   };
 
   // সাইজগুলোকে ডায়নামিকভাবে দুই ভাগে ভাগ করা হচ্ছে
