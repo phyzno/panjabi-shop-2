@@ -1,100 +1,53 @@
-Punjabi Shop - Project Map
-Updated after cleanup on 2026-05-30
-
-Scope
-- Current workspace root: C:\Projects\Punjabi-Shop
-- Removed confirmed waste, duplicate assets, old debug scripts, stale docs, generated/local folders, and unused legacy source files.
-- Kept live route files, active components, active public assets, Supabase migrations, database utilities, and the seed script used by package.json.
-- Note: app/(public)/cart/page.tsx is intentionally kept. CartDrawer is the slide-out cart UI, while app/(public)/cart/page.tsx owns the /cart route.
-
-Cleanup Completed
-- Removed local/generated folders: .continue, .vercel, .vscode, .next, tmp.
-- Removed duplicate source image folder: Punjabi Shop Resources.
-- Removed default unused public SVGs: file.svg, globe.svg, next.svg, vercel.svg, window.svg.
-- Removed old root debug/test files: debug_upload.py, draft.tsx, migrate.js, nohup.out, test-*.js, texture_generator.py.
-- Removed one-off database inspection scripts; kept scripts/seed-catalog.cjs.
-- Removed stale docs/config: .eslintrc.json, PROJECT_DOCS.md, PROJECT_STRUCTURE.md, README.md.
-- Removed unused legacy source chain:
-  - app/(auth)/(protected)/dashboard/measurements/MeasurementForm.tsx
-  - components/admin/AdminShell.tsx
-  - components/admin/ColorPicker.tsx
-  - components/admin/dashboard/AnalyticsCards.tsx
-  - components/admin/dashboard/FilterBar.tsx
-  - components/admin/dashboard/OrderDetailsModal.tsx
-  - components/admin/dashboard/OrderListLayout.tsx
-  - components/admin/dashboard/mockOrders.ts
-  - components/admin/product/draft.tsx
-  - components/customizer/FabricSwatch.tsx
-  - components/dashboard/WishlistStat.tsx
-  - components/layout/HowItWorks.tsx
-  - lib/actions/measurements.ts
-  - lib/actions/orders.ts
-  - lib/actions/products.ts
-  - lib/collectionData.ts
-  - lib/email.ts
-  - unused shadcn/base-ui primitives not imported by live code
-- Removed unused dependencies from package.json/package-lock.json:
-  - browser-image-compression
-  - embla-carousel-react
-  - next-themes
-  - resend
-  - ws
-  - @types/ws
-
-Dynamic Title Work
-- Root metadata now uses a Next.js title template: "%s | Panjabi Shop".
-- Public, auth, dashboard, admin, and product detail pages now set route-specific titles.
-- Client-only pages set document.title on mount:
-  - /cart
-  - /checkout
-  - /checkout/success
-  - /contact
-  - /track-order
-  - /admin/login
-  - /auth/reset-password
-
-Verification Notes
-- Import/reference check found no live imports for removed legacy files.
-- npm run lint could not run because node_modules is not installed in this workspace: eslint was not found.
-- Run npm install, then npm run lint and npm run build for full verification.
-- Git index note: if git status shows app/(public)/cart/page.tsx as both deleted and untracked, refresh the index with:
-  git add -- app/(public)/cart/page.tsx
-
-Current File Structure
-
 Punjabi-Shop/
+|-- .env.local
+|-- .gitignore
+|-- components.json
+|-- drizzle.config.ts
+|-- eslint.config.mjs
+|-- middleware.ts
+|-- next-env.d.ts
+|-- next.config.ts
+|-- package-lock.json
+|-- package.json
+|-- postcss.config.mjs
+|-- tsconfig.json
+|-- __Project__Map__.txt
 |-- app/
+|   |-- favicon.ico
+|   |-- globals.css
+|   |-- layout.tsx
 |   |-- (auth)/
+|   |   |-- AuthRedirect.tsx
+|   |   |-- layout.tsx
 |   |   |-- (protected)/
+|   |   |   |-- layout.tsx
 |   |   |   |-- dashboard/
+|   |   |   |   |-- page.tsx
 |   |   |   |   |-- measurements/
 |   |   |   |   |   |-- MeasurementsClient.tsx
 |   |   |   |   |   \-- page.tsx
 |   |   |   |   |-- orders/
 |   |   |   |   |   |-- OrdersClient.tsx
 |   |   |   |   |   \-- page.tsx
-|   |   |   |   |-- wishlist/
-|   |   |   |   |   |-- page.tsx
-|   |   |   |   |   \-- WishlistClient.tsx
-|   |   |   |   \-- page.tsx
-|   |   |   \-- layout.tsx
+|   |   |   |   \-- wishlist/
+|   |   |   |       |-- page.tsx
+|   |   |   |       \-- WishlistClient.tsx
 |   |   |-- forgot-password/
 |   |   |   |-- ForgotPasswordForm.tsx
 |   |   |   \-- page.tsx
 |   |   |-- login/
 |   |   |   |-- LoginForm.tsx
 |   |   |   \-- page.tsx
-|   |   |-- signup/
-|   |   |   |-- page.tsx
-|   |   |   \-- SignupForm.tsx
-|   |   \-- layout.tsx
+|   |   \-- signup/
+|   |       |-- page.tsx
+|   |       \-- SignupForm.tsx
 |   |-- (public)/
-|   |   |-- cart/
-|   |   |   \-- page.tsx
+|   |   |-- layout.tsx
+|   |   |-- page.tsx
 |   |   |-- checkout/
-|   |   |   |-- success/
-|   |   |   |   \-- page.tsx
-|   |   |   \-- page.tsx
+|   |   |   |-- page.tsx
+|   |   |   \-- success/
+|   |   |       \-- page.tsx
 |   |   |-- contact/
 |   |   |   \-- page.tsx
 |   |   |-- customize/
@@ -112,51 +65,49 @@ Punjabi-Shop/
 |   |   |-- shipping/
 |   |   |   \-- page.tsx
 |   |   |-- shop/
-|   |   |   |-- [id]/
-|   |   |   |   |-- page.tsx
-|   |   |   |   \-- ProductDetailsClient.tsx
 |   |   |   |-- page.tsx
-|   |   |   \-- ShopClient.tsx
+|   |   |   |-- ShopClient.tsx
+|   |   |   \-- [id]/
+|   |   |       |-- page.tsx
+|   |   |       \-- ProductDetailsClient.tsx
 |   |   |-- terms/
 |   |   |   \-- page.tsx
-|   |   |-- track-order/
-|   |   |   \-- page.tsx
-|   |   |-- layout.tsx
-|   |   \-- page.tsx
+|   |   \-- track-order/
+|   |       \-- page.tsx
 |   |-- admin/
+|   |   |-- layout.tsx
 |   |   |-- (protected)/
+|   |   |   |-- layout.tsx
+|   |   |   |-- page.tsx
 |   |   |   |-- collars/
-|   |   |   |   |-- edit/
-|   |   |   |   |   \-- [id]/
-|   |   |   |   |       \-- page.tsx
-|   |   |   |   \-- page.tsx
+|   |   |   |   |-- page.tsx
+|   |   |   |   \-- edit/
+|   |   |   |       \-- [id]/
+|   |   |   |           \-- page.tsx
 |   |   |   |-- fabrics/
+|   |   |   |   |-- page.tsx
 |   |   |   |   |-- edit/
 |   |   |   |   |   \-- [id]/
 |   |   |   |   |       \-- page.tsx
-|   |   |   |   |-- new/
-|   |   |   |   |   \-- page.tsx
-|   |   |   |   \-- page.tsx
+|   |   |   |   \-- new/
+|   |   |   |       \-- page.tsx
 |   |   |   |-- featured/
 |   |   |   |   \-- page.tsx
 |   |   |   |-- orders/
 |   |   |   |   \-- page.tsx
 |   |   |   |-- products/
+|   |   |   |   |-- page.tsx
 |   |   |   |   |-- edit/
 |   |   |   |   |   \-- [id]/
 |   |   |   |   |       \-- page.tsx
-|   |   |   |   |-- new/
-|   |   |   |   |   \-- page.tsx
-|   |   |   |   \-- page.tsx
+|   |   |   |   \-- new/
+|   |   |   |       \-- page.tsx
 |   |   |   |-- settings/
 |   |   |   |   \-- page.tsx
-|   |   |   |-- stock/
-|   |   |   |   \-- page.tsx
-|   |   |   |-- layout.tsx
-|   |   |   \-- page.tsx
-|   |   |-- login/
-|   |   |   \-- page.tsx
-|   |   \-- layout.tsx
+|   |   |   \-- stock/
+|   |   |       \-- page.tsx
+|   |   \-- login/
+|   |       \-- page.tsx
 |   |-- api/
 |   |   |-- admin/
 |   |   |   |-- login/
@@ -169,16 +120,20 @@ Punjabi-Shop/
 |   |   |       \-- route.ts
 |   |   \-- resend-verification/
 |   |       \-- route.ts
-|   |-- auth/
-|   |   |-- callback/
-|   |   |   \-- route.ts
-|   |   \-- reset-password/
-|   |       \-- page.tsx
-|   |-- favicon.ico
-|   |-- globals.css
-|   \-- layout.tsx
+|   \-- auth/
+|       |-- callback/
+|       |   \-- route.ts
+|       |-- reset-password/
+|       |   \-- page.tsx
+|       \-- sync/
+|           \-- page.tsx
 |-- components/
 |   |-- admin/
+|   |   |-- AdminSidebar.tsx
+|   |   |-- ImageUpload.tsx
+|   |   |-- InstantDeleteButton.tsx
+|   |   |-- SettingsFormClient.tsx
+|   |   |-- SubmitButton.tsx
 |   |   |-- dashboard/
 |   |   |   |-- order.types.ts
 |   |   |   |-- OrderDashboardClient.tsx
@@ -192,13 +147,8 @@ Punjabi-Shop/
 |   |   |-- product/
 |   |   |   |-- ProductForm.tsx
 |   |   |   \-- ProductTableClient.tsx
-|   |   |-- stock/
-|   |   |   \-- StockClient.tsx
-|   |   |-- AdminSidebar.tsx
-|   |   |-- ImageUpload.tsx
-|   |   |-- InstantDeleteButton.tsx
-|   |   |-- SettingsFormClient.tsx
-|   |   \-- SubmitButton.tsx
+|   |   \-- stock/
+|   |       \-- StockClient.tsx
 |   |-- cart/
 |   |   \-- CartDrawer.tsx
 |   |-- customizer/
@@ -228,6 +178,11 @@ Punjabi-Shop/
 |       |-- GlobalSizeGuide.tsx
 |       \-- SizeGuideModal.tsx
 |-- lib/
+|   |-- catalogPlaceholders.ts
+|   |-- cloudinary.ts
+|   |-- demoCatalog.ts
+|   |-- productImages.ts
+|   |-- utils.ts
 |   |-- actions/
 |   |   |-- admin.ts
 |   |   |-- auth.ts
@@ -244,38 +199,33 @@ Punjabi-Shop/
 |   |-- canvas/
 |   |   |-- fabricPatterns.ts
 |   |   \-- textureEngine.ts
-|   |-- db/
-|   |   |-- index.ts
-|   |   \-- schema.ts
-|   |-- catalogPlaceholders.ts
-|   |-- cloudinary.ts
-|   |-- demoCatalog.ts
-|   |-- productImages.ts
-|   \-- utils.ts
+|   \-- db/
+|       |-- index.ts
+|       \-- schema.ts
 |-- public/
 |   \-- assets/
+|       |-- customizable-punjabi.png
 |       |-- collars/
 |       |   |-- band-collar.png
 |       |   |-- mandarin-collar.png
 |       |   |-- round-collar.png
 |       |   \-- vneck-collar.png
-|       |-- punjabi/
-|       |   |-- 1-1.webp
-|       |   |-- 1-2.webp
-|       |   |-- 1-29.webp
-|       |   |-- 1-31.webp
-|       |   |-- 1-34.webp
-|       |   |-- 3-8.webp
-|       |   |-- 4-11.webp
-|       |   |-- 6-1.webp
-|       |   |-- Blue-1-1.webp
-|       |   |-- collar-band.png
-|       |   |-- collar-mandarin.png
-|       |   |-- collar-round.png
-|       |   |-- collar-vneck.png
-|       |   |-- Merun-KC-2.webp
-|       |   \-- Off-White-1.webp
-|       \-- customizable-punjabi.png
+|       \-- punjabi/
+|           |-- 1-1.webp
+|           |-- 1-2.webp
+|           |-- 1-29.webp
+|           |-- 1-31.webp
+|           |-- 1-34.webp
+|           |-- 3-8.webp
+|           |-- 4-11.webp
+|           |-- 6-1.webp
+|           |-- Blue-1-1.webp
+|           |-- collar-band.png
+|           |-- collar-mandarin.png
+|           |-- collar-round.png
+|           |-- collar-vneck.png
+|           |-- Merun-KC-2.webp
+|           \-- Off-White-1.webp
 |-- scripts/
 |   \-- seed-catalog.cjs
 |-- store/
@@ -288,22 +238,9 @@ Punjabi-Shop/
 |   \-- migrations/
 |       |-- 0000_initial_schema.sql
 |       \-- 0001_add_missing_product_columns.sql
-|-- utils/
-|   \-- supabase/
-|       |-- client.ts
-|       |-- middleware.ts
-|       |-- server.ts
-|       \-- service.ts
-|-- .env.local
-|-- .gitignore
-|-- __Project__Map__.txt
-|-- components.json
-|-- drizzle.config.ts
-|-- eslint.config.mjs
-|-- middleware.ts
-|-- next.config.ts
-|-- next-env.d.ts
-|-- package.json
-|-- package-lock.json
-|-- postcss.config.mjs
-\-- tsconfig.json
+\-- utils/
+    \-- supabase/
+        |-- client.ts
+        |-- middleware.ts
+        |-- server.ts
+        \-- service.ts
