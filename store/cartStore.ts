@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const CART_STORAGE_KEY = 'panjabi-shop-cart';
+
 export interface CartItem {
   cartItemId: string;
   productId: string;
@@ -34,6 +36,19 @@ interface CartState {
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
   getSubTotal: () => number;
+}
+
+let isCartCrossTabSyncReady = false;
+
+function readPersistedCartItems(value: string | null) {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed?.state?.items) ? parsed.state.items : [];
+  } catch {
+    return [];
+  }
 }
 
 export const useCartStore = create<CartState>()(
@@ -115,9 +130,23 @@ export const useCartStore = create<CartState>()(
       },
     }),
     {
-      name: 'panjabi-shop-cart',
+      name: CART_STORAGE_KEY,
       // শুধুমাত্র items গুলোকে লোকাল স্টোরেজে সেভ করা হচ্ছে, isOpen স্টেট নয়
       partialize: (state) => ({ items: state.items }),
     }
   )
 );
+
+export function initCartCrossTabSync() {
+  if (typeof window === 'undefined' || isCartCrossTabSyncReady) return;
+
+  isCartCrossTabSyncReady = true;
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== CART_STORAGE_KEY) return;
+
+    useCartStore.setState({
+      items: readPersistedCartItems(event.newValue),
+    });
+  });
+}

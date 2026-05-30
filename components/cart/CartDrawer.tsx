@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCartStore } from "@/store/cartStore";
+import { initCartCrossTabSync, useCartStore } from "@/store/cartStore";
 
 export function CartDrawer() {
   const router = useRouter();
@@ -12,6 +12,7 @@ export function CartDrawer() {
 
   // Hydration error রোধ করার জন্য
   useEffect(() => {
+    initCartCrossTabSync();
     setMounted(true);
   }, []);
 
