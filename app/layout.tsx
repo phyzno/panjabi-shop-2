@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Caudex, Sniglet } from 'next/font/google'
 import AuthProvider from '@/components/providers/AuthProvider';
 import '@/app/globals.css'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const caudex = Caudex({
   subsets: ['latin'],
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   )
