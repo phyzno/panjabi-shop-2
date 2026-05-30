@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/authStore';
 import { useWishlistStore } from '@/store/wishlistStore';
@@ -9,11 +9,18 @@ import { getUserWishlist } from '@/lib/actions/wishlist.actions';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { setUser, setLoaded } = useAuthStore();
   const { setWishlistedIds } = useWishlistStore();
   const supabase = useMemo(() => createClient(), []);
   const wishlistUserIdRef = useRef<string | null>(null);
+
+  const goToResetPassword = useCallback(() => {
+    if (pathname !== '/auth/reset-password') {
+      router.replace('/auth/reset-password');
+    }
+  }, [pathname, router]);
 
   const syncAuthState = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -54,6 +61,16 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [pathname, syncAuthState]);
 
   useEffect(() => {
+    const isRecoveryUrl =
+      window.location.hash.includes('type=recovery') ||
+      window.location.search.includes('type=recovery');
+
+    if (!isRecoveryUrl) return;
+
+    supabase.auth.getSession().finally(goToResetPassword);
+  }, [goToResetPassword, supabase]);
+
+  useEffect(() => {
     if (user) return;
 
     const interval = window.setInterval(() => {
@@ -92,8 +109,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     window.addEventListener('storage', handleStorage);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       syncAuthState();
+      if (event === 'PASSWORD_RECOVERY') {
+        goToResetPassword();
+      }
     });
 
     return () => {
@@ -104,7 +124,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       subscription.unsubscribe();
     };
-  }, [supabase, syncAuthState]);
+  }, [goToResetPassword, supabase, syncAuthState]);
 
   return <>{children}</>;
 }

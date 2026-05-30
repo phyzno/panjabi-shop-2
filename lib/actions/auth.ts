@@ -2,9 +2,25 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
+
+async function getSiteUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+  if (configuredUrl) return configuredUrl
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+
+  const headerStore = await headers()
+  const host = headerStore.get('host')
+  const protocol = headerStore.get('x-forwarded-proto') || 'http'
+
+  return host ? `${protocol}://${host}` : ''
+}
 
 // SIGN UP (এখান থেকে db.insert সরিয়ে দেওয়া হয়েছে)
 export async function signUpWithEmail(formData: FormData): Promise<void> {
@@ -24,7 +40,7 @@ export async function signUpWithEmail(formData: FormData): Promise<void> {
     redirect('/signup?error=' + encodeURIComponent('Password must be at least 8 characters'))
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const siteUrl = await getSiteUrl()
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -89,7 +105,7 @@ export async function signOut(): Promise<void> {
 export async function sendResetEmail(formData: FormData): Promise<void> {
   const supabase = await createClient()
   const email = formData.get('email') as string
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const siteUrl = await getSiteUrl()
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password`,

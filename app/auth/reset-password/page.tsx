@@ -41,6 +41,7 @@ function ResetPasswordForm() {
     if (error) {
       setLocalError(error.message)
     } else {
+      await supabase.auth.signOut()
       window.location.href = '/login?message=' + encodeURIComponent('Password updated successfully! Sign in with your new password.')
     }
   }

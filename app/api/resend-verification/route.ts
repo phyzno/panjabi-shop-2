@@ -13,7 +13,9 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : new URL(request.url).origin)
 
   const { error } = await supabase.auth.resend({
     type: 'signup',
