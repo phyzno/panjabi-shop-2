@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/authStore";
@@ -31,8 +31,9 @@ export function Header({ activeOfferText }: HeaderProps) {
   const { items, openCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
-  const { user: storeUser } = useAuthStore();
-  const [user, setUser] = useState<any>(storeUser);
+  const { user, setUser } = useAuthStore(); // সরাসরি গ্লোবাল স্টোর ব্যবহার
+  const router = useRouter(); // রিডাইরেক্ট করার জন্য
+
   const supabase = createClient();
 
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -40,13 +41,21 @@ export function Header({ activeOfferText }: HeaderProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsUserDropdownOpen(false);
-    setShowMobileAccount(false);
-    setIsMobileMenuOpen(false);
-    window.location.href = '/login'; // লগআউট হলে রিফ্রেশ সহ লগইন পেজে যাবে
-  };
+  // ১. সাথে সাথে ড্রপডাউন বন্ধ করে দেওয়া
+  setIsUserDropdownOpen(false);
+  setShowMobileAccount(false);
+  setIsMobileMenuOpen(false);
+  
+  // ২. ইনস্ট্যান্ট UI আপডেটের জন্য স্টোর থেকে ইউজার মুছে ফেলা
+  setUser(null); 
+  
+  // ৩. ব্যাকগ্রাউন্ডে লগআউট করা
+  await supabase.auth.signOut();
+  
+  // ৪. রিলোড ছাড়াই ফাস্ট রিডাইরেক্ট
+  router.push('/login'); 
+  router.refresh(); // সার্ভার সাইড কম্পোনেন্টগুলো আপডেট করার জন্য
+};
 
   // স্ক্রিনের অন্য কোথাও ক্লিক করলে যেন ডেক্সটপ ড্রপডাউন বন্ধ হয়ে যায়
   useEffect(() => {
@@ -63,18 +72,6 @@ export function Header({ activeOfferText }: HeaderProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    const syncSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-      } else {
-        setUser(storeUser);
-      }
-    };
-    syncSession();
-  }, [storeUser, pathname]);
 
   // কার্টের আইটেম গোনার লজিক
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
