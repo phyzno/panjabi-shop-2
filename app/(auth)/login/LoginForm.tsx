@@ -72,7 +72,7 @@ export default function LoginForm({
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C221A]/30" />
             <input
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl pl-11 pr-12 py-3.5 focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] outline-none font-sans text-sm transition-all"
               placeholder="••••••••"

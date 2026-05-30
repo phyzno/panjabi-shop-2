@@ -50,17 +50,32 @@ export default function OrderDashboardClient() {
     }, []);
 
     // প্রিন্ট উইন্ডো ক্লোজ হলে স্টেট ক্লিয়ার করার জন্য useEffect
+    // প্রিন্ট উইন্ডো ক্লোজ হলে স্টেট ক্লিয়ার করার জন্য useEffect
     useEffect(() => {
+        // ১. ওয়েবসাইটের আসল টাইটেলটি সেভ করে রাখা
+        let originalTitle = document.title; 
+
         if (printingOrder) {
+            // ২. প্রিন্ট হওয়ার ঠিক আগে টাইটেল চেঞ্জ করে অর্ডার আইডি বসানো
+            document.title = `invoice-${printingOrder.id}`;
+            
             setTimeout(() => {
                 window.print();
             }, 150);
         }
 
-        const handleAfterPrint = () => setPrintingOrder(null);
+        const handleAfterPrint = () => {
+            // ৩. প্রিন্ট শেষে আবার আগের টাইটেল ফিরিয়ে আনা
+            document.title = originalTitle; 
+            setPrintingOrder(null);
+        };
+        
         window.addEventListener("afterprint", handleAfterPrint);
 
-        return () => window.removeEventListener("afterprint", handleAfterPrint);
+        return () => {
+            document.title = originalTitle; // ক্লিনআপ
+            window.removeEventListener("afterprint", handleAfterPrint);
+        };
     }, [printingOrder]);
 
     // ১. Time Filtering Logic

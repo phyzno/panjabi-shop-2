@@ -107,7 +107,7 @@ function TrackOrderContent() {
               <button 
                 onClick={() => handleTrackOrder(orderId)}
                 disabled={isLoading}
-                className="w-full sm:w-auto bg-[#4A5D23] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl shadow-[0_8px_20px_rgba(74,93,35,0.2)] hover:bg-[#3D4C1D] transition-all font-sans text-[12px] sm:text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-70"
+                className="w-full sm:w-auto bg-[#4A5D23] text-white px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl shadow-[0_8px_20px_rgba(74,93,35,0.2)] hover:bg-[#3D4C1D] transition-all font-sans text-[12px] sm:text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
               >
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Track Now"}
               </button>

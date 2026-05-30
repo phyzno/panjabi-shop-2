@@ -11,6 +11,31 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !order) return;
+
+    const originalTitle = document.title;
+
+    const handleBeforePrint = () => {
+      // প্রিন্ট ডায়ালগ ওপেন হওয়ার ঠিক আগে টাইটেল চেঞ্জ হবে
+      document.title = `invoice-${order.id}`;
+    };
+
+    const handleAfterPrint = () => {
+      // প্রিন্ট ডায়ালগ ক্লোজ হওয়ার পর আবার আগের টাইটেল ফিরে আসবে
+      document.title = originalTitle;
+    };
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    return () => {
+      document.title = originalTitle;
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [isOpen, order]);
+
   if (!isOpen || !order) return null;
 
   return (
@@ -21,7 +46,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
 
         {/* Header - Hidden on Print */}
         <div className="relative px-4 sm:px-6 py-4 sm:py-5 bg-white border-b border-[#D4D7C9]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 print-hidden">
-          
+
           {/* Title Section */}
           <div className="pr-12 sm:pr-0">
             <h2 className="font-heading text-base sm:text-lg font-bold uppercase tracking-widest text-[#17210C]">
@@ -34,15 +59,19 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
           <div className="flex items-center gap-3 w-full sm:w-auto">
             {/* Print Button - Clean unified color for all screens */}
             <button
-              onClick={onPrint}
+              onClick={() => {
+                // মাদার কম্পোনেন্টে onPrint থাকলে সেটি কল হবে, না থাকলে সরাসরি প্রিন্ট হবে
+                if (onPrint) onPrint();
+                window.print();
+              }}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-primary border border-primary rounded-full text-[11px] sm:text-xs font-sans uppercase tracking-wider text-white hover:bg-[#4A5D23] hover:border-[#4A5D23] transition-all cursor-pointer shadow-sm"
             >
               <Printer className="w-4 h-4 sm:w-4 sm:h-4" /> Print Invoice
             </button>
 
             {/* Close Button - Absolute Top-Right on Mobile, Static Side-by-Side on PC */}
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="absolute top-4 right-4 sm:static p-2 bg-[#EBECE3] rounded-full text-accent hover:bg-red-50 transition-colors cursor-pointer shrink-0 shadow-sm sm:shadow-none"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2]" />

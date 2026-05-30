@@ -92,7 +92,7 @@ export async function sendResetEmail(formData: FormData): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/reset-password`,
+    redirectTo: `${siteUrl}/auth/callback?next=/auth/reset-password`,
   })
 
   if (error) redirect('/forgot-password?error=' + encodeURIComponent(error.message))

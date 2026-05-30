@@ -44,10 +44,11 @@ export function CustomizeClient({
   collars,
   filterColors = [],
   filterPatterns = [],
+  userId: serverUserId,
   savedMeasurements
 }: CustomizeClientProps) {
   const { user, isLoaded } = useAuthStore();
-  const userId = user?.id;
+  const userId = serverUserId || user?.id;
 
   const cartStore = useCartStore();
   const store = useCustomizerStore();

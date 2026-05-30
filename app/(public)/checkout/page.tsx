@@ -1,5 +1,6 @@
 "use client";
 
+import { createClient } from "@/utils/supabase/client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, Truck, CreditCard, ShieldCheck, Loader2, Wallet, User } from "lucide-react";
@@ -11,7 +12,8 @@ import { useAuthStore } from "@/store/authStore";
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getSubTotal, clearCart } = useCartStore();
-  const { user } = useAuthStore();
+  const { user: storeUser } = useAuthStore(); 
+  const [user, setUser] = useState<any>(storeUser);
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,19 @@ export default function CheckoutPage() {
   // Hydration Error হ্যান্ডেল করার জন্য
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Login er por fresh cookie background e sync korar logic
+    const syncSession = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user); // Client k update kore dilam
+      } else {
+        setUser(storeUser);
+      }
+    };
+    syncSession();
+  }, [storeUser]);
 
   if (!mounted) return null;
 
