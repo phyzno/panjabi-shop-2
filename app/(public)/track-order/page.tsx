@@ -221,6 +221,10 @@ function TrackOrderContent() {
 
 // Next.js SearchParams requires Suspense wrapper
 export default function TrackOrderPage() {
+  useEffect(() => {
+    document.title = 'Track Order | Panjabi Shop';
+  }, []);
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F8F9F5] flex flex-col items-center justify-center gap-4">

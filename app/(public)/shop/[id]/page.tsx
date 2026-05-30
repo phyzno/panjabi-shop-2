@@ -1,8 +1,33 @@
+import type { Metadata } from 'next';
 import { getCachedProductById, getCachedAllProducts } from '@/lib/actions/product.actions';
 import ProductDetailsClient from './ProductDetailsClient';
 import { notFound } from 'next/navigation';
 
-export default async function ProductDetailsPage({ params }: { params: { id: string } }) {
+type ProductDetailsPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export async function generateMetadata({ params }: ProductDetailsPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const productId = Number(id);
+
+  if (Number.isNaN(productId)) {
+    return { title: 'Product Not Found' };
+  }
+
+  const { data: product } = await getCachedProductById(productId);
+
+  if (!product) {
+    return { title: 'Product Not Found' };
+  }
+
+  return {
+    title: product.name,
+    description: product.description || `Shop ${product.name} at Panjabi Shop.`,
+  };
+}
+
+export default async function ProductDetailsPage({ params }: ProductDetailsPageProps) {
   const resolvedParams = await params;
   const productId = Number(resolvedParams.id);
   

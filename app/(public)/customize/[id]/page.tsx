@@ -4,6 +4,10 @@ import { CustomizeClient } from '@/components/customizer/CustomizeClient';
 import { createClient } from '@/utils/supabase/server'; // 👈 যুক্ত করা হলো
 import { getUserMeasurements } from '@/lib/actions/user.actions'; // 👈 যুক্ত করা হলো
 
+export const metadata = {
+  title: 'Customize Panjabi',
+};
+
 export default async function CustomizePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   

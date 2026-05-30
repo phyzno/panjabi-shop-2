@@ -1,6 +1,10 @@
 import { getCachedAllProducts, getCachedCategories } from '@/lib/actions/product.actions';
 import ShopClient from './ShopClient';
 
+export const metadata = {
+  title: 'Shop',
+};
+
 export default async function ShopPage() {
   // একই সাথে প্রোডাক্ট এবং ক্যাটাগরি ফেচ করা হচ্ছে
   const [{ data: dbProducts }, { data: dbCategories }] = await Promise.all([

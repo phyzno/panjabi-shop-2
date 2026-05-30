@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { ShieldCheck, Eye, EyeOff } from 'lucide-react'
 
 function LoginForm() {
@@ -80,6 +80,10 @@ function LoginForm() {
 }
 
 export default function AdminLoginPage() {
+  useEffect(() => {
+    document.title = 'Admin Login | Panjabi Shop';
+  }, []);
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F8F9F5] flex items-center justify-center">

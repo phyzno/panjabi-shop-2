@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, Package, LayoutDashboard, ShoppingBag, Copy, Check } from "lucide-react";
@@ -98,6 +98,10 @@ function OrderSuccessContent() {
 
 // Next.js App Router-এ useSearchParams ব্যবহার করলে Suspense এর ভেতরে রাখা বেস্ট প্র্যাকটিস
 export default function OrderSuccessPage() {
+  useEffect(() => {
+    document.title = 'Order Successful | Panjabi Shop';
+  }, []);
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F8F9F5] flex items-center justify-center">

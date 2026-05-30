@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'Order Confirmation',
+};
+
 export default async function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: orderId } = await params;
 

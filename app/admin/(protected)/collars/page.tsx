@@ -8,6 +8,10 @@ import Image from 'next/image'
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title: 'Admin Collars',
+}
+
 export default async function AdminCollarsPage() {
   const supabase = await createClient()
   const { data: collars, error } = await supabase

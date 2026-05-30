@@ -4,6 +4,10 @@ import SettingsFormClient from "@/components/admin/SettingsFormClient";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: 'Admin Settings',
+};
+
 export default async function AdminSettingsPage() {
   // ডাটাবেস থেকে গ্লোবাল সেটিংস এবং শপ ক্যাটাগরি প্যারালালি ফেচ করা হচ্ছে
   const [settingsRes, categoriesRes] = await Promise.all([

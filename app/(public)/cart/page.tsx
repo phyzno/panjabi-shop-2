@@ -1,11 +1,16 @@
 "use client";
 
+import { useEffect } from 'react';
 import { useCartStore } from '@/store/cartStore';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Trash2 } from 'lucide-react';
 
 export default function CartPage() {
+  useEffect(() => {
+    document.title = 'Cart | Panjabi Shop';
+  }, []);
+
   const { items, removeItem, getSubtotal } = useCartStore();
   const subtotal = getSubtotal();
   const delivery = subtotal > 2000 ? 0 : 60;

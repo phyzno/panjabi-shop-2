@@ -5,7 +5,7 @@ import OrdersClient from './OrdersClient';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'My Orders | My Atelier',
+  title: 'My Orders',
 };
 
 export default async function OrdersPage() {

@@ -4,6 +4,10 @@ import { getCachedSiteSettings } from "@/lib/actions/settings.actions"; // স�
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: 'Add Fabric',
+};
+
 export default async function AddFabricPage() {
   // ক্যাশ থেকে সেটিংস ফেচ করা
   const settingsRes = await getCachedSiteSettings();

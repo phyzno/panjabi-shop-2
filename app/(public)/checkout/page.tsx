@@ -27,6 +27,10 @@ export default function CheckoutPage() {
 
   // (Optional UX Boost) ইউজার লগ-ইন করা থাকলে তার নাম ও ফোন নম্বর ফর্মে অটো-ফিল করে দিতে পারেন:
   useEffect(() => {
+    document.title = 'Checkout | Panjabi Shop';
+  }, []);
+
+  useEffect(() => {
     if (user) {
       setFormData(prev => ({
         ...prev,

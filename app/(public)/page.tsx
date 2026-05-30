@@ -6,6 +6,10 @@ import CustomizerSpotLight from '@/components/layout/CustomizerSpotLight'
 import ReviewSection from '@/components/layout/ReviewSection'
 import ReviewTwo from '@/components/layout/ReviewTwo'
 
+export const metadata = {
+  title: 'Home',
+}
+
 export default function HomePage() {
   return (
     <div className="w-full">

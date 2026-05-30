@@ -5,7 +5,7 @@ import MeasurementsClient from './MeasurementsClient';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'Saved Measurements | My Atelier',
+  title: 'Saved Measurements',
 };
 
 export default async function MeasurementsPage() {

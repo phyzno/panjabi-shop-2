@@ -2,6 +2,10 @@ import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
+export const metadata = {
+  title: 'Admin',
+};
+
 export default function AdminRootPage() {
   // পুরনো পেজ বাদ দিয়ে সরাসরি নতুন Orders পেজে রিডাইরেক্ট
   redirect('/admin/orders');

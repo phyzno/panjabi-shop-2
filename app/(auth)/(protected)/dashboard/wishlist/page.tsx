@@ -5,7 +5,7 @@ import WishlistClient from './WishlistClient';
 import { redirect } from 'next/navigation';
 
 export const metadata = {
-  title: 'My Wishlist | My Atelier',
+  title: 'My Wishlist',
 };
 
 export default async function WishlistPage() {

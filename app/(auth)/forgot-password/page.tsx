@@ -3,6 +3,10 @@ import ForgotPasswordForm from './ForgotPasswordForm'
 import { KeyRound } from 'lucide-react'
 import { Suspense } from 'react'
 
+export const metadata = {
+  title: 'Forgot Password',
+}
+
 export default async function ForgotPasswordPage({
   searchParams,
 }: {

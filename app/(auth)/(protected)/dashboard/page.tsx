@@ -7,6 +7,10 @@ import { ShoppingBag, Ruler, Heart, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+export const metadata = {
+  title: 'Dashboard',
+};
+
 export default async function DashboardOverview() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

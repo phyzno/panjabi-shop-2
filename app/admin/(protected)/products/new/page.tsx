@@ -4,6 +4,10 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: 'Add Product',
+};
+
 export default async function AddProductPage() {
   const { data: categories } = await getCategories();
 

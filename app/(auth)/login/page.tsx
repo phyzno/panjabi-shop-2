@@ -3,6 +3,10 @@ import LoginForm from './LoginForm'
 import { LogIn } from 'lucide-react'
 import { Suspense } from 'react'
 
+export const metadata = {
+  title: 'Login',
+}
+
 export default async function LoginPage({
   searchParams,
 }: {

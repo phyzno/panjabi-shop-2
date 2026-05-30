@@ -1,10 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { MapPin, Phone, Mail, Clock, ArrowRight, Scissors, ShoppingBag, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 export default function ContactPage() {
+  useEffect(() => {
+    document.title = 'Contact | Panjabi Shop';
+  }, []);
+
   // Showroom Details & Map Link
   const contactInfo = {
     address: "12A Banani Commercial Area, Road 11, Dhaka, Bangladesh",

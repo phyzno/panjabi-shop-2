@@ -17,7 +17,11 @@ const sniglet = Sniglet({
 })
 
 export const metadata: Metadata = {
-  title: 'Home | Panjabi Shop — Custom Panjabi Bangladesh',
+  title: {
+    default: 'Panjabi Shop',
+    template: '%s | Panjabi Shop',
+  },
+  applicationName: 'Panjabi Shop',
   description: 'Premium custom Panjabi stitched to your exact measurements.',
 }
 

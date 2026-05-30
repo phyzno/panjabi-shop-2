@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+export const metadata = {
+  title: 'FAQ',
+};
+
 export default function FAQPage() {
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">

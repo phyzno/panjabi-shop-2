@@ -9,6 +9,10 @@ interface PageProps {
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title: 'Edit Collar',
+}
+
 export default async function EditCollarPage({ params }: PageProps) {
   const { id } = await params
   const supabase = await createClient()

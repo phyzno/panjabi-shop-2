@@ -2,6 +2,10 @@ import OrderDashboardClient from "@/components/admin/dashboard/OrderDashboardCli
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: 'Admin Orders',
+};
+
 export default function AdminOrdersPage() {
   return (
     <div className="space-y-6">

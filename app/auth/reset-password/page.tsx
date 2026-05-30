@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
@@ -160,6 +160,10 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  useEffect(() => {
+    document.title = 'Reset Password | Panjabi Shop';
+  }, []);
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#F8F9F5] flex items-center justify-center">

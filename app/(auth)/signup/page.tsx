@@ -3,6 +3,10 @@ import SignupForm from './SignupForm'
 import { UserPlus } from 'lucide-react'
 import { Suspense } from 'react'
 
+export const metadata = {
+  title: 'Create Account',
+}
+
 export default async function SignupPage({
   searchParams,
 }: {

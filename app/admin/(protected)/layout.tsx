@@ -4,6 +4,10 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 
 export const dynamic = 'force-dynamic'
 
+export const metadata = {
+  title: 'Admin',
+}
+
 export default async function ProtectedAdminLayout({
   children,
 }: {
