@@ -95,7 +95,7 @@ export function Header({ activeOfferText }: HeaderProps) {
 
   return (
     <>
-      <div className={isHomePage ? "absolute top-0 left-0 w-full z-50" : "relative w-full z-50"}>
+      <div className={`site-header-shell ${isHomePage ? "absolute top-0 left-0 w-full z-50" : "relative w-full z-50"}`}>
 
         {activeOfferText && (
           <div className="bg-[#1A1A1A] text-[#C9A84C] text-xs py-2 px-4 text-center font-medium tracking-wide">
@@ -104,7 +104,10 @@ export function Header({ activeOfferText }: HeaderProps) {
         )}
 
         <header
-          className={`w-full transition-colors duration-300 border-b ${isScrolled
+          className={`site-header w-full transition-colors duration-300 border-b ${isScrolled
+            ? "is-scrolled"
+            : ""
+            } ${isScrolled
             ? "fixed top-0 left-0 z-50 bg-background/90 backdrop-blur-lg border-border/50 shadow-sm"
             : isHomePage
               ? "absolute top-full left-0 bg-transparent border-transparent"
@@ -127,7 +130,7 @@ export function Header({ activeOfferText }: HeaderProps) {
             <div className="flex-1 md:flex-none text-center md:text-left">
               <Link
                 href="/"
-                className={`font-heading text-2xl md:text-3xl font-bold tracking-[0.15em] flex items-center justify-center md:justify-start uppercase transition-colors duration-300 ${showScrolledStyle ? "text-primary" : "text-[#B5C18E]"
+                className={`site-logo font-heading text-2xl md:text-3xl font-bold tracking-[0.15em] flex items-center justify-center md:justify-start uppercase transition-colors duration-300 ${showScrolledStyle ? "text-primary" : "text-[#B5C18E]"
                   }`}
               >
                 Panjabi<span className="text-accent text-4xl leading-none font-sans">.</span>
