@@ -33,7 +33,6 @@ export default function FeaturedCollectionClient({
   const carouselRef = useRef<HTMLDivElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
-  // ডায়নামিক প্রোডাক্ট ফিল্টার করা
   const activeProducts = products.filter((product) => product.category === activeCategory);
   
   const checkOverflow = () => {

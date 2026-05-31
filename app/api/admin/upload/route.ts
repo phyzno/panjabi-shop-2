@@ -11,11 +11,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // File থেকে Buffer এ কনভার্ট (সরাসরি স্ট্রিম, কোনো Base64 লিক নেই)
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(new Uint8Array(arrayBuffer));
 
-    // সরাসরি Cloudinary-তে আপলোড
     const uploadResult: any = await uploadImageToCloudinary(buffer, folder);
 
     if (!uploadResult || !uploadResult.secure_url) {

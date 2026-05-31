@@ -40,7 +40,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
     }
   };
 
-  // Render function instead of an inner component to avoid unnecessary re-renders
   const renderActionMenu = (product: any) => (
     <div className="relative inline-block text-left">
       <button
@@ -52,7 +51,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
 
       {openDropdownId === product.id && (
         <>
-          {/* Backdrop to close dropdown when clicking outside */}
           <div 
             className="fixed inset-0 z-20" 
             onClick={() => setOpenDropdownId(null)} 
@@ -89,7 +87,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
 
-      {/* Header Section (Optimized for both Desktop & Mobile) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-background border border-border p-6 shadow-sm rounded-lg gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-primary">Manage Products</h1>
@@ -99,7 +96,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          {/* Search Input - ordered 2nd on mobile, 1st on desktop */}
           <div className="relative w-full sm:w-64 order-2 md:order-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <input
@@ -111,7 +107,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
             />
           </div>
 
-          {/* Add New Button - ordered 1st on mobile, 2nd on desktop */}
           <Link
             href="/admin/products/new"
             className="w-full sm:w-auto bg-primary text-white px-6 py-2 font-sans text-sm font-medium rounded-md flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm active:scale-95 whitespace-nowrap order-1 md:order-2"
@@ -121,7 +116,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
         </div>
       </div>
 
-      {/* Desktop Table View (Hidden on Mobile) */}
       <div className="hidden md:block bg-background border border-border rounded-lg shadow-sm">
         <div className="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-220px)] w-full">
           <table className="w-full text-left table-auto border-collapse">
@@ -165,7 +159,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
                           <Edit3 size={18} />
                         </Link>
                         
-                        {/* Delete Button with Loading State */}
                         <button 
                           onClick={() => handleDelete(product.id, product.images as string[])}
                           disabled={deletingId === product.id}
@@ -183,7 +176,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
         </div>
       </div>
 
-      {/* Mobile Card Layout (Hidden on Desktop) */}
       <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-195px)] w-full">
         {filteredProducts.length === 0 ? (
           <div className="bg-background border border-border p-12 text-center rounded-lg shadow-sm">
@@ -197,7 +189,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
               key={product.id} 
               className="bg-background border border-border rounded-lg p-4 flex gap-4 relative shadow-sm hover:border-muted-foreground/30 transition-colors"
             >
-              {/* Product Image */}
               <div className="w-16 h-20 rounded-md overflow-hidden bg-secondary border border-border shrink-0">
                 {product.images && (product.images as string[])[0] ? (
                   <Image 
@@ -212,7 +203,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
                 )}
               </div>
 
-              {/* Product Details */}
               <div className="flex-1 min-w-0 pr-6">
                 <h3 className="font-sans text-sm font-medium text-foreground line-clamp-2 leading-snug">
                   {product.name}
@@ -221,7 +211,6 @@ export default function ProductTableClient({ products }: { products: any[] }) {
                 <p className="font-sans text-primary text-base mt-2">৳ {product.price}</p>
               </div>
 
-              {/* 3-Dot Action Menu */}
               <div className="absolute top-2 right-2">
                 {renderActionMenu(product)}
               </div>

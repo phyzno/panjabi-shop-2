@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { signUpWithEmail } from '@/lib/actions/auth'
 import { Loader2, Mail, Lock, User, Phone, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
-// Password Strength Indicator (Redesigned)
 function PasswordStrength({ password }: { password: string }) {
   if (!password) return null
 
@@ -52,7 +51,6 @@ export default function SignupForm({
 
   return (
     <div className="space-y-6">
-      {/* Messages */}
       {error && (
         <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-[11px] font-sans flex items-center gap-2 animate-in slide-in-from-top-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -69,7 +67,6 @@ export default function SignupForm({
 
       <form action={handleSubmit} className="space-y-4">
 
-        {/* Full Name Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-1.5 ml-1">
             Full Name
@@ -86,7 +83,6 @@ export default function SignupForm({
           </div>
         </div>
 
-        {/* Phone Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-1.5 ml-1">
             Phone Number
@@ -103,7 +99,6 @@ export default function SignupForm({
           </div>
         </div>
 
-        {/* Email Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-1.5 ml-1">
             Email Address
@@ -120,7 +115,6 @@ export default function SignupForm({
           </div>
         </div>
 
-        {/* Password Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-1.5 ml-1">
             Password
@@ -136,7 +130,6 @@ export default function SignupForm({
               className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl pl-11 pr-12 py-3 focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] outline-none font-sans text-sm transition-all"
               placeholder="••••••••"
             />
-            {/* 👈 নতুন Show/Hide বাটন */}
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -148,7 +141,6 @@ export default function SignupForm({
           <PasswordStrength password={password} />
         </div>
 
-        {/* Confirm Password Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-1.5 ml-1">
             Confirm Password
@@ -162,7 +154,6 @@ export default function SignupForm({
               className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl pl-11 pr-12 py-3 focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] outline-none font-sans text-sm transition-all"
               placeholder="••••••••"
             />
-            {/* 👈 নতুন Show/Hide বাটন */}
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -173,7 +164,6 @@ export default function SignupForm({
           </div>
         </div>
 
-        {/* Terms and Conditions Checkbox */}
         <div className="pt-2 px-1">
           <label className="flex items-start gap-2 cursor-pointer group">
             <input
@@ -197,7 +187,6 @@ export default function SignupForm({
           </label>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
@@ -214,7 +203,6 @@ export default function SignupForm({
         </button>
       </form>
 
-      {/* Sign In Link */}
       <div className="pt-4 border-t border-[#D4D7C9]/40 text-center">
         <p className="font-sans text-xs text-[#1C221A]/50 uppercase tracking-widest">
           Already have an account?{' '}

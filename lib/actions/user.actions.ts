@@ -4,12 +4,10 @@ import { db } from "@/lib/db";
 import { orders, orderItems, savedMeasurements } from "@/lib/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 
-// ১. ইউজারের Order History ফেচ করা
 export async function getUserOrders(userId: string) {
   try {
     if (!userId) return { success: false, error: "User ID is required" };
 
-    // ইউজারের সব অর্ডার ফেচ করা
     const userOrders = await db.select()
       .from(orders)
       .where(eq(orders.user_id, userId))
@@ -19,13 +17,11 @@ export async function getUserOrders(userId: string) {
       return { success: true, data: [] };
     }
 
-    // অর্ডারগুলোর সাথে সম্পর্কিত আইটেমগুলো ফেচ করা
     const orderIds = userOrders.map((order) => order.id);
     const userOrderItems = await db.select()
       .from(orderItems)
       .where(inArray(orderItems.order_id, orderIds));
 
-    // ডেটা স্ট্রাকচারিং: অর্ডার এবং তার আইটেমগুলোকে একসাথে ম্যাপ করা
     const formattedOrders = userOrders.map((order) => {
       const itemsForOrder = userOrderItems.filter((item) => item.order_id === order.id);
 
@@ -52,7 +48,6 @@ export async function getUserOrders(userId: string) {
           quantity: item.quantity,
           unitPrice: item.unit_price,
           totalPrice: item.total_price,
-          // User side specific data mapping
           stitchingCharge: item.stitching_charge || 0,
           fabricName: item.fabric_name || undefined,
           sizeMode: item.size_mode || undefined,
@@ -73,7 +68,6 @@ export async function getUserOrders(userId: string) {
   }
 }
 
-// ২. ইউজারের Saved Measurements ফেচ করা
 export async function getUserMeasurements(userId: string) {
   try {
     if (!userId) return { success: false, error: "User ID is required" };

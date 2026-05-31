@@ -8,7 +8,6 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   
-  /* আপনার পছন্দের ফন্টগুলো এখানে ম্যাপ করা হলো */
   --font-sans: var(--font-sniglet); 
   --font-heading: var(--font-caudex);
   
@@ -48,9 +47,8 @@
 }
 
 :root {
-  /* Light Mode - Olivic Royal Heritage */
-  --background: #F8F9F5; /* Soft Warm Olive White */
-  --foreground: #1C221A; /* Deep Charcoal Green/Grey */
+  --background: #F8F9F5;
+  --foreground: #1C221A;
   
   --card: #FFFFFF;
   --card-foreground: #1C221A;
@@ -58,39 +56,38 @@
   --popover: #FFFFFF;
   --popover-foreground: #1C221A;
   
-  --primary: #4A5D23; /* Royal Olive Green */
+  --primary: #4A5D23;
   --primary-foreground: #FFFFFF;
   
-  --secondary: #EBECE3; /* Soft Olive Tint */
+  --secondary: #EBECE3;
   --secondary-foreground: #4A5D23;
   
   --muted: #E1E4D9;
   --muted-foreground: #5C6656;
   
-  --accent: #C25934; /* Terracotta / Earthy Rust */
+  --accent: #C25934;
   --accent-foreground: #FFFFFF;
   
   --destructive: #EF4444;
   
   --border: #D4D7C9;
   --input: #D4D7C9;
-  --ring: #4A5D23; /* Focus ring on inputs */
+  --ring: #4A5D23;
   
   --radius: 0.75rem;
 }
 
 .dark {
-  /* Dark Mode - Deep Forest & Rust */
-  --background: #111410; /* Extremely Dark Forest Green/Black */
-  --foreground: #F8F9F5; /* Soft Off-White */
+  --background: #111410;
+  --foreground: #F8F9F5;
   
-  --card: #1A2018; /* Dark Olive Surface */
+  --card: #1A2018;
   --card-foreground: #F8F9F5;
   
   --popover: #1A2018;
   --popover-foreground: #F8F9F5;
   
-  --primary: #7B914A; /* Lighter Olive for contrast in dark mode */
+  --primary: #7B914A;
   --primary-foreground: #111410;
   
   --secondary: #242D21;
@@ -99,7 +96,7 @@
   --muted: #2A3326;
   --muted-foreground: #9AA392;
   
-  --accent: #D47A55; /* Lighter Terracotta for dark mode */
+  --accent: #D47A55;
   --accent-foreground: #111410;
   
   --destructive: #EF4444;
@@ -120,7 +117,6 @@
     @apply font-sans;
   }
   
-  /* Smooth scroll behavior for the entire site */
   html {
     scroll-behavior: smooth;
   }
@@ -129,14 +125,13 @@
 @media print {
   @page {
     size: A4;
-    margin: 0mm; /* এটি ব্রাউজারের ডিফল্ট URL এবং Page number হাইড করবে */
+    margin: 0mm;
   }
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     background-color: white !important;
   }
-  /* এক্সট্রা ব্ল্যাঙ্ক পেজ আসা রোধ করতে */
   html, body {
     height: 100vh;
     margin: 0 !important;
@@ -144,26 +139,3 @@
     overflow: hidden; 
   }
 }
-/* another printing css proposed to review in future */
-/*
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .print-hidden {
-    display: none !important;
-  }
-  .print-section, .print-section * {
-    visibility: visible;
-  }
-  .print-section {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 20px;
-    background: white !important;
-  }
-}
-*/

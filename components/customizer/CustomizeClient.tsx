@@ -6,11 +6,10 @@ import { useCustomizerStore } from '@/store/useCustomizerStore';
 import { resolveProductImageSrc } from '@/lib/productImages';
 import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calculator, ChevronLeft, ChevronRight, X, ShoppingCart, RotateCcw } from "lucide-react";
 import { useCartStore } from '@/store/cartStore';
-import { addMeasurementProfile } from '@/lib/actions/measurement.actions'; // নতুন যুক্ত করা হয়েছে
+import { addMeasurementProfile } from '@/lib/actions/measurement.actions';
 import { useAuthStore } from '@/store/authStore';
 import { getUserMeasurements } from '@/lib/actions/user.actions';
 
-// --- Mock Data ---
 const presetSizes = [
   { size: "S", yard: 2.25 },
   { size: "M", yard: 2.5 },
@@ -34,7 +33,6 @@ interface CustomizeClientProps {
   collars?: any[];
   filterColors?: string[];
   filterPatterns?: string[];
-  // নতুন প্রপস
   userId?: string | null;
   savedMeasurements?: any[];
 }
@@ -51,23 +49,16 @@ export function CustomizeClient({
   const { user, isLoaded } = useAuthStore();
   const userId = user?.id || (!isLoaded ? serverUserId : null);
   const [activeSavedMeasurements, setActiveSavedMeasurements] = useState<any[]>(savedMeasurements || []);
-
   const cartStore = useCartStore();
   const store = useCustomizerStore();
   const [isHydrated, setIsHydrated] = useState(false);
-
-  // --- New Measurement Flow States ---
   const [saveProfileToggle, setSaveProfileToggle] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [profileNameError, setProfileNameError] = useState('');
   const [showLoginModal, setShowLoginModal] = useState(false);
-
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [hasSavedCurrentProfile, setHasSavedCurrentProfile] = useState(false);
-
-  // Helper to determine collar type for canvas and image paths based on name
   const getCanvasCollarType = (collar: any) => {
     if (!collar || !collar.name) return 'band';
     const nameLower = collar.name.toLowerCase();
@@ -76,25 +67,15 @@ export function CustomizeClient({
     if (nameLower.includes('mandarin')) return 'mandarin';
     return 'band';
   };
-
-  // Accordion & Modal States
   const [expandedStep, setExpandedStep] = useState<number>(0);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [modalFabric, setModalFabric] = useState<any>(null);
-
-  // Mobile UI States
   const [mobileStep, setMobileStep] = useState<'design' | 'checkout'>('design');
   const [activeBottomSheet, setActiveBottomSheet] = useState<'fabric' | 'collar' | null>(null);
-
-  // Dropdown States for Filters
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
-
-  // Fabric Filter States
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
-
-  // Custom Measurement Input States
 
   useEffect(() => {
     if (!isLoaded) {
@@ -126,7 +107,6 @@ export function CustomizeClient({
     };
   }, [isLoaded, user?.id, savedMeasurements, store.setSelectedProfileId]);
 
-  // Set default profile if saved measurements exist
   useEffect(() => {
     if (!isHydrated) return;
     const selectedProfileExists = activeSavedMeasurements.some(
@@ -141,7 +121,6 @@ export function CustomizeClient({
     }
   }, [activeSavedMeasurements, isHydrated, store.selectedProfileId, store.setSelectedProfileId]);
 
-  // Check for duplicate profile names
   useEffect(() => {
     if (newProfileName) {
       const isDuplicate = activeSavedMeasurements.some(
@@ -157,14 +136,11 @@ export function CustomizeClient({
     }
   }, [newProfileName, activeSavedMeasurements]);
 
-  // Whenever custom measurements change, unlock the save profile button
   useEffect(() => {
     setHasSavedCurrentProfile(false);
   }, [store.customLength, store.customChest, store.customShoulder, store.customSleeve]);
 
-  // Dynamic Yardage Synchronization (Auto Calculated) - Updated with Saved Profile logic
   const calculatedPanjabiYardage = useMemo(() => {
-    // Check saved mode first
     if (store.measurementMode === 'saved') {
       const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
       if (profile && profile.measurements) {
@@ -179,7 +155,7 @@ export function CustomizeClient({
         }
         return baseYard;
       }
-      return 2.5; // Default fallback if no profile loaded yet
+      return 2.5;
     }
 
     if (store.sizeType === 'preset') {
@@ -187,11 +163,10 @@ export function CustomizeClient({
       return found ? found.yard : 2.5;
     }
 
-    // Auto calculate for custom size
     if (store.sizeType === 'custom') {
       const len = parseFloat(store.customLength) || 0;
       const chest = parseFloat(store.customChest) || 0;
-      let baseYard = 2.5; // Default fallback
+      let baseYard = 2.5;
 
       if (len > 0 && chest > 0) {
         baseYard = 2.25;
@@ -211,7 +186,6 @@ export function CustomizeClient({
     }
   }, [calculatedPanjabiYardage, store.orderMode, store.setYardage]);
 
-  // Filtering Fabrics Array
   const filteredFabrics = useMemo(() => {
     return fabrics.filter((f: any) => {
       const matchSearch = f.name.toLowerCase().includes(store.searchQuery.toLowerCase());
@@ -221,7 +195,6 @@ export function CustomizeClient({
     });
   }, [fabrics, store.searchQuery, selectedColors, selectedPatterns]);
 
-  // Initial Configuration Sync
   useEffect(() => {
     if (!isHydrated) return;
     if (fabrics.length > 0 && !store.selectedFabricId) store.setSelectedFabricId(fabrics[0].id);
@@ -230,40 +203,31 @@ export function CustomizeClient({
 
   const selectedFabric = fabrics.find((f: any) => f.id === store.selectedFabricId) || fabrics[0];
   const selectedCollar = CORE_COLLARS.find((c: any) => c.id === store.collarId) || CORE_COLLARS[0];
-
   const selectedFabricImageUrl = selectedFabric?.image_url ? resolveProductImageSrc(selectedFabric.image_url) : undefined;
   const selectedFabricTextureUrl = selectedFabric?.texture_url || undefined;
   const selectedFabricRawUrl = selectedFabric?.raw_image_url || selectedFabric?.texture_url || undefined;
-
-  // Price Calculation Engine
   const stitchingCharge = 450;
   const activeYardage = store.orderMode === 'tailoring' ? calculatedPanjabiYardage : store.yardage;
   const maxFabricYards = selectedFabric?.yards || 0;
   const isFabricStockSufficient = maxFabricYards >= activeYardage;
-
   const fabricPrice = (selectedFabric?.price || 0) * activeYardage;
   const collarPrice = 0;
-
   const totalCost = store.orderMode === 'tailoring'
     ? fabricPrice + stitchingCharge + collarPrice
     : fabricPrice;
 
-  // Save Toggle & Login logic
   const handleSaveToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
     if (isChecked && !userId) {
-      setSaveProfileToggle(false); // Force switch to stay OFF immediately
+      setSaveProfileToggle(false);
       setShowLoginModal(true);
       return;
     }
     setSaveProfileToggle(isChecked);
   };
-
   const goToLogin = () => {
     window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
   };
-
-  // নতুন Save Profile ফাংশন
   const handleSaveProfile = async () => {
     if (!newProfileName) {
       setProfileNameError('Please enter a profile name.');
@@ -285,7 +249,6 @@ export function CustomizeClient({
     
     try {
       const res = await addMeasurementProfile(userId!, payload);
-      // সেভ হয়ে গেলে বাটন লক করে দিব
       if (res?.success) {
         setHasSavedCurrentProfile(true);
         const latest = await getUserMeasurements(userId!);
@@ -314,12 +277,9 @@ export function CustomizeClient({
   }
 
     const isTailoring = store.orderMode === 'tailoring';
-
-    // 2. Prepare custom measurements data based on active mode
     const selectedProfile = store.measurementMode === 'saved'
       ? activeSavedMeasurements.find((p: any) => p.id.toString() === store.selectedProfileId)
       : null;
-
     const finalCustomMeasurements = isTailoring ? (
       store.measurementMode === 'saved' && selectedProfile ? {
         length: selectedProfile.measurements.length.toString(),
@@ -394,10 +354,6 @@ export function CustomizeClient({
     };
   }, [activeBottomSheet, mobileStep]);
 
-  // ============================================================================
-  // REUSABLE UI RENDER FUNCTIONS (Shared between Desktop & Mobile)
-  // ============================================================================
-
   const renderFabricContent = () => (
     <>
       <div className="flex flex-col gap-3 mb-6 relative z-40">
@@ -413,7 +369,6 @@ export function CustomizeClient({
         </div>
 
         <div className="flex gap-3 w-full">
-          {/* Color Dropdown */}
           <div className="relative flex-1 w-full">
             <button
               onClick={() => { setIsColorDropdownOpen(!isColorDropdownOpen); setIsPatternDropdownOpen(false); }}
@@ -435,7 +390,6 @@ export function CustomizeClient({
             )}
           </div>
 
-          {/* Pattern Dropdown */}
           <div className="relative flex-1 w-full">
             <button
               onClick={() => { setIsPatternDropdownOpen(!isPatternDropdownOpen); setIsColorDropdownOpen(false); }}
@@ -543,7 +497,6 @@ export function CustomizeClient({
 
   const renderMeasurementContent = () => (
     <>
-      {/* 1. Main Top-level Toggle: Saved vs New Size */}
       <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl mb-6">
         <button
           onClick={() => store.setMeasurementMode('saved')}
@@ -563,7 +516,6 @@ export function CustomizeClient({
         </button>
       </div>
 
-      {/* 2. SAVED PROFILES MODE */}
       {store.measurementMode === 'saved' && (
         <div className="animate-in fade-in duration-300">
           {!userId ? (
@@ -591,7 +543,6 @@ export function CustomizeClient({
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C221A]/50 pointer-events-none" />
               </div>
 
-              {/* Locked Inputs for Selected Profile */}
               {store.selectedProfileId && (
                 <div className="grid grid-cols-2 gap-3 p-4 bg-[#F8F9F5]/80 rounded-xl border border-[#D4D7C9]/40">
                   {(() => {
@@ -629,7 +580,6 @@ export function CustomizeClient({
         </div>
       )}
 
-      {/* 3. NEW SIZE MODE */}
       {store.measurementMode === 'new' && (
         <div className="animate-in fade-in duration-300">
           <div className="flex gap-4 mb-6">
@@ -677,7 +627,6 @@ export function CustomizeClient({
                 </div>
               </div>
 
-              {/* Minimal Save Switch */}
               <div className="pt-2 border-t border-[#D4D7C9]/40">
                 <label className="flex items-center justify-between cursor-pointer group">
                   <span className="font-sans text-[11px] uppercase tracking-widest text-[#1C221A]/70 group-hover:text-[#17210C] transition-colors">
@@ -691,7 +640,6 @@ export function CustomizeClient({
                   />
                 </label>
 
-                {/* Profile Name Input & Submit Button */}
                 {saveProfileToggle && userId && (
                   <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
                     <input 
@@ -704,7 +652,6 @@ export function CustomizeClient({
                     />
                     {profileNameError && <p className="font-sans text-[10px] text-red-500 mt-1.5">{profileNameError}</p>}
                     
-                    {/* ✨ New Explicit Save Button ✨ */}
                     <button 
                       onClick={handleSaveProfile}
                       disabled={hasSavedCurrentProfile || isSavingProfile || !!profileNameError || !newProfileName.trim()}
@@ -783,12 +730,10 @@ export function CustomizeClient({
     </>
   );
 
-  // হাইড্রেশন চেকার ইফেক্ট এখানে রাখুন (সব হুকের নিচে)
   useEffect(() => {
     setIsHydrated(true);
   }, []);
 
-  // হাইড্রেশন চেক (Early Return) একদম শেষে!
   if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8F9F5]">
@@ -800,9 +745,6 @@ export function CustomizeClient({
   return (
     <div className="flex flex-col lg:flex-row min-h-[100dvh] bg-[#F8F9F5] lg:pb-32">
 
-      {/* ===================================================================== */}
-      {/* 💻 DESKTOP LAYOUT (Strictly preserved, hidden on mobile)                 */}
-      {/* ===================================================================== */}
       <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center sticky top-20 h-fit self-start">
         <div className="w-full aspect-square">
           <PanjabiCanvas
@@ -823,7 +765,6 @@ export function CustomizeClient({
         </div>
 
         <div className="space-y-4">
-          {/* STEP 1: Choose Fabric */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 1 ? 0 : 1)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
               <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">01. Choose Fabric</span>
@@ -832,7 +773,6 @@ export function CustomizeClient({
             {expandedStep === 1 && <div className="p-5 border-t border-[#D4D7C9]/40 bg-transparent animate-in slide-in-from-top-2 duration-300">{renderFabricContent()}</div>}
           </div>
 
-          {/* STEP 2: Collar Style Selection */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 2 ? 0 : 2)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
               <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">02. Collar Style</span>
@@ -841,7 +781,6 @@ export function CustomizeClient({
             {expandedStep === 2 && <div className="p-5 border-t border-[#D4D7C9]/40 animate-in slide-in-from-top-2 duration-300">{renderCollarContent()}</div>}
           </div>
 
-          {/* STEP 3: Measurement Panel */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 3 ? 0 : 3)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
               <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">03. Measurements</span>
@@ -894,11 +833,6 @@ export function CustomizeClient({
           </div>
         </div>
       </div>
-
-
-      {/* ===================================================================== */}
-      {/* 📱 MOBILE LAYOUT (Hidden on desktop, App-like interactions)              */}
-      {/* ===================================================================== */}
 
       <div className={`lg:hidden fixed top-0 left-0 w-full h-[100dvh] z-0 transition-opacity duration-500 bg-[#F8F9F5] ${mobileStep === 'design' ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
         <div className="absolute inset-0 w-full h-full pb-20 flex items-center justify-center">
@@ -1009,7 +943,6 @@ export function CustomizeClient({
         </div>
       </div>
 
-      {/* --- Fabric Quick Info Modal --- */}
       {isInfoModalOpen && modalFabric && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setIsInfoModalOpen(false)} />
@@ -1029,7 +962,6 @@ export function CustomizeClient({
         </div>
       )}
 
-      {/* ✨ Assistive Touch Style Floating Reset Button (Mobile Only) ✨ */}
       {mobileStep === 'design' && (
         <button
           onClick={() => setIsResetModalOpen(true)}
@@ -1040,7 +972,6 @@ export function CustomizeClient({
         </button>
       )}
 
-      {/* Login Prompt Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setShowLoginModal(false)} />
@@ -1059,7 +990,6 @@ export function CustomizeClient({
         </div>
       )}
 
-      {/* ✨ Custom Reset Confirmation Modal ✨ */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-[1001] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setIsResetModalOpen(false)} />
@@ -1080,8 +1010,8 @@ export function CustomizeClient({
               </button>
               <button 
                 onClick={() => {
-                  store.resetCustomizer(); // Zustand স্টোর ক্লিয়ার হবে
-                  setIsResetModalOpen(false); // মডাল বন্ধ হবে
+                  store.resetCustomizer();
+                  setIsResetModalOpen(false);
                 }} 
                 className="flex-1 py-3.5 bg-red-600 text-white hover:bg-red-700 rounded-xl font-sans text-[12px] uppercase tracking-widest shadow-md transition-colors cursor-pointer"
               >

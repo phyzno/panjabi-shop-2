@@ -32,7 +32,7 @@ export function PanjabiCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isRendering, setIsRendering] = useState(true);
   const imageCache = useRef<Record<string, HTMLImageElement>>({});
-  const [imagesLoaded, setImagesLoaded] = useState(0); // Counter to trigger re-render
+  const [imagesLoaded, setImagesLoaded] = useState(0);
 
   const [isMounted, setIsMounted] = useState(false);
   
@@ -40,7 +40,6 @@ export function PanjabiCanvas({
     setIsMounted(true);
   }, []);
 
-  // Preload collar base images
   useEffect(() => {
     const images = [
       '/assets/punjabi/collar-band.png',
@@ -64,7 +63,6 @@ export function PanjabiCanvas({
     if (!canvasRef.current) return;
     setIsRendering(true);
     
-    // Smooth transition start
     if (canvasRef.current) {
       canvasRef.current.style.opacity = '0.6';
       canvasRef.current.style.transition = 'opacity 0.15s';
@@ -88,7 +86,6 @@ export function PanjabiCanvas({
       console.error('Failed to render canvas', err);
     } finally {
       setIsRendering(false);
-      // Smooth transition end
       if (canvasRef.current) {
         canvasRef.current.style.opacity = '1';
       }
@@ -125,8 +122,6 @@ export function PanjabiCanvas({
     }
   };
 
-  // PanjabiCanvas.tsx - Return অংশের সম্পূর্ণ পরিবর্তন
-
 return (
   <div className="relative w-full h-full z-[999] lg:h-auto lg:max-w-[500px] lg:aspect-square mx-auto lg:bg-[#F5F0EA] lg:rounded-2xl lg:shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden group flex items-center justify-center">
     
@@ -138,7 +133,6 @@ return (
       Front View
     </div>
 
-    {/* ✨ Reset Button ✨ */}
     {onReset && (
       <button
         onClick={onReset}
@@ -149,7 +143,6 @@ return (
       </button>
     )}
 
-    {/* পাঞ্জাবিকে মোবাইলেscale-[1.35] করে জুম করা হয়েছে এবং translate-y-6 দিয়ে একটু নিচে নামানো হয়েছে। ডেক্সটপে এটা স্বাভাবিক থাকবে। */}
     <canvas
       ref={canvasRef}
       className={`w-full h-full lg:h-auto lg:max-h-none object-contain scale-[1.25] translate-y-6 lg:scale-100 lg:translate-y-0 transition-all duration-300 group-hover:scale-[1.02] lg:group-hover:scale-[1.02] ${
@@ -163,7 +156,6 @@ return (
       </div>
     )}
 
-    {/* ওভারলে প্যানেল: মোবাইলেও flex-row থাকবে, টেক্সট ছোট ও компакт করা হয়েছে। জুম করা পাঞ্জাবি থেকে দুরে রাখতে একদম নিচে (bottom-0) রাখা হয়েছে। */}
     {!hideControls && (
       <div className="absolute bottom-4 left-0 right-0 lg:left-4 lg:right-4 flex flex-row justify-between items-center gap-1 text-[10px] lg:text-xs text-gray-500 bg-white/80 backdrop-blur-md px-3 lg:px-4 py-2 rounded-t-xl lg:rounded-xl shadow-sm z-20 border border-white/50 lg:border-gray-100">
         <span className="flex items-center gap-1 font-medium whitespace-nowrap overflow-hidden text-ellipsis">

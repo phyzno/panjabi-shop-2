@@ -10,7 +10,6 @@ import { CollectionQuickViewModal, ExtendedCollectionProduct } from '@/component
 export default function WishlistClient({ userId, initialItems }: { userId: string, initialItems: any[] }) {
   const [items, setItems] = useState(initialItems);
   
-  // States for Modals
   const [selectedProduct, setSelectedProduct] = useState<ExtendedCollectionProduct | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; productId: number | null; wishlistId: number | null }>({ 
@@ -22,13 +21,11 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
   
   const router = useRouter();
 
-  // Handle Quick View Open
   const handleQuickView = (product: any) => {
     setSelectedProduct(product as ExtendedCollectionProduct);
     setIsQuickViewOpen(true);
   };
 
-  // Handle Delete Confirmation
   const confirmDelete = async () => {
     if (!deleteModal.productId || !deleteModal.wishlistId) return;
     
@@ -54,7 +51,6 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
               className="flex flex-row items-center gap-4 bg-white rounded-2xl p-3 sm:p-4 border border-[#D4D7C9]/50 shadow-[0_2px_10px_rgba(14,20,9,0.02)] hover:shadow-md transition-all group"
             >
               
-              {/* Minimal Product Image */}
               <div className="relative w-20 h-24 sm:w-24 sm:h-28 bg-[#EBECE3] rounded-xl overflow-hidden shrink-0 cursor-pointer" onClick={() => handleQuickView(product)}>
                 <img 
                   src={product.images?.[0] || '/placeholder.png'} 
@@ -63,7 +59,6 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
                 />
               </div>
               
-              {/* Product Info */}
               <div className="flex-1 flex flex-col justify-center min-w-0">
                 <h3 
                   onClick={() => handleQuickView(product)}
@@ -79,7 +74,6 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
                 </span>
               </div>
               
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 shrink-0 pr-2">
                 <button 
                   onClick={() => handleQuickView(product)}
@@ -102,7 +96,6 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
           ))}
         </div>
       ) : (
-        /* Empty State */
         <div className="text-center py-20 sm:py-24 bg-white rounded-2xl border border-[#D4D7C9]/50 shadow-sm">
           <div className="w-16 h-16 bg-[#F8F9F5] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#D4D7C9]/40">
             <Heart className="w-6 h-6 text-[#1C221A]/30" />
@@ -122,14 +115,12 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
         </div>
       )}
 
-      {/* Quick View Modal */}
       <CollectionQuickViewModal
         product={selectedProduct}
         isOpen={isQuickViewOpen}
         onClose={() => setIsQuickViewOpen(false)}
       />
 
-      {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setDeleteModal({ isOpen: false, productId: null, wishlistId: null })} />

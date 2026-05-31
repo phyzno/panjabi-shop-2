@@ -3,7 +3,7 @@ import { User } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
-  isLoaded: boolean; // লগ-ইন চেক করা শেষ হয়েছে কি না, তা বোঝার জন্য
+  isLoaded: boolean;
   setUser: (user: User | null) => void;
   setLoaded: (status: boolean) => void;
 }

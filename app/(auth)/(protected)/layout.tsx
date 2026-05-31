@@ -30,7 +30,6 @@ function notifyAuthChange() {
 
     localStorage.setItem('panjabi-shop-auth-event', String(Date.now()));
   } catch {
-    // Auth is already cleared in this tab; cross-tab fallback can fail silently.
   }
 }
 
@@ -68,7 +67,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-[#F8F9F5] text-[#17210C] font-sans pb-20 md:pb-0 select-none">
       
-      {/* Desktop Top Header Container */}
       <header className="hidden md:block bg-white border-b border-[#D4D7C9]/60 sticky top-0 z-40 shadow-[0_4px_20px_rgba(14,20,9,0.02)]">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link href="/dashboard" className="font-heading text-xl font-bold uppercase tracking-widest text-[#17210C]">
@@ -97,7 +95,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </header>
 
-      {/* Mobile Top Header */}
       <header className="md:hidden bg-white border-b border-[#D4D7C9]/60 px-5 h-16 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <Link href="/dashboard" className="font-heading text-lg font-bold uppercase tracking-widest text-[#17210C]">
           My Atelier
@@ -110,7 +107,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </button>
       </header>
 
-      {/* Main Layout Grid */}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
           
@@ -118,7 +114,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {children}
           </main>
 
-          {/* Right Side: Hidden on mobile (lg:block), visible on desktop */}
           <aside className="hidden lg:block w-full">
             <div className="bg-white rounded-2xl border border-[#D4D7C9]/50 p-6 shadow-sm sticky top-28">
               <h3 className="font-heading text-sm font-bold uppercase tracking-widest text-[#17210C] mb-5 border-b border-[#D4D7C9]/40 pb-3">
@@ -154,7 +149,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      {/* Mobile Bottom Sheet Modal */}
       <div className={`md:hidden fixed inset-0 z-50 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-[#111410]/40 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
         
@@ -169,10 +163,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
           
-          {/* Scrollable Content Area for smaller phones */}
           <div className="flex flex-col gap-2 pb-2 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
             
-            {/* Main Navigation */}
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -194,12 +186,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <div className="h-px bg-[#D4D7C9]/40 my-3"></div>
             
-            {/* Quick Actions Header */}
             <span className="font-heading text-[10px] font-bold uppercase tracking-widest text-[#1C221A]/50 px-2 mb-1">
               Quick Actions
             </span>
 
-            {/* Quick Links Map */}
             {quickLinks.map((link) => (
               <Link
                 key={link.name}
@@ -216,7 +206,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <div className="h-px bg-[#D4D7C9]/40 my-3"></div>
 
-            {/* Mobile Sign Out Button */}
             <button 
               onClick={handleLogout}
               className="flex items-center gap-3 p-4 rounded-xl border border-red-100 bg-red-50 text-red-600 font-sans text-xs uppercase tracking-wider w-full mb-4"

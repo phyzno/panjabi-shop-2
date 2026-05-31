@@ -10,40 +10,32 @@ import { updateFabricStock } from "@/lib/actions/fabric.actions";
 export default function StockClient({ initialProducts, initialFabrics }: { initialProducts: any[], initialFabrics: any[] }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
-
     const [activeTab, setActiveTab] = useState<"products" | "fabrics">("products");
     const [searchTerm, setSearchTerm] = useState("");
-
-    // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const [actionType, setActionType] = useState<"add" | "sub" | "edit">("add");
     const [quantities, setQuantities] = useState<Record<string, number | "">>({});
-
     const filteredProducts = initialProducts.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.id.toString().includes(searchTerm)
     );
-
     const filteredFabrics = initialFabrics.filter(f =>
         f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         f.id.toString().includes(searchTerm)
     );
-
     const openModal = (item: any, type: "add" | "sub" | "edit") => {
         setSelectedItem(item);
         setActionType(type);
         setQuantities({});
         setIsModalOpen(true);
     };
-
     const handleQuantityChange = (sizeOrId: string, value: string) => {
         setQuantities(prev => ({
             ...prev,
             [sizeOrId]: value === "" ? "" : Number(value)
         }));
     };
-
     const handleStockSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -101,7 +93,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
     const standardSizes = selectedItem?.sizes?.filter((s: string) => isNaN(Number(s))) || [];
     const numberSizes = selectedItem?.sizes?.filter((s: string) => !isNaN(Number(s))) || [];
 
-    // Helper values for modal UI based on actionType
     const actionDetails = {
         add: { title: "Add Stock", color: "text-green-600", bgBtn: "bg-green-600 hover:bg-green-700" },
         sub: { title: "Reduce Stock", color: "text-red-600", bgBtn: "bg-red-600 hover:bg-red-700" },
@@ -111,7 +102,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
 
-            {/* Header & Search */}
             <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-6">
                 <div>
                     <h1 className="text-2xl font-heading font-bold text-primary">Inventory & Stock</h1>
@@ -121,7 +111,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-border">
-                    {/* Fully responsive Mother Switcher */}
                     <div className="flex bg-secondary p-1 rounded-md border border-border w-full md:w-auto shrink-0">
                         <button
                             onClick={() => { setActiveTab("products"); setSearchTerm(""); }}
@@ -150,7 +139,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                 </div>
             </div>
 
-            {/* Main Table Area */}
             <div className="bg-background border border-border rounded-lg shadow-sm overflow-hidden">
                 <div className="w-full overflow-x-auto overflow-y-auto max-h-[calc(100dvh-195px)] md:max-h-[calc(100dvh-220px)]">
                     <table className="w-full text-left border-collapse">
@@ -162,11 +150,9 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                         </thead>
                         <tbody className="divide-y divide-border">
 
-                            {/* === PRODUCTS TAB === */}
                             {activeTab === "products" && filteredProducts.map((product) => (
                                 <tr key={product.id} className="hover:bg-secondary/10 transition-colors">
                                     <td className="px-4 md:px-6 py-5 align-top">
-                                        {/* Wrapped inside flex-col to allow 2nd row for buttons on mobile */}
                                         <div className="flex flex-col gap-4">
                                             <div className="flex items-start gap-4">
                                                 <div className="w-12 h-14 bg-secondary border border-border rounded flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -182,7 +168,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                                                 </div>
                                             </div>
 
-                                            {/* Mobile View: Action Buttons taking full width on 2nd row */}
                                             <div className="md:hidden w-full flex flex-col gap-2 pt-2 border-t border-border">
                                                 <div className="flex gap-2">
                                                     <button onClick={() => openModal(product, "add")} className="flex-1 flex justify-center items-center gap-1 bg-green-50 border border-green-200 text-green-700 py-2 rounded text-xs hover:bg-green-100 transition-colors cursor-pointer">
@@ -204,7 +189,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                                         </div>
                                     </td>
 
-                                    {/* Desktop View */}
                                     <td className="hidden md:table-cell px-6 py-5 align-top">
                                         <div className="flex flex-col gap-3 w-full">
                                             <table className="w-full border-collapse border border-border rounded-md text-sm font-sans overflow-hidden">
@@ -245,7 +229,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                                 </tr>
                             ))}
 
-                            {/* === FABRICS TAB === */}
                             {activeTab === "fabrics" && filteredFabrics.map((fabric) => (
                                 <tr key={fabric.id} className="hover:bg-secondary/10 transition-colors">
                                     <td className="px-4 md:px-6 py-5 align-middle">
@@ -264,7 +247,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                                                 </div>
                                             </div>
 
-                                            {/* Mobile Fabric Action Buttons */}
                                             <div className="md:hidden w-full flex gap-2 pt-2 border-t border-border">
                                                 <button onClick={() => openModal(fabric, "add")} className="flex-1 flex justify-center items-center gap-1 bg-green-50 border border-green-200 text-green-700 py-2 rounded text-xs hover:bg-green-100"><Plus size={14} /> Add</button>
                                                 <button onClick={() => openModal(fabric, "sub")} className="flex-1 flex justify-center items-center gap-1 bg-red-50 border border-red-200 text-red-700 py-2 rounded text-xs hover:bg-red-100"><Minus size={14} /> Sub</button>
@@ -296,7 +278,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                 </div>
             </div>
 
-            {/* === MASTER STOCK MODAL === */}
             {isModalOpen && selectedItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="bg-background w-full max-w-2xl border border-border rounded-xl shadow-2xl relative flex flex-col max-h-[90vh]">
@@ -312,7 +293,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
 
                         <form onSubmit={handleStockSubmit} className="p-6 overflow-y-auto space-y-6">
 
-                            {/* Item Info Overview */}
                             <div className="bg-secondary/30 border border-border rounded-lg p-4">
                                 <h3 className="font-sans text-md text-foreground">{selectedItem.name}</h3>
                                 <p className="font-mono text-xs text-muted-foreground mb-4">{selectedItem.id}</p>
@@ -344,7 +324,6 @@ export default function StockClient({ initialProducts, initialFabrics }: { initi
                                 )}
                             </div>
 
-                            {/* Input Area (Modal Internal Toggle is now Removed) */}
                             <div>
                                 <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground uppercase tracking-widest border-b border-border pb-2">
                                     <Info size={14} />

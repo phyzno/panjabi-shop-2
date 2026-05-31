@@ -17,7 +17,6 @@ export default function TermsPage() {
         <h2 className="text-xl text-primary mt-8 mb-4">General Conditions ➔</h2>
         <ul className="list-decimal pl-6 space-y-6 text-muted-foreground">
           
-          {/* Point 1: Advance Payment */}
           <li>
             <strong className="text-foreground font-normal text-lg block mb-2">Advance Payment</strong>
             <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground">
@@ -26,7 +25,6 @@ export default function TermsPage() {
             </ul>
           </li>
 
-          {/* Point 2: Measurements */}
           <li>
             <strong className="text-foreground font-normal text-lg block mb-2">Measurements</strong>
             <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground">
@@ -35,7 +33,6 @@ export default function TermsPage() {
             </ul>
           </li>
 
-          {/* Point 3: Fabric */}
           <li>
             <strong className="text-foreground font-normal text-lg block mb-2">Fabric & Colors</strong>
             <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground">

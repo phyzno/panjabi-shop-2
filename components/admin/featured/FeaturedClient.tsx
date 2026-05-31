@@ -16,36 +16,26 @@ export default function FeaturedClient({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  
   const [activeTab, setActiveTab] = useState<"products" | "fabrics">("products");
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSearchTerm, setModalSearchTerm] = useState("");
-  const [selectedToAdd, setSelectedToAdd] = useState<number[]>([]); // Array of real IDs
-
-  // Main Table Data (Only Featured Items)
+  const [selectedToAdd, setSelectedToAdd] = useState<number[]>([]);
   const displayedFeaturedProducts = initialProducts.filter(p => 
     p.is_featured && (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.toString().includes(searchTerm))
   );
   const displayedFeaturedFabrics = initialFabrics.filter(f => 
     f.is_featured && (f.name.toLowerCase().includes(searchTerm.toLowerCase()) || f.id.toString().includes(searchTerm))
   );
-
-  // Modal Data (Only Unfeatured Items)
   const modalAvailableProducts = initialProducts.filter(p => 
     !p.is_featured && (p.name.toLowerCase().includes(modalSearchTerm.toLowerCase()) || p.id.toString().includes(modalSearchTerm))
   );
   const modalAvailableFabrics = initialFabrics.filter(f => 
     !f.is_featured && (f.name.toLowerCase().includes(modalSearchTerm.toLowerCase()) || f.id.toString().includes(modalSearchTerm))
   );
-
-  // Quick Stats
   const featuredProductsCount = initialProducts.filter(p => p.is_featured).length;
   const featuredFabricsCount = initialFabrics.filter(f => f.is_featured).length;
 
-  // Remove from Featured (Server Action)
   const handleRemoveFeatured = (id: number) => {
     if (!confirm("Are you sure you want to remove this from featured?")) return;
     
@@ -59,7 +49,6 @@ export default function FeaturedClient({
     });
   };
 
-  // Modal Actions
   const openModal = () => {
     setModalSearchTerm("");
     setSelectedToAdd([]);
@@ -72,7 +61,6 @@ export default function FeaturedClient({
     );
   };
 
-  // Add Multiple Items to Featured (Server Action)
   const handleAddSelected = () => {
     startTransition(async () => {
       if (activeTab === "products") {
@@ -88,7 +76,6 @@ export default function FeaturedClient({
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* Header & Controls (Optimized for both Desktop & Mobile) */}
       <div className="bg-background border border-border p-4 sm:p-6 rounded-lg shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -108,7 +95,6 @@ export default function FeaturedClient({
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-4 border-t border-border">
-          {/* Tabs */}
           <div className="flex bg-secondary p-1 rounded-md border border-border w-full md:w-auto shrink-0">
             <button 
               onClick={() => { setActiveTab("products"); setSearchTerm(""); }}
@@ -125,7 +111,6 @@ export default function FeaturedClient({
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            {/* Search Box - ordered 2nd on mobile, 1st on desktop */}
             <div className="relative w-full sm:w-64 order-2 sm:order-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <input 
@@ -137,7 +122,6 @@ export default function FeaturedClient({
               />
             </div>
 
-            {/* Add New Button - ordered 1st on mobile, 2nd on desktop */}
             <button 
               onClick={openModal}
               disabled={isPending}
@@ -149,7 +133,6 @@ export default function FeaturedClient({
         </div>
       </div>
 
-      {/* Desktop Table View (Hidden on Mobile) */}
       <div className="hidden md:block bg-background border border-border rounded-lg shadow-sm overflow-hidden w-full">
         <div className="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-220px)] w-full">
           <table className="w-full text-left table-auto border-collapse">
@@ -162,12 +145,10 @@ export default function FeaturedClient({
             </thead>
             <tbody className="divide-y divide-border">
               
-              {/* === PRODUCTS RENDER === */}
               {activeTab === "products" && displayedFeaturedProducts.map((product) => (
                 <tr key={product.id} className={`hover:bg-secondary/30 transition-colors ${isPending ? 'opacity-50' : ''}`}>
                   <td className="px-6 py-4 align-middle whitespace-nowrap">
                     <div className="flex items-center gap-4">
-                      {/* Product Image */}
                       <div className="w-12 h-14 bg-secondary border border-border rounded shrink-0 flex items-center justify-center overflow-hidden relative">
                         {product.images && product.images[0] ? (
                           <Image src={product.images[0]} alt={product.name} width={48} height={56} className="w-full h-full object-cover z-10" />
@@ -202,12 +183,10 @@ export default function FeaturedClient({
                 </tr>
               ))}
 
-              {/* === FABRICS RENDER === */}
               {activeTab === "fabrics" && displayedFeaturedFabrics.map((fabric) => (
                 <tr key={fabric.id} className={`hover:bg-secondary/30 transition-colors ${isPending ? 'opacity-50' : ''}`}>
                   <td className="px-6 py-4 align-middle whitespace-nowrap">
                     <div className="flex items-center gap-4">
-                      {/* Fabric Raw Image */}
                       <div className="w-12 h-14 bg-secondary border border-border rounded shrink-0 flex items-center justify-center overflow-hidden relative">
                         {fabric.raw_image_url ? (
                           <Image src={fabric.raw_image_url} alt={fabric.name} width={48} height={56} className="w-full h-full object-cover z-10" />
@@ -237,7 +216,6 @@ export default function FeaturedClient({
                 </tr>
               ))}
 
-              {/* Empty States */}
               {displayedFeaturedProducts.length === 0 && activeTab === "products" && (
                 <tr><td colSpan={3} className="py-16 text-center text-sm font-sans text-muted-foreground italic">No featured products found.</td></tr>
               )}
@@ -250,10 +228,8 @@ export default function FeaturedClient({
         </div>
       </div>
 
-      {/* Mobile Card Layout (Hidden on Desktop) */}
       <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-195px)] w-full">
         
-        {/* === PRODUCTS RENDER === */}
         {activeTab === "products" && (
           displayedFeaturedProducts.length === 0 ? (
             <div className="bg-background border border-border p-12 text-center rounded-lg shadow-sm">
@@ -265,7 +241,6 @@ export default function FeaturedClient({
                 key={product.id} 
                 className={`bg-background border border-border rounded-lg p-4 flex gap-4 relative shadow-sm hover:border-muted-foreground/30 transition-colors ${isPending ? 'opacity-50' : ''}`}
               >
-                {/* Product Image */}
                 <div className="w-16 h-20 rounded-md overflow-hidden bg-secondary border border-border shrink-0 flex items-center justify-center relative">
                   {product.images && product.images[0] ? (
                     <Image src={product.images[0]} alt={product.name} width={64} height={80} className="w-full h-full object-cover z-10" />
@@ -274,7 +249,6 @@ export default function FeaturedClient({
                   )}
                 </div>
 
-                {/* Product Details */}
                 <div className="flex-1 min-w-0 pr-8">
                   <h3 className="font-sans text-sm font-medium text-foreground line-clamp-2 leading-snug">
                     {product.name}
@@ -285,7 +259,6 @@ export default function FeaturedClient({
                   <p className="font-sans text-primary text-base mt-2">৳ {product.price}</p>
                 </div>
 
-                {/* Remove Action */}
                 <div className="absolute top-2 right-2">
                   <button 
                     onClick={() => handleRemoveFeatured(product.id)}
@@ -300,7 +273,6 @@ export default function FeaturedClient({
           )
         )}
 
-        {/* === FABRICS RENDER === */}
         {activeTab === "fabrics" && (
           displayedFeaturedFabrics.length === 0 ? (
             <div className="bg-background border border-border p-12 text-center rounded-lg shadow-sm">
@@ -312,7 +284,6 @@ export default function FeaturedClient({
                 key={fabric.id} 
                 className={`bg-background border border-border rounded-lg p-4 flex gap-4 relative shadow-sm hover:border-muted-foreground/30 transition-colors ${isPending ? 'opacity-50' : ''}`}
               >
-                {/* Fabric Image */}
                 <div className="w-16 h-20 rounded-md overflow-hidden bg-secondary border border-border shrink-0 flex items-center justify-center relative">
                   {fabric.raw_image_url ? (
                     <Image src={fabric.raw_image_url} alt={fabric.name} width={64} height={80} className="w-full h-full object-cover z-10" />
@@ -321,7 +292,6 @@ export default function FeaturedClient({
                   )}
                 </div>
 
-                {/* Fabric Details */}
                 <div className="flex-1 min-w-0 pr-8">
                   <h3 className="font-sans text-sm font-medium text-foreground line-clamp-2 leading-snug">
                     {fabric.name}
@@ -330,7 +300,6 @@ export default function FeaturedClient({
                   <p className="font-sans text-primary text-base mt-2">৳ {fabric.price} / Yard</p>
                 </div>
 
-                {/* Remove Action */}
                 <div className="absolute top-2 right-2">
                   <button 
                     onClick={() => handleRemoveFeatured(fabric.id)}
@@ -346,7 +315,6 @@ export default function FeaturedClient({
         )}
       </div>
 
-      {/* === ADD NEW MODAL === */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-background w-full max-w-lg border border-border rounded-xl shadow-2xl relative flex flex-col max-h-[85vh]">
@@ -398,7 +366,6 @@ export default function FeaturedClient({
                       } ${isPending ? 'opacity-50 pointer-events-none' : ''}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        {/* Modal Image */}
                         <div className="w-10 h-10 bg-secondary border border-border rounded flex items-center justify-center shrink-0 overflow-hidden relative">
                            {activeTab === "products" ? (
                               item.images && item.images[0] ? <Image src={item.images[0]} alt={item.name} width={40} height={40} className="w-full h-full object-cover z-10" /> : <Shirt size={16} className="text-muted-foreground z-0" />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { createClient } from '@/utils/supabase/server';
 import { getUserProfile } from '@/lib/actions/auth';
-import { getUserOrders, getUserMeasurements } from '@/lib/actions/user.actions'; // আপনার তৈরি সার্ভার অ্যাকশন
+import { getUserOrders, getUserMeasurements } from '@/lib/actions/user.actions';
 import { getUserWishlist } from '@/lib/actions/wishlist.actions';
 import { ShoppingBag, Ruler, Heart, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -14,31 +14,25 @@ export const metadata = {
 export default async function DashboardOverview() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) {
     redirect('/login?redirect=/dashboard');
   }
 
   const profile = await getUserProfile();
-
-  // প্যারালাল ডেটা ফেচিং
   const [ordersResponse, measurementsResponse, wishlistResponse] = await Promise.all([
     getUserOrders(user.id),
     getUserMeasurements(user.id),
     getUserWishlist(user.id),
   ]);
-
   const recentOrders = ordersResponse.success && ordersResponse.data ? ordersResponse.data.slice(0, 3) : [];
   const totalOrders = ordersResponse.success && ordersResponse.data ? ordersResponse.data.length : 0;
   const measurementCount = measurementsResponse.success && measurementsResponse.data ? measurementsResponse.data.length : 0;
   const wishlistCount = wishlistResponse.success && wishlistResponse.data ? wishlistResponse.data.length : 0;
-
   const displayName = profile?.name || user?.email?.split('@')[0] || 'Customer';
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
 
-      {/* Welcome Banner */}
       <div className="bg-white rounded-2xl border border-[#D4D7C9]/50 p-6 md:p-8 shadow-sm bg-[url('/pattern-bg.png')] bg-cover bg-center">
         <h1 className="font-heading text-2xl md:text-3xl font-bold uppercase tracking-wider text-[#17210C]">
           Welcome, {displayName}
@@ -48,7 +42,6 @@ export default async function DashboardOverview() {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-[#D4D7C9]/50 p-5 shadow-sm flex flex-col items-center justify-center text-center gap-3">
           <div className="w-12 h-12 bg-[#4A5D23]/10 text-[#4A5D23] rounded-full flex items-center justify-center">
@@ -81,7 +74,6 @@ export default async function DashboardOverview() {
         </div>
       </div>
 
-      {/* Recent Orders Glimpse */}
       <div className="bg-white rounded-2xl border border-[#D4D7C9]/50 p-6 md:p-8 shadow-sm">
         <div className="flex items-center justify-between mb-6 border-b border-[#D4D7C9]/40 pb-4">
           <h2 className="font-heading text-base font-bold uppercase tracking-wider text-[#17210C]">

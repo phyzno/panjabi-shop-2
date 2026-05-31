@@ -15,7 +15,6 @@ function notifyAuthChange() {
 
     localStorage.setItem('panjabi-shop-auth-event', String(Date.now()));
   } catch {
-    // Auth is already synced in this tab; cross-tab fallback can fail silently.
   }
 }
 

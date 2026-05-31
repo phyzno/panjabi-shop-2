@@ -29,8 +29,8 @@ export const getCachedFeaturedProducts = unstable_cache(
           images: products.images,
           description: products.description,
           categoryName: categories.name,
-          sizes: products.sizes, // <-- যুক্ত করা হলো
-          stock: products.stock, // <-- যুক্ত করা হলো
+          sizes: products.sizes,
+          stock: products.stock,
         })
         .from(products)
         .leftJoin(categories, eq(products.category_id, categories.id))
@@ -46,7 +46,6 @@ export const getCachedFeaturedProducts = unstable_cache(
   { tags: ['products', 'categories'] } 
 );
 
-// ১. নতুন প্রোডাক্ট যোগ করা
 export async function addProduct(data: {
   category_id: number;
   name: string;
@@ -69,7 +68,6 @@ export async function addProduct(data: {
       is_featured: data.is_featured || false,
     });
 
-    // Tier 2 Cache Clear
     revalidateTag('products');
 
     return { success: true, message: "Product added successfully!" };
@@ -79,7 +77,6 @@ export async function addProduct(data: {
   }
 }
 
-// ২. প্রোডাক্ট আপডেট করা
 export async function updateProduct(
   id: number,
   data: {
@@ -116,7 +113,6 @@ export async function updateProduct(
   }
 }
 
-// ৩. প্রোডাক্ট ডিলিট করা
 export async function deleteProduct(id: number, imageUrls: string[]) {
   try {
     for (const url of imageUrls) {
@@ -136,7 +132,6 @@ export async function deleteProduct(id: number, imageUrls: string[]) {
   }
 }
 
-// ৪. প্রোডাক্ট ফেচ করা
 export async function getProducts(categoryId?: number) {
   try {
     const data = categoryId
@@ -150,7 +145,6 @@ export async function getProducts(categoryId?: number) {
   }
 }
 
-// ৫. সিঙ্গেল প্রোডাক্ট ফেচ করা
 export async function getProductById(id: number) {
   try {
     const data = await db.select().from(products).where(eq(products.id, id));
@@ -161,12 +155,10 @@ export async function getProductById(id: number) {
   }
 }
 
-// ৬. প্রোডাক্ট স্টক আপডেট করা (সাইজ অনুযায়ী)
 export async function updateProductStock(id: number, stockObj: ProductStock) {
   try {
     await db.update(products).set({ stock: stockObj, updated_at: new Date() }).where(eq(products.id, id));
     
-    // Tier 2 & 3 Cache Clear
     revalidateTag('products');
     revalidateTag(`product-${id}`);
     revalidatePath(`/shop/${id}`);
@@ -179,7 +171,6 @@ export async function updateProductStock(id: number, stockObj: ProductStock) {
   }
 }
 
-// ৭. প্রোডাক্ট ফিচার্ড স্ট্যাটাস টগল করা
 export async function toggleProductFeatured(id: number, is_featured: boolean) {
   try {
     await db.update(products).set({ is_featured, updated_at: new Date() }).where(eq(products.id, id));
@@ -192,7 +183,6 @@ export async function toggleProductFeatured(id: number, is_featured: boolean) {
   }
 }
 
-// সব ক্যাটাগরি ফেচ করার জন্য (Tier 2 Caching)
 export async function getCachedCategories() {
   return await unstable_cache(
     async () => {
@@ -205,11 +195,10 @@ export async function getCachedCategories() {
       }
     },
     ['all-categories-cache'],
-    { tags: ['categories'] } // Tier 2 Tag
+    { tags: ['categories'] }
   )();
 }
 
-// সব প্রোডাক্ট ফেচ করার জন্য (Tier 2 Caching)
 export async function getCachedAllProducts() {
   return await unstable_cache(
     async () => {
@@ -222,8 +211,8 @@ export async function getCachedAllProducts() {
             images: products.images,
             description: products.description,
             categoryName: categories.name,
-            sizes: products.sizes, // <-- যুক্ত করা হলো
-            stock: products.stock, // <-- যুক্ত করা হলো
+            sizes: products.sizes,
+            stock: products.stock,
           })
           .from(products)
           .leftJoin(categories, eq(products.category_id, categories.id));
@@ -239,7 +228,6 @@ export async function getCachedAllProducts() {
   )();
 }
 
-// নির্দিষ্ট আইডি অনুযায়ী প্রোডাক্ট ফেচ করার জন্য (Tier 3 Caching)
 export async function getCachedProductById(id: number) {
   return await unstable_cache(
     async () => {

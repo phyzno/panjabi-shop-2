@@ -75,7 +75,6 @@ export function CollectionQuickViewModal({
     setIsFullscreenOpen(false);
     setIsHoveringBtn(false);
 
-    // ডাইনামিক ডিফল্ট সাইজ সেটআপ
     const initialMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
     setSizeMode(initialMode);
 
@@ -397,7 +396,6 @@ export function CollectionQuickViewModal({
                 )}
               </div>
 
-              {/* স্টক স্ট্যাটাস মেসেজ */}
               {selectedSize && (
                 <div className="mt-3 min-h-[20px]">
                   {isOutOfStock ? (

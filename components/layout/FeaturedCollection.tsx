@@ -9,7 +9,6 @@ export default async function FeaturedCollection() {
     return null; 
   }
 
-  // ডেটা ম্যাপ করার সময় categoryName ব্যবহার করবো
   const featuredProducts: CollectionProduct[] = dbProducts.map((p) => ({
     id: p.id.toString(),
     name: p.name,
@@ -17,11 +16,10 @@ export default async function FeaturedCollection() {
     price: `৳ ${p.price}`,
     images: p.images || [],
     description: p.description || '',
-    sizes: (p.sizes as string[]) || [], // <-- এই লাইনটি যুক্ত করুন
-    stock: p.stock as Record<string, any> || {}, // <-- এই লাইনটি যুক্ত করুন
+    sizes: (p.sizes as string[]) || [],
+    stock: p.stock as Record<string, any> || {},
   }));
 
-  // ক্যাটাগরির নামগুলো দিয়ে ইউনিক লিস্ট তৈরি
   const uniqueCategories = Array.from(
     new Set(featuredProducts.map((p) => p.category))
   );

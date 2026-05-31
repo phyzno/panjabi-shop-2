@@ -6,12 +6,10 @@ import { db } from "@/lib/db";
 import { siteSettings } from "@/lib/db/schema";
 import { revalidateTag } from "next/cache";
 
-// সেটিংস ডেটা ফেচ করা (id = 1 এর জন্য)
 export async function getSiteSettings() {
   try {
     const data = await db.select().from(siteSettings).where(eq(siteSettings.id, 1));
     
-    // যদি কোনো সেটিংস রো না থাকে, তবে একটি ডিফল্ট রো তৈরি করবে
     if (data.length === 0) {
       const defaultRow = await db.insert(siteSettings).values({
         active_offer_id: "default",
@@ -29,16 +27,14 @@ export async function getSiteSettings() {
   }
 }
 
-// ডাটাবেস থেকে পড়ার সময় Next.js ক্যাশ ব্যবহার করার জন্য র্যাপার
 export const getCachedSiteSettings = unstable_cache(
   async () => {
     return await getSiteSettings();
   },
-  ["global-site-settings"], // Cache key
-  { tags: ["site-settings"], revalidate: 3600 } // Tier 1 Tag
+  ["global-site-settings"],
+  { tags: ["site-settings"], revalidate: 3600 }
 );
 
-// গ্লোবাল সেটিংস আপডেট করার কোর অ্যাকশন
 export async function updateSiteSettings(payload: {
   active_offer_id?: string;
   offers?: any[];
@@ -53,7 +49,6 @@ export async function updateSiteSettings(payload: {
       })
       .where(eq(siteSettings.id, 1));
 
-    // মাইক্রো-ক্যাশিং রিভ্যালিডেশন: হেডার এবং ফ্যাব্রিক ফর্ম সাথে সাথে আপডেট হবে
     revalidateTag("site-settings");
     
     return { success: true, message: "Settings updated successfully!" };

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { MapPin, Phone, Mail, CreditCard } from "lucide-react";
 import { useSizeGuideStore } from "@/store/useSizeGuideStore";
 
-// --- Custom Reusable Footer Link Component with Push Animation ---
 const FooterLink = ({ 
   href, 
   children, 
@@ -20,10 +19,8 @@ const FooterLink = ({
     onClick={onClick}
     className="group flex items-center relative text-white/70 hover:text-[#B5C293] transition-colors duration-300 font-sans text-[13px] font-medium tracking-[0.08em] py-1"
   >
-    {/* Left Emerging Line Indicator */}
     <span className="absolute left-0 w-0 h-[1.5px] bg-[#B5C293] transition-all duration-300 ease-out group-hover:w-4 group-active:w-4 opacity-0 group-hover:opacity-100 group-active:opacity-100" />
     
-    {/* Text That Gets Pushed to the Right */}
     <span className="transition-transform duration-300 ease-out group-hover:translate-x-6 group-active:translate-x-6">
       {children}
     </span>
@@ -36,10 +33,8 @@ export default function Footer() {
     <footer className="bg-[#0A0A0A] border-t border-white/10 pt-20 pb-8 select-none transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Main Grid Content */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 pb-16">
           
-          {/* Column 1: Brand Info */}
           <div className="flex flex-col space-y-6">
             <h3 className="font-heading text-2xl font-bold uppercase tracking-[0.15em] text-[#B5C293]">
               PANJABI<span className="text-accent text-3xl leading-none font-sans">.</span>
@@ -47,7 +42,6 @@ export default function Footer() {
             <p className="font-sans text-[13px] leading-relaxed text-white/70 max-w-[260px]">
               Crafting premium, royal heritage ethnic wear stitched to your exact measurements. Experience luxury fabrics and timeless designs.
             </p>
-            {/* Social Icons - Optimized Clean SVGs */}
             <div className="flex items-center gap-5 pt-2">
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-white/70 hover:text-[#B5C293] transition-all duration-300 hover:-translate-y-1 hover:scale-110" aria-label="Facebook">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -69,7 +63,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 2: Quick Links */}
           <div className="flex flex-col space-y-5">
             <h4 className="font-heading text-[12px] font-bold uppercase tracking-[0.2em] text-white/90">
               Quick Links
@@ -82,7 +75,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 3: Customer Care */}
           <div className="flex flex-col space-y-5">
             <h4 className="font-heading text-[12px] font-bold uppercase tracking-[0.2em] text-white/90">
               Customer Care
@@ -105,14 +97,12 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 4: The Showroom & Payments */}
           <div className="flex flex-col space-y-5">
             <h4 className="font-heading text-[12px] font-bold uppercase tracking-[0.2em] text-white/90">
               The Showroom
             </h4>
             <div className="flex flex-col space-y-4 font-sans text-[13px] text-white/70">
               
-              {/* Map Anchor */}
               <a 
                 href="https://maps.google.com/?q=12A+Banani+Commercial+Area,+Road+11,+Dhaka,+Bangladesh" 
                 target="_blank" 
@@ -125,7 +115,6 @@ export default function Footer() {
                 </span>
               </a>
 
-              {/* Phone Anchor */}
               <a 
                 href="tel:+8801700000000" 
                 className="flex items-center gap-3 hover:text-[#B5C293] transition-colors duration-300 group/link"
@@ -134,7 +123,6 @@ export default function Footer() {
                 <span className="group-hover/link:underline underline-offset-4">+880 1700 000000</span>
               </a>
 
-              {/* Mail Anchor */}
               <a 
                 href="mailto:info@panjabi.com" 
                 className="flex items-center gap-3 hover:text-[#B5C293] transition-colors duration-300 group/link"
@@ -144,7 +132,6 @@ export default function Footer() {
               </a>
             </div>
 
-            {/* Payment Methods Section - Upgraded Premium Look */}
             <div className="pt-4 flex flex-col space-y-3">
                <h4 className="font-heading text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
                  Accepted Payments
@@ -165,7 +152,6 @@ export default function Footer() {
 
         </div>
 
-        {/* Bottom Area: Divider, Copyright & Legal */}
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-white/50 text-center md:text-left">
             © {new Date().getFullYear()} Panjabi Shop. All Rights Reserved.

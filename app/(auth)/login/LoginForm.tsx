@@ -28,7 +28,6 @@ export default function LoginForm({
 
   return (
     <div className="space-y-6">
-      {/* Messages */}
       {error && (
         <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-[11px] font-sans flex items-center gap-2 animate-in slide-in-from-top-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -46,7 +45,6 @@ export default function LoginForm({
       <form action={handleSubmit} className="space-y-5">
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
-        {/* Email Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-2 ml-1">
             Email Address
@@ -63,7 +61,6 @@ export default function LoginForm({
           </div>
         </div>
 
-        {/* Password Field */}
         <div>
           <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/60 mb-2 ml-1">
             Password
@@ -77,7 +74,6 @@ export default function LoginForm({
               className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl pl-11 pr-12 py-3.5 focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] outline-none font-sans text-sm transition-all"
               placeholder="••••••••"
             />
-            {/* 👈 নতুন Show/Hide বাটন */}
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -88,13 +84,12 @@ export default function LoginForm({
           </div>
         </div>
 
-        {/* Remember Me & Forgot Password (Inline Layout) */}
         <div className="flex items-center justify-between px-1">
           <label className="flex items-center gap-2 cursor-pointer group">
             <input
               type="checkbox"
               name="remember"
-              defaultChecked={true} // <-- ডিফল্টভাবে চেক করা থাকবে
+              defaultChecked={true}
               className="w-3.5 h-3.5 rounded-[4px] border-[#D4D7C9] text-[#4A5D23] focus:ring-[#4A5D23]/30 transition-colors cursor-pointer accent-[#4A5D23]"
             />
             <span className="text-[12px] uppercase tracking-widest text-[#1C221A]/60 group-hover:text-[#17210C] transition-colors pt-0.5">
@@ -106,7 +101,6 @@ export default function LoginForm({
           </Link>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
@@ -123,7 +117,6 @@ export default function LoginForm({
         </button>
       </form>
 
-      {/* Sign Up Link */}
       <div className="pt-4 border-t border-[#D4D7C9]/40 text-center">
         <p className="font-sans text-xs text-[#1C221A]/50 uppercase tracking-widest">
           Don&apos;t have an account?{' '}

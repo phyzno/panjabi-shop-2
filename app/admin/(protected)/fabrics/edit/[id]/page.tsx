@@ -13,7 +13,6 @@ export const metadata = {
 export default async function EditFabricPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
-  // Promise.all দিয়ে একই সাথে ফ্যাব্রিক এবং সেটিংস ফেচ করা হচ্ছে
   const [{ data: fabric }, settingsRes] = await Promise.all([
     getFabricById(Number(id)),
     getCachedSiteSettings()
@@ -36,7 +35,6 @@ export default async function EditFabricPage({ params }: { params: Promise<{ id:
         <h1 className="text-2xl font-heading font-bold text-primary mt-2">Edit Fabric: {fabric.name}</h1>
       </div>
 
-      {/* ডাইনামিক প্রপস পাস করা হলো */}
       <FabricForm 
         initialData={fabric} 
         isEditMode={true} 

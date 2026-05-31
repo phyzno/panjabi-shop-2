@@ -47,7 +47,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
   const productIdNum = Number(product.id);
   const isWishlisted = wishlistedIds.includes(productIdNum);
 
-  // Gallery States
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [zoomBgPos, setZoomBgPos] = useState('50% 50%');
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
@@ -57,7 +56,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // Database Sizes & Stock
   const allAvailableSizes = product?.sizes || [];
 
   const productStock = typeof product?.stock === 'string'
@@ -67,7 +65,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
   const handleAddToCart = () => {
     if (isOutOfStock || !selectedSize) return;
 
-    // প্রাইস যদি স্ট্রিং বা ফরম্যাটেড আকারে থাকে তবে তা সেফলি নাম্বারে কনভার্ট করা
     const numericPrice = typeof product.price === 'number'
       ? product.price
       : Number(String(product.price).replace(/[^0-9.]/g, ''));
@@ -107,11 +104,9 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     }
   };
 
-  // সাইজগুলোকে ডায়নামিকভাবে দুই ভাগে ভাগ করা হচ্ছে
-  const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size))); // যেগুলো নাম্বার নয় (S, M, L)
-  const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size))); // যেগুলো নাম্বার (38, 40)
+  const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
+  const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
 
-  // Size Toggle States
   const [sizeMode, setSizeMode] = useState<SizeMode>('preset');
   const [selectedSize, setSelectedSize] = useState<string>('');
 
@@ -119,7 +114,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
   const [openTab, setOpenTab] = useState<number | null>(0);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
-  // যে মোডটি সিলেক্ট করা আছে, সেটির সাইজগুলো বের করা
   const activeSizes = sizeMode === 'preset' ? dbPresetSizes : dbNumericSizes;
 
   useEffect(() => {
@@ -128,8 +122,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     setZoomBgPos('50% 50%');
     setIsFullscreenOpen(false);
     setIsHoveringBtn(false);
-
-    // প্রোডাক্ট লোড হওয়ার পর ডিফল্ট মোড এবং সাইজ সেট করা
     const initialMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
     setSizeMode(initialMode);
 
@@ -139,8 +131,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     setQuantity(1);
     setOpenTab(0);
   }, [product]);
-
-  // Gallery Handlers
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isHoveringBtn) return;
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -148,26 +138,20 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     const y = ((e.clientY - top) / height) * 100;
     setZoomBgPos(`${x}% ${y}%`);
   };
-
   const handlePrev = () => {
     if (!product) return;
     setActiveImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1));
   };
-
   const handleNext = () => {
     if (!product) return;
     setActiveImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
   };
-
   const toggleTab = (index: number) => {
     setOpenTab((current) => (current === index ? null : index));
   };
-
-  // স্টক লজিক
   const maxStock = productStock[selectedSize] || 0;
   const isOutOfStock = maxStock === 0;
 
-  // প্রোডাক্ট না থাকলে এম্পটি স্টেট দেখাবে
   if (!product) {
     return (
       <div className="bg-[#F8F9F5] min-h-screen pt-24 pb-20">
@@ -194,7 +178,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     );
   }
 
-  // Fullscreen UI
   if (isFullscreenOpen) {
     return (
       <div className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center select-none">
@@ -236,7 +219,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-16 items-start">
 
-          {/* Gallery Section */}
           <div className="flex flex-col-reverse md:flex-row gap-4 lg:sticky top-24">
             <div className="flex flex-row md:flex-col gap-3 shrink-0 justify-center md:justify-start overflow-x-auto md:overflow-visible">
               {product.images.map((img, i) => (
@@ -302,7 +284,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
             </div>
           </div>
 
-          {/* Product Details Section */}
           <div className="flex flex-col">
             <div className="flex items-center justify-between mb-3">
               <span className="font-sans text-[11px] font-medium uppercase tracking-[0.25em] text-[#4A5D23]">
@@ -333,7 +314,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
               {product.description}
             </p>
 
-            {/* Sizing & Stock Section */}
             <div className="mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <div className="flex items-center gap-4">
@@ -341,7 +321,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
                     Select Size
                   </span>
 
-                  {/* Size Mode Toggle - শুধুমাত্র যদি দুই ধরণের সাইজ থাকে তবেই দেখাবে */}
                   {(dbPresetSizes.length > 0 || dbNumericSizes.length > 0) && (
                     <div className="inline-flex rounded-full bg-[#EBECE3] p-1">
                       <button
@@ -389,7 +368,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
                 </button>
               </div>
 
-              {/* ডায়নামিক সাইজ রেন্ডারিং */}
               <div className="flex flex-wrap gap-3">
                 {activeSizes.length > 0 ? (
                   activeSizes.map((size) => {
@@ -420,7 +398,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
                 )}
               </div>
 
-              {/* স্টক স্ট্যাটাস মেসেজ */}
               {selectedSize && (
                 <div className="mt-3 min-h-[20px]">
                   {isOutOfStock ? (
@@ -436,9 +413,7 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
               )}
             </div>
 
-            {/* Responsive Actions Section */}
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
-              {/* Quantity Selector - স্টক অনুযায়ী রেস্ট্রিক্ট করা */}
               <div className="flex items-center justify-between border border-[#D4D7C9] bg-white h-14 px-4 w-full sm:w-[140px] shrink-0">
                 <button
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
@@ -457,9 +432,7 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
                 </button>
               </div>
 
-              {/* Add to Cart and Wishlist Row Wrapper */}
               <div className="flex flex-row gap-3 flex-1 w-full">
-                {/* Add to Cart Button Update */}
                 <button
                   disabled={isOutOfStock || !selectedSize}
                   onClick={handleAddToCart}
@@ -472,7 +445,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
                   <span>{isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
                 </button>
 
-                {/* Wishlist Button Update */}
                 <button
                   onClick={handleWishlistClick}
                   disabled={isWishlistLoading}
@@ -487,7 +459,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
               </div>
             </div>
 
-            {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-2 py-5 border-y border-[#D4D7C9]/40 mb-8 text-center bg-white/40 rounded-xl px-2">
               <div className="flex flex-col items-center justify-center gap-1">
                 <ShieldCheck className="w-5 h-5 text-[#4A5D23]" />
@@ -503,7 +474,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
               </div>
             </div>
 
-            {/* Accordions */}
             <div className="space-y-3">
               {detailSections.map((item, index) => {
                 const isOpen = openTab === index;
@@ -534,7 +504,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
           </div>
         </div>
 
-        {/* Related Products */}
         <div className="mt-28 border-t border-[#D4D7C9]/60 pt-16">
           <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#4A5D23]/70 text-center mb-2">
             Complete the Look
@@ -572,7 +541,6 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
 
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
 
-      {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setShowLoginModal(false)} />

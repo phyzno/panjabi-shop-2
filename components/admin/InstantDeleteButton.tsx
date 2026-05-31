@@ -16,7 +16,7 @@ export function InstantDeleteButton({ action, className = "cursor-pointer p-2 ho
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this?')) {
-      setDeleted(true); // hide instantly
+      setDeleted(true);
       startTransition(async () => {
         await action();
       })

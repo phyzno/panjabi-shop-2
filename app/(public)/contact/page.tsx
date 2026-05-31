@@ -9,7 +9,6 @@ export default function ContactPage() {
     document.title = 'Contact | Panjabi Shop';
   }, []);
 
-  // Showroom Details & Map Link
   const contactInfo = {
     address: "12A Banani Commercial Area, Road 11, Dhaka, Bangladesh",
     phone: "+880 1700 000000",
@@ -24,7 +23,6 @@ export default function ContactPage() {
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           
-          {/* --- LEFT CONTENT: Information & Typography --- */}
           <div className="flex flex-col z-10">
             <span className="text-[#4A5D23]/70 text-[12px] md:text-[13px] uppercase tracking-[0.3em] mb-5">
               Flagship Studio
@@ -38,10 +36,8 @@ export default function ContactPage() {
               Step into our flagship studio to experience true royal heritage. Feel the premium fabrics, consult with our master tailors, and get your exact measurements taken for a flawless bespoke fit.
             </p>
 
-            {/* Separated 4 Info Details List */}
             <div className="flex flex-col gap-6 mb-12 border-y border-[#D4D7C9]/60 py-8">
               
-              {/* 1. Location */}
               <div className="flex items-start gap-5 group">
                 <div className="w-10 h-10 rounded-full bg-white border border-[#D4D7C9] flex items-center justify-center text-[#4A5D23] group-hover:bg-[#4A5D23] group-hover:text-white transition-colors shrink-0">
                   <MapPin className="w-4 h-4 stroke-[1.5]" />
@@ -52,7 +48,6 @@ export default function ContactPage() {
                 </div>
               </div>
               
-              {/* 2. Opening Hours */}
               <div className="flex items-start gap-5 group">
                 <div className="w-10 h-10 rounded-full bg-white border border-[#D4D7C9] flex items-center justify-center text-[#4A5D23] group-hover:bg-[#4A5D23] group-hover:text-white transition-colors shrink-0">
                   <Clock className="w-4 h-4 stroke-[1.5]" />
@@ -63,7 +58,6 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* 3. Call */}
               <div className="flex items-start gap-5 group">
                 <a href={`tel:${contactInfo.phone}`} className="w-10 h-10 rounded-full bg-white border border-[#D4D7C9] flex items-center justify-center text-[#4A5D23] group-hover:bg-[#4A5D23] group-hover:text-white transition-colors shrink-0">
                   <Phone className="w-4 h-4 stroke-[1.5]" />
@@ -74,7 +68,6 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              {/* 4. Email */}
               <div className="flex items-start gap-5 group">
                 <a href={`mailto:${contactInfo.email}`} className="w-10 h-10 rounded-full bg-white border border-[#D4D7C9] flex items-center justify-center text-[#4A5D23] group-hover:bg-[#4A5D23] group-hover:text-white transition-colors shrink-0">
                   <Mail className="w-4 h-4 stroke-[1.5]" />
@@ -87,7 +80,6 @@ export default function ContactPage() {
 
             </div>
 
-            {/* Call to Actions */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Link 
                 href="/customize/new"
@@ -107,13 +99,10 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* --- RIGHT CONTENT: Immersive Map Widget --- */}
           <div className="w-full flex flex-col items-center lg:items-end">
             
-            {/* Map Container - Sliced Top Design */}
             <div className="w-full flex flex-col rounded-[2.5rem] border-8 border-white shadow-[0_30px_60px_rgba(0,0,0,0.08)] bg-white overflow-hidden group">
               
-              {/* Sliced White Header Bar */}
               <div className="flex items-center justify-center gap-2.5 px-6 md:px-8 py-3 bg-white shrink-0 z-20">
                  <ShieldCheck className="w-5 md:w-6 h-5 md:h-6 text-[#4A5D23] stroke-[2.5]" />
                  <span className="font-sans text-[11px] md:text-[14px] uppercase tracking-[0.2em] text-[#4A5D23] select-none">
@@ -121,13 +110,10 @@ export default function ContactPage() {
                  </span>
               </div>
 
-              {/* Divider */}
               <div className="h-px w-full bg-[#D4D7C9]/60 shrink-0 z-20"></div>
               
-              {/* Map Canvas Frame */}
               <div className="relative w-full h-[400px] md:h-[500px] lg:h-[550px] bg-[#EBECE3]">
                 
-                {/* Embedded Live Studio Badge (Safe Placement: Bottom Right) */}
                 <div className="absolute bottom-10 right-6 md:right-8 z-10 bg-[#111410] px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-transform duration-500 hover:scale-105 pointer-events-none">
                   <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full animate-pulse shadow-[0_0_12px_#22c55e]"></div>
                   <span className="font-sans text-[11px] uppercase tracking-[0.2em] text-[#F8F9F5]">
@@ -148,7 +134,6 @@ export default function ContactPage() {
               </div>
             </div>
             
-            {/* Get Directions Trigger Anchor */}
             <div className="mt-8 w-full pl-4 md:pl-8 lg:pl-0 lg:pr-8 text-left lg:text-right">
                <a 
                  href="https://maps.app.goo.gl/sggU8janT5qz8sTV9"

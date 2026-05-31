@@ -5,14 +5,10 @@ import { orders, orderItems } from "@/lib/db/schema";
 import { eq, inArray, desc } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 
-// ১. অ্যাডমিন প্যানেলের জন্য সব অর্ডার এবং তার আইটেম ফেচ করা
 export async function getAdminOrders() {
   try {
-    // Drizzle ORM দিয়ে অর্ডার এবং আইটেম আলাদাভাবে এনে মেমোরিতে ম্যাপ করা হচ্ছে (সুপার ফাস্ট)
     const allOrders = await db.select().from(orders).orderBy(desc(orders.created_at));
     const allItems = await db.select().from(orderItems);
-
-    // ডেটাবেসের রিলেশনাল ডেটাকে ফ্রন্টএন্ডের MOCK_ORDERS-এর স্ট্রাকচারে ম্যাপ করা হচ্ছে
     const formattedOrders = allOrders.map(order => {
       const itemsForOrder = allItems.filter(item => item.order_id === order.id);
 
@@ -21,7 +17,6 @@ export async function getAdminOrders() {
         customerName: order.customer_name,
         customerPhone: order.customer_phone,
         customerAddress: order.customer_address,
-        // ISO Date থেকে শুধু YYYY-MM-DD বের করা হচ্ছে
         date: order.created_at ? order.created_at.toISOString().split('T')[0] : "Unknown",
 
         subTotal: order.sub_total,
@@ -33,7 +28,6 @@ export async function getAdminOrders() {
         paymentStatus: order.payment_status,
         isArchived: order.is_archived,
 
-        // অর্ডার আইটেমগুলোকে ম্যাপ করা
         items: itemsForOrder.map(item => ({
           id: item.id.toString(),
           name: item.name,
@@ -59,12 +53,10 @@ export async function getAdminOrders() {
   }
 }
 
-// ২. অর্ডার স্ট্যাটাস আপডেট করা (Dropdown Action)
 export async function updateOrderStatus(id: string, status: string) {
   try {
     await db.update(orders).set({ order_status: status, updated_at: new Date() }).where(eq(orders.id, id));
 
-    // Tier 2 Cache Update
     revalidateTag('orders');
     return { success: true };
   } catch (error) {
@@ -73,12 +65,10 @@ export async function updateOrderStatus(id: string, status: string) {
   }
 }
 
-// ৩. পেমেন্ট স্ট্যাটাস আপডেট করা (Dropdown Action)
 export async function updatePaymentStatus(id: string, status: string) {
   try {
     await db.update(orders).set({ payment_status: status, updated_at: new Date() }).where(eq(orders.id, id));
 
-    // Tier 2 Cache Update
     revalidateTag('orders');
     return { success: true };
   } catch (error) {
@@ -87,14 +77,12 @@ export async function updatePaymentStatus(id: string, status: string) {
   }
 }
 
-// ৪. বাল্ক অর্ডার আর্কাইভ বা রিস্টোর করা (Multi-select Action)
 export async function bulkToggleArchiveOrders(ids: string[], isArchived: boolean) {
   try {
     if (ids.length === 0) return { success: true };
 
     await db.update(orders).set({ is_archived: isArchived, updated_at: new Date() }).where(inArray(orders.id, ids));
 
-    // Tier 2 Cache Update
     revalidateTag('orders');
     return { success: true, message: `Orders ${isArchived ? 'archived' : 'restored'} successfully.` };
   } catch (error) {
@@ -103,7 +91,6 @@ export async function bulkToggleArchiveOrders(ids: string[], isArchived: boolean
   }
 }
 
-// ৫. কাস্টমারের ট্র্যাকিং এর জন্য সিঙ্গেল অর্ডার ফেচ করা
 export async function getOrderById(orderId: string) {
   try {
     const orderRecord = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);

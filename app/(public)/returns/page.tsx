@@ -17,7 +17,6 @@ export default function ReturnsPage() {
         <h2 className="text-xl text-primary mt-8 mb-4">Our Policy Guidelines ➔</h2>
         <ul className="list-decimal pl-6 space-y-6 text-muted-foreground">
           
-          {/* Point 1: Measurement Correction */}
           <li>
             <strong className="text-foreground font-normal text-lg mb-2 flex items-center gap-2">
               <span>✅</span> Measurement Correction
@@ -28,7 +27,6 @@ export default function ReturnsPage() {
             </ul>
           </li>
 
-          {/* Point 2: No Refunds */}
           <li>
             <strong className="text-foreground font-normal text-lg mb-2 flex items-center gap-2">
               <span>❌</span> No Refunds
@@ -39,7 +37,6 @@ export default function ReturnsPage() {
             </ul>
           </li>
           
-          {/* Point 3: Damaged or Defective Items (অতিরিক্ত একটি পয়েন্ট যুক্ত করা হয়েছে প্রফেশনাল লুকের জন্য) */}
           <li>
             <strong className="text-foreground font-normal text-lg mb-2 flex items-center gap-2">
               <span>📦</span> Damaged or Defective Items

@@ -1,7 +1,7 @@
 import { Header } from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { GlobalSizeGuide } from '@/components/ui/GlobalSizeGuide'
-import { getCachedSiteSettings } from '@/lib/actions/settings.actions' // ইমপোর্ট করো
+import { getCachedSiteSettings } from '@/lib/actions/settings.actions'
 import { CartDrawer } from "@/components/cart/CartDrawer";
 
 export default async function PublicLayout({
@@ -9,11 +9,9 @@ export default async function PublicLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  // ক্যাশ থেকে সেটিংস ফেচ করা হচ্ছে
   const settingsRes = await getCachedSiteSettings();
   const settings = settingsRes?.data;
   
-  // লাইভ অফার টেক্সট বের করা
   let activeOfferText = null;
   if (settings && settings.active_offer_id) {
     const offers = Array.isArray(settings.offers) ? settings.offers : [];

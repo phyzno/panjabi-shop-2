@@ -5,13 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   ShoppingBag, Shirt, Palette, Settings, Menu, X, LogOut, Star, Package, 
-  ChevronLeft, ChevronRight // 👈 নতুন আইকন
+  ChevronLeft, ChevronRight
 } from "lucide-react";
 import { logoutAdmin } from "@/lib/actions/admin";
 
 export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false); // 👈 ডেস্কটপের কলাপ্স স্টেট
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
 
   const menuItems = [
@@ -25,7 +25,6 @@ export default function AdminSidebar() {
 
   return (
     <>
-      {/* Mobile Top Bar */}
       <div className="md:hidden flex items-center justify-between bg-background border-b border-border px-6 py-4 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-heading text-primary font-bold">
@@ -40,7 +39,6 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 md:hidden transition-opacity"
@@ -48,7 +46,6 @@ export default function AdminSidebar() {
         />
       )}
 
-      {/* Main Sidebar */}
       <aside
         className={`
         fixed inset-y-0 left-0 z-50 bg-background border-r border-border flex flex-col shadow-2xl md:shadow-none transition-all duration-300 ease-in-out
@@ -57,7 +54,6 @@ export default function AdminSidebar() {
         ${isCollapsed ? "md:w-[88px]" : "md:w-[260px]"} 
       `}
       >
-        {/* Sidebar Header */}
         <div className={`border-b border-border flex flex-col items-center relative shrink-0 transition-all duration-300 ${isCollapsed ? 'p-4 md:py-8' : 'p-8'}`}>
           <button
             onClick={() => setIsOpen(false)}
@@ -82,7 +78,6 @@ export default function AdminSidebar() {
           )}
         </div>
 
-        {/* Navigation Links */}
         <nav className="flex-grow py-6 overflow-y-auto custom-scrollbar overflow-x-hidden">
           {menuItems.map((item) => {
             const isActive = pathname.includes(item.href);
@@ -91,7 +86,7 @@ export default function AdminSidebar() {
                 key={item.id}
                 href={item.href}
                 onClick={() => setIsOpen(false)}
-                title={isCollapsed ? item.label : ""} // কলাপ্স থাকলে হোভার করলে নাম দেখাবে
+                title={isCollapsed ? item.label : ""}
                 className={`w-full flex items-center transition-all border-l-4 group ${isCollapsed ? 'justify-center px-0 py-4' : 'gap-4 px-8 py-4'} ${
                   isActive
                     ? "bg-secondary border-primary text-primary"
@@ -110,10 +105,8 @@ export default function AdminSidebar() {
           })}
         </nav>
 
-        {/* Footer Actions (Collapse Toggle & Logout) */}
         <div className="p-4 border-t border-border shrink-0 flex flex-col gap-3">
           
-          {/* Collapse Menu Button (Only for PC) */}
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="hidden md:flex w-full py-3 bg-background border border-border text-muted-foreground hover:bg-secondary hover:text-primary hover:border-primary/50 transition-all rounded-md font-sans text-sm items-center justify-center gap-2 cursor-pointer shadow-sm"
@@ -128,7 +121,6 @@ export default function AdminSidebar() {
             )}
           </button>
 
-          {/* Logout Button */}
           <button
             onClick={async () => await logoutAdmin()}
             className={`w-full py-3 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all rounded-md font-sans text-sm font-medium flex items-center justify-center gap-2 cursor-pointer ${isCollapsed ? 'px-0' : 'px-4'}`}

@@ -19,10 +19,6 @@ async function requireAdminSession() {
   }
 }
 
-// Requires 'product-images' bucket in Supabase Storage
-//  Dashboard → Storage → New bucket → name: product-images
-//  Set to Public
-
 export async function uploadImage(formData: FormData): Promise<string> {
   await requireAdminSession()
   const supabase = createServiceRoleClient()
@@ -75,7 +71,6 @@ export async function logoutAdmin() {
   redirect('/admin/login')
 }
 
-// Order management
 export async function updateOrderStatus(orderId: string, status: string) {
   await requireAdminSession()
   const supabase = createServiceRoleClient()
@@ -94,7 +89,6 @@ export async function deleteOrder(orderId: string) {
   redirect('/admin')
 }
 
-// Product CRUD
 export async function addProduct(formData: FormData) {
   console.log('addProduct action started')
   await requireAdminSession()
@@ -136,7 +130,6 @@ export async function deleteProduct(productId: string) {
   redirect('/admin/products')
 }
 
-// Fabric CRUD
 export async function addFabric(formData: FormData) {
   console.log('addFabric action started')
   await requireAdminSession()
@@ -177,7 +170,6 @@ export async function deleteFabric(fabricId: string) {
   redirect('/admin/fabrics')
 }
 
-// Collar (design_options) CRUD
 export async function addCollar(formData: FormData) {
   console.log('addCollar action started')
   await requireAdminSession()
@@ -215,7 +207,6 @@ export async function deleteCollar(collarId: string) {
   redirect('/admin/collars')
 }
 
-// Update actions
 export async function updateProduct(productId: string, formData: FormData) {
   console.log('updateProduct action started for ID:', productId)
   await requireAdminSession()

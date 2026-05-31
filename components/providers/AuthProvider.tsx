@@ -15,13 +15,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { setWishlistedIds } = useWishlistStore();
   const supabase = useMemo(() => createClient(), []);
   const wishlistUserIdRef = useRef<string | null>(null);
-
   const goToResetPassword = useCallback(() => {
     if (pathname !== '/auth/reset-password') {
       router.replace('/auth/reset-password');
     }
   }, [pathname, router]);
-
   const syncAuthState = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const sessionUser = session?.user ?? null;
@@ -84,21 +82,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const handlePageShow = () => syncAuthState();
-
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         syncAuthState();
       }
     };
-
     const handleAuthBroadcast = () => syncAuthState();
-
     const handleStorage = (event: StorageEvent) => {
       if (event.key === 'panjabi-shop-auth-event') {
         syncAuthState();
       }
     };
-
     const authChannel =
       typeof BroadcastChannel !== 'undefined'
         ? new BroadcastChannel('panjabi-shop-auth')

@@ -6,19 +6,16 @@ import { useSearchParams } from 'next/navigation';
 import { Search, Package, CheckCircle2, Clock, XCircle, FileText, Loader2, ArrowLeft } from 'lucide-react';
 import { getOrderById } from '@/lib/actions/order.actions';
 import OrderDetailsModal from '@/components/dashboard/OrderDetailsModal';
-import PrintableInvoice from '@/components/admin/dashboard/PrintableInvoice'; // 👈 প্রিন্টেবল ইনভয়েস ইমপোর্ট করা হলো
+import PrintableInvoice from '@/components/admin/dashboard/PrintableInvoice';
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get("id") || "";
-
   const [orderId, setOrderId] = useState(initialId);
   const [orderData, setOrderData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // 👈 প্রিন্টের জন্য নতুন স্টেট
   const [printingOrder, setPrintingOrder] = useState<any>(null);
 
   useEffect(() => {
@@ -27,13 +24,10 @@ function TrackOrderContent() {
     }
   }, [initialId]);
 
-  // 👈 প্রিন্ট ট্রিগার এবং ডায়নামিক টাইটেল ক্লিনআপ লজিক
   useEffect(() => {
-    // ওয়েবসাইটের আসল টাইটেলটি সেভ করে রাখা হচ্ছে
     let originalTitle = document.title;
 
     if (printingOrder) {
-      // প্রিন্ট হওয়ার ঠিক আগে টাইটেল চেঞ্জ করে অর্ডার আইডি বসানো হচ্ছে
       document.title = `invoice-${printingOrder.id}`;
       
       setTimeout(() => {
@@ -42,7 +36,6 @@ function TrackOrderContent() {
     }
 
     const handleAfterPrint = () => {
-      // প্রিন্ট শেষে আবার আগের টাইটেল ফিরিয়ে আনা হচ্ছে এবং স্টেট ক্লিয়ার করা হচ্ছে
       document.title = originalTitle;
       setPrintingOrder(null);
     };
@@ -50,7 +43,6 @@ function TrackOrderContent() {
     window.addEventListener("afterprint", handleAfterPrint);
 
     return () => {
-      // কম্পোনেন্ট আনমাউন্ট হলে ক্লিনআপ
       document.title = originalTitle;
       window.removeEventListener("afterprint", handleAfterPrint);
     };
@@ -76,10 +68,9 @@ function TrackOrderContent() {
     setIsLoading(false);
   };
 
-  // 👈 মডালের প্রিন্ট বাটনে ক্লিক করলে যা হবে
   const handlePrint = () => {
-    setIsModalOpen(false); // মডাল ক্লোজ করে দেবে
-    setPrintingOrder(orderData); // প্রিন্টারের জন্য ডেটা সেট করবে
+    setIsModalOpen(false);
+    setPrintingOrder(orderData);
   };
 
   const statusSteps = ["pending", "processing", "shipped", "delivered"];
@@ -88,11 +79,9 @@ function TrackOrderContent() {
 
   return (
     <>
-      {/* 👈 প্রিন্ট হওয়ার সময় মূল পেজটি হাইড রাখার জন্য `print:hidden` কন্ডিশন যোগ করা হলো */}
       <div className={`min-h-screen bg-[#F8F9F5] pt-12 sm:pt-16 pb-16 sm:pb-20 select-none ${printingOrder ? 'print:hidden' : ''}`}>
         <div className="container mx-auto px-4 sm:px-6 max-w-2xl">
           
-          {/* Header Section */}
           <div className="text-center mb-8 sm:mb-10">
             <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#4A5D23]/10 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-[#4A5D23]/20">
               <Package className="w-7 h-7 sm:w-8 sm:h-8 text-[#4A5D23]" />
@@ -105,7 +94,6 @@ function TrackOrderContent() {
             </p>
           </div>
           
-          {/* Search Box */}
           <div className="bg-white p-4 sm:p-6 rounded-[20px] sm:rounded-[24px] shadow-xl shadow-[#4A5D23]/5 border border-[#D4D7C9]/50 mb-6 sm:mb-8 relative z-10">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
@@ -128,7 +116,6 @@ function TrackOrderContent() {
               </button>
             </div>
 
-            {/* Error Message */}
             {error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start sm:items-center gap-2 text-red-600 text-[11px] sm:text-xs font-sans animate-in slide-in-from-top-2">
                 <XCircle className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0" />
@@ -137,7 +124,6 @@ function TrackOrderContent() {
             )}
           </div>
 
-          {/* Status Display Area */}
           {orderData && !isLoading && (
             <div className="bg-white p-5 sm:p-6 md:p-8 rounded-[20px] sm:rounded-[24px] border border-[#D4D7C9]/50 shadow-sm animate-in fade-in zoom-in-95 duration-500">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 sm:mb-8 pb-5 sm:pb-6 border-b border-[#D4D7C9]/40">
@@ -151,10 +137,8 @@ function TrackOrderContent() {
                 </div>
               </div>
 
-              {/* Timeline UI */}
               {!isCanceledOrReturned ? (
                 <div className="relative mb-8 sm:mb-10">
-                  {/* Connecting Line */}
                   <div className="absolute top-4 sm:top-5 left-[12%] right-[12%] sm:left-[10%] sm:right-[10%] h-[2px] bg-[#EBECE3] -z-10">
                     <div 
                       className="h-full bg-[#4A5D23] transition-all duration-1000 ease-out" 
@@ -162,7 +146,6 @@ function TrackOrderContent() {
                     />
                   </div>
                   
-                  {/* Step Indicators */}
                   <div className="flex justify-between relative z-10">
                     {statusSteps.map((step, idx) => {
                       const isCompleted = idx <= currentStepIndex;
@@ -182,7 +165,6 @@ function TrackOrderContent() {
                   </div>
                 </div>
               ) : (
-                /* Canceled / Returned State */
                 <div className="bg-red-50 border border-red-100 rounded-xl p-4 sm:p-5 text-center mb-6 sm:mb-8">
                   <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-500 mx-auto mb-2" />
                   <h3 className="font-heading font-bold text-red-700 uppercase tracking-wider text-xs sm:text-sm mb-1">
@@ -194,7 +176,6 @@ function TrackOrderContent() {
                 </div>
               )}
 
-              {/* View Full Details Button */}
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="w-full py-3.5 sm:py-4 rounded-xl border-2 border-[#D4D7C9]/60 text-[#17210C] font-sans text-[11px] sm:text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:border-[#4A5D23] hover:text-[#4A5D23] hover:bg-[#F8F9F5] transition-all cursor-pointer"
@@ -204,7 +185,6 @@ function TrackOrderContent() {
             </div>
           )}
 
-          {/* Back Link */}
           <div className="mt-6 sm:mt-8 text-center">
             <Link href="/shop" className="inline-flex items-center gap-2 font-sans text-[11px] sm:text-xs uppercase tracking-widest text-[#1C221A]/50 hover:text-[#4A5D23] transition-colors">
               <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Continue Shopping
@@ -213,18 +193,16 @@ function TrackOrderContent() {
 
         </div>
 
-        {/* Reuse Admin's Order Details Modal */}
         {orderData && (
           <OrderDetailsModal 
             order={orderData} 
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
-            onPrint={handlePrint} // 👈 এখন এটি সঠিক ফাংশন কল করবে
+            onPrint={handlePrint}
           />
         )}
       </div>
 
-      {/* 👈 Printable Invoice Component rendering (শুধুমাত্র যখন প্রিন্ট বাটনে ক্লিক করা হবে) */}
       {printingOrder && (
         <div className="hidden print:block w-full bg-white absolute top-0 left-0 z-50">
           <PrintableInvoice order={printingOrder} />
@@ -234,7 +212,6 @@ function TrackOrderContent() {
   );
 }
 
-// Next.js SearchParams requires Suspense wrapper
 export default function TrackOrderPage() {
   useEffect(() => {
     document.title = 'Track Order | Panjabi Shop';

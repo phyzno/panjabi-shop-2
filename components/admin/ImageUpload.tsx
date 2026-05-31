@@ -32,7 +32,7 @@ export function ImageUpload({
   const [showModal, setShowModal] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'original' | 'mode2' | 'mode3'>('original')
-  const [passes, setPasses] = useState<number>(1) // Multi-pass state
+  const [passes, setPasses] = useState<number>(1)
   const [cachedUrls, setCachedUrls] = useState<Record<string, string>>({})
 
   const displaySrc = storedValue ? resolveProductImageSrc(storedValue) : null
@@ -98,7 +98,7 @@ export function ImageUpload({
         body: JSON.stringify({
           originalUrl: cachedUrls.original,
           mode: mode,
-          iterations: currentPasses // Sending the loop count
+          iterations: currentPasses
         })
       })
 
@@ -244,7 +244,6 @@ export function ImageUpload({
                 </button>
               </div>
 
-              {/* Processing Intensity (Passes) */}
               {selectedMode !== 'original' && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-2 mb-3">

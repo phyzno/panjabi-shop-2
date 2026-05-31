@@ -8,7 +8,7 @@ export interface CartItem {
   productId: string;
   productName: string;
   productType: 'readymade' | 'custom_fabric_only' | 'custom_tailored';
-  image: string; // কার্টে প্রোডাক্টের ছবি দেখানোর জন্য
+  image: string;
 
   fabricId?: string;
   fabricName?: string;
@@ -28,7 +28,7 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
-  isOpen: boolean; // কার্ট ড্রয়ার ওপেন/ক্লোজ স্টেট
+  isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
   addItem: (item: Omit<CartItem, 'cartItemId' | 'quantity' | 'totalPrice'>) => void;
@@ -62,7 +62,6 @@ export const useCartStore = create<CartState>()(
 
       addItem: (item) => {
         set((state) => {
-          // চেক করা হচ্ছে একই প্রোডাক্ট এবং একই সাইজ কার্টে আছে কিনা
           const existingItem = state.items.find((i) =>
             i.productId === item.productId &&
             i.productType === item.productType &&
@@ -70,7 +69,6 @@ export const useCartStore = create<CartState>()(
             i.fabricId === item.fabricId &&
             i.yardage === item.yardage &&
             i.collarType === item.collarType &&
-            // Custom measurement thakle shob map perfectly match kore kina check korbe
             JSON.stringify(i.customMeasurements) === JSON.stringify(item.customMeasurements)
           );
 
@@ -131,7 +129,6 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: CART_STORAGE_KEY,
-      // শুধুমাত্র items গুলোকে লোকাল স্টোরেজে সেভ করা হচ্ছে, isOpen স্টেট নয়
       partialize: (state) => ({ items: state.items }),
     }
   )

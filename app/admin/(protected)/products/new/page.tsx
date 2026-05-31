@@ -20,7 +20,6 @@ export default async function AddProductPage() {
         <h1 className="text-2xl font-heading font-bold text-primary mt-2">Add New Product</h1>
       </div>
 
-      {/* ফর্ম কম্পোনেন্ট কল করা হচ্ছে */}
       <ProductForm categories={categories || []} />
     </div>
   );

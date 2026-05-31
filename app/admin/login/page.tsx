@@ -13,7 +13,6 @@ function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-[#F8F9F5] px-4 select-none">
       <div className="w-full max-w-md bg-white border border-[#D4D7C9]/40 rounded-[32px] shadow-xl shadow-[#4A5D23]/5 p-8 sm:p-10 animate-in fade-in zoom-in-95 duration-500">
 
-        {/* Header Section */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-[#4A5D23]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#4A5D23]/20">
             <ShieldCheck className="w-8 h-8 text-[#4A5D23]" />
@@ -26,14 +25,12 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-xs font-sans mb-6 text-center animate-in slide-in-from-top-2">
             {error}
           </div>
         )}
 
-        {/* Login Form */}
         <form action="/api/admin/login" method="POST" className="space-y-5">
           <div>
             <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/70 mb-2">Username</label>
@@ -47,13 +44,11 @@ function LoginForm() {
           </div>
           <div>
             <label className="block text-[12px] uppercase tracking-widest text-[#1C221A]/70 mb-2">Password</label>
-            {/* 👈 এই নতুন relative div-টি যোগ করুন */}
             <div className="relative">
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
                 required
-                // 👈 ডানদিকে প্যাডিং (pr-12) যোগ করা হয়েছে যাতে টেক্সট আইকনের নিচে না ঢুকে যায়
                 className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl px-4 py-3.5 pr-12 focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] outline-none font-sans text-sm transition-all"
               />
               <button

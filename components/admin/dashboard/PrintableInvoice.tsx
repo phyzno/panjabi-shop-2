@@ -6,7 +6,6 @@ export default function PrintableInvoice({ order }: { order: Order | null }) {
 
   return (
     <div className="w-[210mm] min-h-[297mm] bg-white p-12 mx-auto text-black font-sans box-border">
-      {/* Header */}
       <div className="flex justify-between items-end border-b-2 border-black pb-4 mb-8">
         <div>
           <h1 className="text-4xl uppercase tracking-widest text-gray-900">Invoice</h1>
@@ -19,7 +18,6 @@ export default function PrintableInvoice({ order }: { order: Order | null }) {
         </div>
       </div>
 
-      {/* Customer Info */}
       <div className="mb-10 flex justify-between">
         <div>
           <h3 className="text-sm font-normal text-primary uppercase tracking-wider mb-2">Billed To:</h3>
@@ -36,7 +34,6 @@ export default function PrintableInvoice({ order }: { order: Order | null }) {
         </div>
       </div>
 
-      {/* Item Table */}
       <table className="w-full text-left mb-10 border-collapse">
         <thead>
           <tr className="border-b-2 border-gray-800">
@@ -54,14 +51,12 @@ export default function PrintableInvoice({ order }: { order: Order | null }) {
                 <div className="text-xs text-gray-500 font-normal mt-1">
                   Type: {item.productType.replace(/_/g, ' ')}
 
-                  {/* আপডেট করা সাইজিং লজিক */}
                   {item.measurements
                     ? ' | Size: Custom'
                     : item.sizeValue
                       ? ` | Size: ${item.sizeValue}`
                       : ''}
 
-                  {/* কাস্টম মেজারমেন্টের বিস্তারিত */}
                   {item.productType === 'custom_tailored' && item.measurements && (
                     <div className="text-[11px] text-amber-800 font-mono mt-0.5 bg-gray-50 px-2 py-0.5 rounded inline-block">
                       Meas: Ln: {item.measurements.length || '-'} | Ch: {item.measurements.chest || '-'} | Sh: {item.measurements.shoulder || '-'} | Sl: {item.measurements.sleeve || '-'}
@@ -77,7 +72,6 @@ export default function PrintableInvoice({ order }: { order: Order | null }) {
         </tbody>
       </table>
 
-      {/* Total Calculation */}
       <div className="flex justify-end">
         <div className="w-1/2">
           <div className="flex justify-between py-2 text-sm text-gray-600">
@@ -101,7 +95,6 @@ export default function PrintableInvoice({ order }: { order: Order | null }) {
         </div>
       </div>
 
-      {/* Footer Note */}
       <div className="mt-24 text-center text-xs text-gray-400 border-t border-gray-200 pt-6">
         <p>Thank you for shopping with us!</p>
         <p className="mt-1">This is a system-generated document and does not require a signature.</p>

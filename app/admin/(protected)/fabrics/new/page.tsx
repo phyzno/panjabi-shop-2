@@ -1,6 +1,6 @@
 import FabricForm from "@/components/admin/fabric/FabricForm";
 import Link from "next/link";
-import { getCachedSiteSettings } from "@/lib/actions/settings.actions"; // সেটিংস ইমপোর্ট
+import { getCachedSiteSettings } from "@/lib/actions/settings.actions";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +9,6 @@ export const metadata = {
 };
 
 export default async function AddFabricPage() {
-  // ক্যাশ থেকে সেটিংস ফেচ করা
   const settingsRes = await getCachedSiteSettings();
   const settings = settingsRes?.data;
   
@@ -25,7 +24,6 @@ export default async function AddFabricPage() {
         <h1 className="text-2xl font-heading font-bold text-primary mt-2">Add New Fabric</h1>
       </div>
 
-      {/* ডাইনামিক প্রপস পাস করা হলো */}
       <FabricForm 
         availableColors={siteColors} 
         availablePatterns={sitePatterns} 

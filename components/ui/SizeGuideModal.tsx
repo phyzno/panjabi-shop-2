@@ -33,7 +33,7 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
   useEffect(() => {
     if (!isOpen) {
       document.body.style.overflow = '';
-      setSizeMode('preset'); // Reset mode when modal closes
+      setSizeMode('preset');
       return;
     }
     document.body.style.overflow = 'hidden';
@@ -55,18 +55,14 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-[#111410]/60 backdrop-blur-sm p-0 sm:items-center sm:p-6 transition-all duration-300">
-      {/* Overlay */}
       <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
 
-      {/* Modal Container */}
       <div className="relative w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] border border-[#D4D7C9]/50 bg-[#FEFDF8] shadow-[0_32px_80px_rgba(0,0,0,0.2)] animate-in slide-in-from-bottom-full duration-500 sm:animate-in sm:zoom-in-95 sm:slide-in-from-bottom-0">
         
-        {/* Mobile Drag Indicator */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
           <div className="w-12 h-1.5 bg-[#D4D7C9] rounded-full opacity-50" />
         </div>
 
-        {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#D4D7C9]/40 bg-[#FEFDF8]/80 backdrop-blur-md px-6 py-5 sm:px-8">
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-full bg-[#4A5D23]/5 text-[#4A5D23]">
@@ -92,17 +88,14 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
         <div className="p-6 sm:p-8">
           <div className="grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
             
-            {/* Left: Table & Mobile Card Section */}
             <div className="space-y-6">
               
-              {/* Dimensions Header & Size Toggle */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-2 text-[#4A5D23]">
                   <InfoIcon className="h-4 w-4" />
                   <span className="font-sans text-[11px] font-normal uppercase tracking-[0.2em]">Standard Panjabi Dimensions</span>
                 </div>
                 
-                {/* Size Mode Toggle */}
                 <div className="inline-flex rounded-full bg-[#EBECE3] p-1 self-start sm:self-auto">
                   <button
                     type="button"
@@ -129,7 +122,6 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
                 </div>
               </div>
               
-              {/* Mobile View: Card Layout */}
               <div className="grid gap-3 sm:hidden">
                 {activeChart.map((row) => (
                   <div key={row.size} className="rounded-2xl border border-[#D4D7C9]/40 bg-white p-4 shadow-sm transition-all hover:border-[#4A5D23]/30">
@@ -159,7 +151,6 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
                 ))}
               </div>
 
-              {/* Desktop/Tablet View: Table Layout */}
               <div className="hidden sm:block overflow-hidden rounded-2xl border border-[#D4D7C9]/40 bg-white shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse transition-all duration-300">
@@ -195,7 +186,6 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
               </div>
             </div>
 
-            {/* Right: Info Section */}
             <div className="space-y-8">
               <section className="space-y-4">
                 <h3 className="font-heading text-sm font-bold uppercase tracking-widest text-[#17210C]">How to Measure</h3>
@@ -238,7 +228,6 @@ export function SizeGuideModal({ isOpen, onClose }: SizeGuideModalProps) {
           </div>
         </div>
 
-        {/* Footer Note */}
         <div className="bg-[#F8F9F5] px-8 py-4 text-center border-t border-[#D4D7C9]/30">
           <p className="font-sans text-[11px] font-normal uppercase tracking-[0.25em] text-[#1C221A]/40">
             © {new Date().getFullYear()} Punjabi Shop • Excellence in Tailoring

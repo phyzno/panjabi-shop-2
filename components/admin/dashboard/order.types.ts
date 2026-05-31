@@ -1,5 +1,3 @@
-// order.types.ts
-
 export type ProductType = 'readymade' | 'custom_fabric_only' | 'custom_tailored';
 export type SizeMode = 'preset' | 'numbered' | 'custom_measurements';
 
@@ -18,12 +16,10 @@ export interface OrderItem {
     unitPrice: number;
     totalPrice: number;
     
-    // Sizing
     sizeMode?: SizeMode;
     sizeValue?: string; 
     measurements?: CustomMeasurements; 
     
-    // Customization
     fabricYards?: number;
     collarType?: string;
 
@@ -50,7 +46,6 @@ export interface Order {
     isArchived: boolean;
 }
 
-// --- মক ডেটা ---
 export const MOCK_ORDERS: Order[] = [
     {
         id: "OLV-2026-001",
@@ -90,7 +85,7 @@ export const MOCK_ORDERS: Order[] = [
                 name: "Premium Silk Fabric",
                 productType: "custom_fabric_only",
                 quantity: 1,
-                unitPrice: 800, // per yard
+                unitPrice: 800,
                 totalPrice: 2400,
                 fabricYards: 3
             },
@@ -99,7 +94,7 @@ export const MOCK_ORDERS: Order[] = [
                 name: "Tailored Kabli Suit",
                 productType: "custom_tailored",
                 quantity: 1,
-                unitPrice: 1500, // making charge + fabric
+                unitPrice: 1500,
                 totalPrice: 4000,
                 sizeMode: "custom_measurements",
                 measurements: { length: 42, chest: 40, shoulder: 18, sleeve: 24 },

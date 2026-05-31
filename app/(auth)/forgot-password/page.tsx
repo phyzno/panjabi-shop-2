@@ -20,7 +20,6 @@ export default async function ForgotPasswordPage({
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[#F8F9F5] select-none">
       <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-500">
         
-        {/* Branding & Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-[#4A5D23]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#4A5D23]/20">
             <KeyRound className="w-8 h-8 text-[#4A5D23]" />
@@ -36,14 +35,12 @@ export default async function ForgotPasswordPage({
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-[32px] shadow-xl shadow-[#4A5D23]/5 border border-[#D4D7C9]/40 p-8 sm:p-10">
           <Suspense fallback={<div className="h-40 flex items-center justify-center"><div className="w-8 h-8 border-4 border-[#4A5D23] border-t-transparent rounded-full animate-spin"></div></div>}>
             <ForgotPasswordForm error={error} message={message} />
           </Suspense>
         </div>
 
-        {/* Footer Link */}
         <div className="mt-8 text-center">
            <Link href="/login" className="font-sans text-[12px] uppercase tracking-widest text-[#1C221A]/40 hover:text-[#4A5D23] transition-colors">
              ← Back to Sign In

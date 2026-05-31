@@ -10,12 +10,10 @@ interface CustomizerState {
   standardSize: string;
   specialInstructions: string;
   
-  // Filtering States
   searchQuery: string;
   selectedColors: string[];
   selectedTypes: string[];
 
-  // ✨ UI থেকে নিয়ে আসা Measurement States
   measurementMode: 'saved' | 'new';
   selectedProfileId: string;
   customLength: string;
@@ -23,7 +21,6 @@ interface CustomizerState {
   customShoulder: string;
   customSleeve: string;
 
-  // Actions
   setOrderMode: (mode: 'tailoring' | 'fabric') => void;
   setSelectedFabricId: (id: string | null) => void;
   setYardage: (yards: number) => void;
@@ -35,14 +32,13 @@ interface CustomizerState {
   toggleColorFilter: (color: string) => void;
   toggleTypeFilter: (type: string) => void;
 
-  // ✨ নতুন Actions
   setMeasurementMode: (mode: 'saved' | 'new') => void;
   setSelectedProfileId: (id: string) => void;
   setCustomLength: (val: string) => void;
   setCustomChest: (val: string) => void;
   setCustomShoulder: (val: string) => void;
   setCustomSleeve: (val: string) => void;
-  resetCustomizer: () => void; // Reset Button-এর জন্য
+  resetCustomizer: () => void;
 }
 
 export const useCustomizerStore = create<CustomizerState>()(
@@ -59,7 +55,6 @@ export const useCustomizerStore = create<CustomizerState>()(
       selectedColors: [],
       selectedTypes: [],
 
-      // Initial Values
       measurementMode: 'new',
       selectedProfileId: '',
       customLength: '',
@@ -86,7 +81,6 @@ export const useCustomizerStore = create<CustomizerState>()(
           : [...state.selectedTypes, type]
       })),
 
-      // New State Actions
       setMeasurementMode: (measurementMode) => set({ measurementMode }),
       setSelectedProfileId: (selectedProfileId) => set({ selectedProfileId }),
       setCustomLength: (customLength) => set({ customLength }),
@@ -94,10 +88,9 @@ export const useCustomizerStore = create<CustomizerState>()(
       setCustomShoulder: (customShoulder) => set({ customShoulder }),
       setCustomSleeve: (customSleeve) => set({ customSleeve }),
 
-      // Reset Action
       resetCustomizer: () => set({
         orderMode: 'tailoring',
-        selectedFabricId: null, // Null করলে আমাদের existing useEffect আবার অটো ডিফল্ট বসিয়ে নেবে
+        selectedFabricId: null,
         collarId: null,
         yardage: 2.5,
         sizeType: 'preset',

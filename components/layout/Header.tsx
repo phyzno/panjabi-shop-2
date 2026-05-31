@@ -22,51 +22,37 @@ function notifyAuthChange() {
 
     localStorage.setItem('panjabi-shop-auth-event', String(Date.now()));
   } catch {
-    // Auth is already cleared in this tab; cross-tab fallback can fail silently.
   }
 }
 
 export function Header({ activeOfferText }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Get current route
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Shop", href: "/shop" },
     { name: "Customize", href: "/customize/new" },
     { name: "Contact", href: "/contact" },
   ];
-
-  // Zustand থেকে ডেটা আনা
   const { items, openCart } = useCartStore();
   const [mounted, setMounted] = useState(false);
-
-  const { user, setUser } = useAuthStore(); // সরাসরি গ্লোবাল স্টোর ব্যবহার
+  const { user, setUser } = useAuthStore();
   const supabase = createClient();
-
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [showMobileAccount, setShowMobileAccount] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-
   const handleLogout = async () => {
-  // ১. সাথে সাথে ড্রপডাউন বন্ধ করে দেওয়া
   setIsUserDropdownOpen(false);
   setShowMobileAccount(false);
   setIsMobileMenuOpen(false);
   
-  // ২. ইনস্ট্যান্ট UI আপডেটের জন্য স্টোর থেকে ইউজার মুছে ফেলা
   setUser(null); 
   
-  // ৩. ব্যাকগ্রাউন্ডে লগআউট করা
   await supabase.auth.signOut();
   notifyAuthChange();
 };
-
-  // স্ক্রিনের অন্য কোথাও ক্লিক করলে যেন ডেক্সটপ ড্রপডাউন বন্ধ হয়ে যায়
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (isUserDropdownOpen && !(e.target as Element).closest('.user-dropdown-container')) {
@@ -77,28 +63,23 @@ export function Header({ activeOfferText }: HeaderProps) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [isUserDropdownOpen]);
 
-  // Hydration ঠিক রাখার জন্য
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // কার্টের আইটেম গোনার লজিক
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0);
 
-  // Scroll effect for glassmorphism & reload detection
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
-    // Initial check on mount/reload
     handleScroll();
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Prevent background scrolling when mobile menu is open
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -110,22 +91,18 @@ export function Header({ activeOfferText }: HeaderProps) {
     };
   }, [isMobileMenuOpen]);
 
-  // Determine when to show the scrolled STYLES (colors & background)
   const showScrolledStyle = !isHomePage || isScrolled;
 
   return (
     <>
-      {/* Dynamic Wrapper: Overlaps on home, takes normal space on other pages */}
       <div className={isHomePage ? "absolute top-0 left-0 w-full z-50" : "relative w-full z-50"}>
 
-        {/* Announcement Bar - ডায়নামিক রেন্ডারিং */}
         {activeOfferText && (
           <div className="bg-[#1A1A1A] text-[#C9A84C] text-xs py-2 px-4 text-center font-medium tracking-wide">
             {activeOfferText}
           </div>
         )}
 
-        {/* Dynamic Header */}
         <header
           className={`w-full transition-colors duration-300 border-b ${isScrolled
             ? "fixed top-0 left-0 z-50 bg-background/90 backdrop-blur-lg border-border/50 shadow-sm"
@@ -134,10 +111,8 @@ export function Header({ activeOfferText }: HeaderProps) {
               : "relative bg-background/90 backdrop-blur-lg border-border/50 shadow-sm"
             }`}
         >
-          {/* Fixed height (h-16) to keep the header slim and consistent */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
 
-            {/* Mobile Menu Toggle (Left) */}
             <div className="md:hidden flex flex-1 items-center">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -149,7 +124,6 @@ export function Header({ activeOfferText }: HeaderProps) {
               </button>
             </div>
 
-            {/* Logo - Royal Heritage Style */}
             <div className="flex-1 md:flex-none text-center md:text-left">
               <Link
                 href="/"
@@ -160,7 +134,6 @@ export function Header({ activeOfferText }: HeaderProps) {
               </Link>
             </div>
 
-            {/* Desktop Navigation - Clean Sans-serif Font */}
             <nav className="hidden md:flex flex-1 items-center justify-center space-x-12">
               {navLinks.map((link) => (
                 <Link
@@ -170,26 +143,21 @@ export function Header({ activeOfferText }: HeaderProps) {
                     }`}
                 >
                   {link.name}
-                  {/* Premium Accent Underline */}
                   <span className="absolute left-1/2 bottom-0 w-0 h-[1.5px] bg-accent transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
                 </Link>
               ))}
             </nav>
 
-            {/* Icons - Right Side */}
             <div className={`flex flex-1 md:flex-none items-center justify-end space-x-5 sm:space-x-6 transition-colors duration-300 ${showScrolledStyle ? "text-foreground" : "text-white"
               }`}>
               <button className={`transition-colors duration-300 hidden sm:block focus:outline-none ${showScrolledStyle ? "hover:text-primary" : "hover:text-neutral-300"
                 }`}>
                 <Search className="w-5 h-5 stroke-[1.5]" />
               </button>
-              {/* Desktop User Account - Hydration Safe */}
               <div className="relative hidden sm:block user-dropdown-container">
                 {!mounted ? (
-                  // হাইড্রেশনের আগে স্কেলিটন বা ফাঁকা জায়গা দেখাবে
                   <div className="w-5 h-5" />
                 ) : user ? (
-                  // লগইন করা থাকলে
                   <button
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                     className={`transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${showScrolledStyle || isUserDropdownOpen ? "text-primary" : "text-neutral-300 hover:text-white"
@@ -198,7 +166,6 @@ export function Header({ activeOfferText }: HeaderProps) {
                     <User className="w-5 h-5 stroke-[1.5]" />
                   </button>
                 ) : (
-                  // লগআউট থাকলে
                   <button
                     onClick={() => setShowLoginModal(true)}
                     className={`transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${showScrolledStyle ? "hover:text-primary" : "text-neutral-300 hover:text-white"}`}
@@ -207,7 +174,6 @@ export function Header({ activeOfferText }: HeaderProps) {
                   </button>
                 )}
 
-                {/* Desktop Dropdown Modal (আপনার আগের কোড হুবহু থাকবে) */}
                 {isUserDropdownOpen && user && (
                   <div className="absolute right-0 mt-5 w-60 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-[#D4D7C9] py-2 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]"><div className="px-5 py-3 border-b border-[#D4D7C9]/40 mb-1 bg-[#F8F9F5]">
                     <p className="font-heading text-sm font-bold text-[#17210C] uppercase tracking-wider">My Account</p>
@@ -241,14 +207,12 @@ export function Header({ activeOfferText }: HeaderProps) {
                 )}
               </div>
 
-              {/* Cart Button Updated */}
               <button
                 onClick={openCart}
                 className={`relative transition-colors duration-300 flex items-center group cursor-pointer ${showScrolledStyle ? "hover:text-primary" : "hover:text-neutral-300"
                   }`}>
                 <ShoppingCart className="w-5 h-5 stroke-[1.5]" />
 
-                {/* Refined Notification Badge (Hydration Safe) */}
                 {mounted && cartItemCount > 0 && (
                   <span className="absolute -top-1.5 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-medium text-accent-foreground shadow-sm transition-transform duration-300 group-hover:scale-110">
                     {cartItemCount}
@@ -260,12 +224,8 @@ export function Header({ activeOfferText }: HeaderProps) {
         </header>
       </div>
 
-      {/* Spacer Element: Prevents content jump on non-home pages when header becomes fixed */}
       {!isHomePage && isScrolled && <div className="h-16 w-full" />}
 
-      {/* --- Mobile Bottom Sheet Menu --- */}
-
-      {/* Dark Overlay */}
       <div
         className={`fixed inset-0 bg-foreground/40 backdrop-blur-[2px] z-50 transition-opacity duration-300 md:hidden ${isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
           }`}
@@ -273,12 +233,10 @@ export function Header({ activeOfferText }: HeaderProps) {
         aria-hidden="true"
       />
 
-      {/* Bottom Sheet Container - Height set to 2/3 (66vh) with inner flex layout */}
       <div
         className={`fixed z-[1001] bottom-0 left-0 w-full bg-background border-t border-border rounded-t-3xl z-[60] flex flex-col h-[85vh] p-6 pb-8 md:hidden transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] ${isMobileMenuOpen ? "translate-y-0" : "translate-y-full"
           }`}
       >
-        {/* Drag Indicator */}
         <div className="w-12 h-1 flex-shrink-0 bg-border rounded-full mx-auto mb-6" />
 
         <div className="flex justify-between items-center mb-6 px-2 flex-shrink-0">
@@ -294,10 +252,8 @@ export function Header({ activeOfferText }: HeaderProps) {
           </button>
         </div>
 
-        {/* Mobile Nav Links - Scrollable area */}
         <nav className="flex-1 overflow-y-auto flex flex-col font-sans px-2">
           {!showMobileAccount ? (
-            // Regular Main Links
             <div className="flex flex-col space-y-2 mt-2 animate-in slide-in-from-left-4 duration-300">
               {navLinks.map((link) => (
                 <Link
@@ -312,10 +268,8 @@ export function Header({ activeOfferText }: HeaderProps) {
               ))}
             </div>
           ) : (
-            // Logged-in Account Sub-Menu
             <div className="flex flex-col mt-2 animate-in slide-in-from-right-4 duration-300">
 
-              {/* নতুন Back to Menu বাটন */}
               <button
                 onClick={() => setShowMobileAccount(false)}
                 className="flex items-center gap-3 text-[14px] uppercase tracking-widest text-foreground/70 hover:text-primary mb-4 pb-4 border-b border-border/40 transition-colors w-full text-left"
@@ -328,7 +282,6 @@ export function Header({ activeOfferText }: HeaderProps) {
                 <p className="text-sm font-medium text-foreground truncate">{user?.email}</p>
               </div>
 
-              {/* বাকি সব আগের মতোই থাকবে */}
               <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 text-[13px] font-medium uppercase tracking-widest text-foreground border-b border-border/40 py-4 hover:text-accent">
                 <LayoutDashboard className="w-5 h-5 text-foreground/50" /> My Dashboard
               </Link>
@@ -348,7 +301,6 @@ export function Header({ activeOfferText }: HeaderProps) {
           )}
         </nav>
 
-        {/* Mobile Bottom Actions - Hydration Safe */}
         <div className="flex items-center justify-around mt-6 pt-6 border-t border-border/40 flex-shrink-0">
           {!mounted ? (
             <div className="w-5 h-5" />
@@ -380,7 +332,6 @@ export function Header({ activeOfferText }: HeaderProps) {
         </div>
       </div>
 
-      {/* Login Modal for Header */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6" onClick={() => setShowLoginModal(false)}>
           <div className="absolute inset-0 bg-foreground/60 backdrop-blur-sm" />

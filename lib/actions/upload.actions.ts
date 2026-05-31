@@ -38,8 +38,6 @@ export async function deleteUploadedImages(urls: string[]) {
   }
 }
 
-// upload.actions.ts এর একেবারে নিচে এটি যোগ করুন:
-
 export async function uploadFileViaFormData(formData: FormData) {
   try {
     const file = formData.get("file") as File;
@@ -47,15 +45,10 @@ export async function uploadFileViaFormData(formData: FormData) {
     
     if (!file) throw new Error("No file found in FormData");
     
-    // ১. File থেকে মেমরি Buffer তৈরি
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    // ২. সার্ভার-সাইডে এক্সটেনশন সহ পূর্ণাঙ্গ Data URI (Base64) রিবিল্ড করা হচ্ছে
+    const buffer = Buffer.from(arrayBuffer);  
     const mimeType = file.type || "image/jpeg";
     const fileUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
-    
-    // ৩. Cloudinary-তে সরাসরি Data URI আপলোড (Buffer এরর বাইপাস)
     const result = await cloudinary.uploader.upload(fileUri, {
       folder: folderName,
       resource_type: "auto",

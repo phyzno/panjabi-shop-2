@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error && data.user) {
-      // === Bulletproof Sync: Neon DB-তে ইউজার সেভ করা ===
       try {
         const existingUser = await db.select().from(users).where(eq(users.id, data.user.id)).limit(1);
         

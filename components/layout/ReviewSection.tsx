@@ -3,7 +3,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 
-// --- Mock Data ---
 const reviews = [
   {
     id: 1,
@@ -48,7 +47,6 @@ export default function ReviewSection() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [showArrows, setShowArrows] = useState(false);
 
-  // ওভারফ্লো চেক (অ্যারো বাটন দেখানোর জন্য)
   const checkOverflow = () => {
     if (carouselRef.current) {
       const { scrollWidth, clientWidth } = carouselRef.current;
@@ -73,7 +71,6 @@ export default function ReviewSection() {
     <section className="py-24 -white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-0 md:px-6">
         
-        {/* Header Section */}
         <div className="flex flex-col items-center mb-12 px-6">
           <p className="font-sans text-[11px] uppercase tracking-[0.3em] text-[#4A5D23] mb-3">
             Client Satisfaction
@@ -83,10 +80,8 @@ export default function ReviewSection() {
           </h2>
         </div>
 
-        {/* Carousel Section */}
         <div className="relative group/carousel mt-8">
             
-          {/* Left Arrow */}
           {showArrows && (
             <button 
               onClick={() => scrollCarousel('left')}
@@ -96,7 +91,6 @@ export default function ReviewSection() {
             </button>
           )}
 
-          {/* Scrollable Area */}
           <div 
             ref={carouselRef}
             className={`flex flex-nowrap gap-6 overflow-x-auto px-6 pb-12 pt-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth max-w-7xl mx-auto ${
@@ -109,20 +103,17 @@ export default function ReviewSection() {
                 className="w-[85vw] sm:w-[320px] md:w-[350px] flex-shrink-0 snap-center group p-8 md:p-10 rounded-[24px] bg-[#F8F9F5] border border-[#EBECE3] transition-all duration-500 hover:border-[#D4D7C9] hover:shadow-[0_20px_40px_rgba(14,20,9,0.06)] flex flex-col justify-between"
               >
                 <div>
-                  {/* Rating Stars */}
                   <div className="flex gap-1.5 mb-6">
                     {[...Array(review.rating)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-[#C25934] stroke-[#C25934]" />
                     ))}
                   </div>
                   
-                  {/* Review Text */}
                   <p className="font-sans text-[14px] leading-relaxed text-[#1C221A]/75 mb-8">
                     "{review.text}"
                   </p>
                 </div>
                 
-                {/* Client Info with Image Fallback Logic */}
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-[#EBECE3] flex items-center justify-center font-heading text-[18px] font-bold text-[#17210C] transition-colors duration-500 group-hover:bg-[#4A5D23] group-hover:text-white shrink-0">
                     {review.image ? (
@@ -148,7 +139,6 @@ export default function ReviewSection() {
             ))}
           </div>
 
-          {/* Right Arrow */}
           {showArrows && (
             <button 
               onClick={() => scrollCarousel('right')}

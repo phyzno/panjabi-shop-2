@@ -16,7 +16,6 @@ export default function FAQPage() {
         
         <div className="space-y-8">
           
-          {/* FAQ 1 */}
           <div>
             <h2 className="text-primary text-xl mb-3 flex items-start gap-2">
               Q1. How do I take measurements?
@@ -30,7 +29,6 @@ export default function FAQPage() {
             </div>
           </div>
 
-          {/* FAQ 2 */}
           <div>
             <h2 className="text-primary text-xl mb-3 flex items-start gap-2">
               Q2. What is the delivery time?
@@ -43,7 +41,6 @@ export default function FAQPage() {
             </div>
           </div>
 
-          {/* FAQ 3 (Added for professional look) */}
           <div>
             <h2 className="text-primary text-xl mb-3 flex items-start gap-2">
               Q3. Can I change my order details after placing it?

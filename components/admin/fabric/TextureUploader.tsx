@@ -56,14 +56,10 @@ const compressImageNative = (file: File, maxWidth = 1200, quality = 0.75): Promi
 };
 
 export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTextureReady }: TextureUploaderProps) {
-  // States
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(currentRawUrl || null);
   const [activeTexture, setActiveTexture] = useState<string | null>(currentTextureUrl || null);
-
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Modal & Engine States
   const [showModal, setShowModal] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [selectedMode, setSelectedMode] = useState<"original" | "mode2" | "mode3">("original");
@@ -74,7 +70,7 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) { // ৫ থেকে বাড়িয়ে ১০ করা হলো
+    if (file.size > 10 * 1024 * 1024) {
       alert("Image size must be less than 10MB.");
       return;
     }
@@ -97,7 +93,6 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
       return;
     }
 
-    // যদি নতুন ফাইল আপলোড না হয়ে আগের সেভ করা লিঙ্কে কাজ করতে চায়
     if (!rawFile && !rawImageUrl) {
       alert("Please upload a file first.");
       return;
@@ -107,13 +102,10 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
     try {
       const formData = new FormData();
 
-      // ফাইল থাকলে ফাইল পাঠাবো, নাহলে অরিজিনাল URL পাঠাবো (API কে সেভাবে হ্যান্ডেল করতে হবে)
       if (rawFile) {
-        // ব্যাকগ্রাউন্ডে জিপিইউ ক্যানভাস দিয়ে চোখের পলকে কম্প্রেস হবে
         const compressed = await compressImageNative(rawFile);
         formData.append("file", compressed);
       } else if (rawImageUrl) {
-        // Fetch existing URL and convert to blob
         const res = await fetch(rawImageUrl);
         const blob = await res.blob();
         formData.append("file", blob, "existing-raw.jpg");
@@ -145,7 +137,6 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
     const cacheKey = selectedMode === "original" ? "original" : `${selectedMode}-${passes}x`;
     const finalTexture = cachedTextures[cacheKey] || cachedTextures.original || rawImageUrl;
 
-    // Raw Image কে Base64 এ কনভার্ট করে ফর্মে পাঠাতে হবে (যাতে সাবমিটের সময় Cloudinary তে যায়)
     let finalRawBase64 = rawImageUrl;
     if (rawFile) {
       finalRawBase64 = await new Promise((resolve) => {
@@ -168,7 +159,6 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
       <label className="block text-sm font-heading font-bold text-primary mb-2">Fabric Texture & Raw Data</label>
 
       <div className="flex gap-4">
-        {/* Upload Box */}
         <div
           onClick={() => inputRef.current?.click()}
           className={`relative w-32 h-32 border-2 border-dashed rounded-xl overflow-hidden cursor-pointer transition-colors flex items-center justify-center shrink-0 ${activeTexture ? 'border-primary shadow-sm bg-secondary/50' : 'border-border bg-secondary/30 hover:border-primary'
@@ -190,7 +180,6 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
         </div>
         <input ref={inputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
 
-        {/* Optimize Trigger */}
         {rawImageUrl && (
           <div className="flex flex-col justify-center">
             <button
@@ -199,7 +188,7 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
                 if (!cachedTextures.original) setCachedTextures(prev => ({ ...prev, original: rawImageUrl }));
                 setShowModal(true);
               }}
-              className="flex items-center justify-center gap-2 bg-accent/10 text-accent border border-accent/20 px-4 py-3 text-xs rounded-md hover:bg-accent/20 transition-colors"
+              className="flex items-center justify-center gap-2 bg-accent/10 text-accent border border-accent/20 px-4 py-3 text-xs rounded-md hover:bg-accent/20 transition-colors cursor-pointer"
             >
               <Wand2 size={16} /> Open Canvas Engine
             </button>
@@ -208,12 +197,10 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
         )}
       </div>
 
-      {/* The Magic Modal */}
       {showModal && previewToRender && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="bg-background rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl flex flex-col md:flex-row border border-border">
 
-            {/* Panjabi Canvas Preview */}
             <div className="md:w-3/5 h-[450px] md:h-[650px] bg-secondary/50 relative overflow-hidden flex items-center justify-center p-4">
 
               <PanjabiCanvas
@@ -232,7 +219,6 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
               </div>
             </div>
 
-            {/* Controls */}
             <div className="md:w-2/5 p-6 md:p-8 flex flex-col h-[450px] md:h-[650px] overflow-y-auto bg-background">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-heading font-bold text-primary flex items-center gap-2"><Wand2 size={20} /> Texture Engine</h3>

@@ -9,29 +9,20 @@ import { useRouter } from "next/navigation";
 export default function SettingsFormClient({ initialSettings, initialCategories }: { initialSettings: any, initialCategories: any[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  // New Inputs Local States (শুধুমাত্র ইনপুট ফিল্ডের জন্য)
   const [newOffer, setNewOffer] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newColor, setNewColor] = useState("");
   const [newPattern, setNewPattern] = useState("");
-
-  // সার্ভার থেকে পাওয়া ডেটাকে সরাসরি ভ্যারিয়েবলে রাখা হলো
   const currentOffers = initialSettings?.offers || [];
   const activeOfferId = initialSettings?.active_offer_id || "";
   const currentColors = initialSettings?.fabric_colors || [];
   const currentPatterns = initialSettings?.fabric_patterns || [];
-
-  // নতুন: অফার বার গ্লোবালি অন নাকি অফ আছে তা চেক করার স্টেট
   const isOfferLiveGlobally = activeOfferId !== "";
-  // নতুন: গ্লোবাল টগল হ্যান্ডলার
   const handleToggleGlobalOffer = () => {
     startTransition(async () => {
       if (isOfferLiveGlobally) {
-        // লাইভ থাকলে অফ করে দেব (এম্পটি স্ট্রিং)
         await updateSiteSettings({ active_offer_id: "" });
       } else {
-        // অফ থাকলে অন করব এবং ডিফল্টভাবে প্রথম অফারটি লাইভ করব (যদি থাকে)
         const firstOfferId = currentOffers.length > 0 ? currentOffers[0].id : "";
         await updateSiteSettings({ active_offer_id: firstOfferId });
       }
@@ -39,7 +30,6 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
     });
   };
 
-  // ১. অফার ম্যানেজমেন্ট লজিক
   const handleAddOffer = () => {
     if (!newOffer.trim()) return;
     startTransition(async () => {
@@ -59,7 +49,6 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
       const updatedOffers = currentOffers.filter((o: any) => o.id !== id);
       let nextActiveId = activeOfferId;
 
-      // নতুন লজিক: যদি লাইভ থাকা অফারটিই ডিলিট করা হয়, তবে জোর করে অন্যটি লাইভ না করে পুরো অফার বারটি অফ করে দেওয়া হবে
       if (activeOfferId === id) {
         nextActiveId = "";
       }
@@ -80,7 +69,6 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
     });
   };
 
-  // ২. ক্যাটাগরি অ্যাড/ডিলিট লজিক
   const handleCreateCategory = () => {
     if (!newCategoryName.trim()) return;
     startTransition(async () => {
@@ -104,7 +92,6 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
     });
   };
 
-  // ৩. ফ্যাব্রিক অ্যাট্রিবিউটস (Colors & Patterns)
   const handleAddColor = () => {
     if (!newColor.trim() || currentColors.includes(newColor.trim())) return;
     startTransition(async () => {
@@ -152,14 +139,12 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-      {/* SECTION A: Announcement Bar (Header Offers) */}
       <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-6 md:col-span-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-3">
           <h2 className="text-lg font-heading font-bold text-primary flex items-center gap-2">
             <Megaphone size={20} /> Header Announcement Offers
           </h2>
 
-          {/* শার্প এবং প্রফেশনাল টগল সুইচ */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-sans text-muted-foreground font-medium">
               {isOfferLiveGlobally ? "Offer Bar is Live" : "Offer Bar is Hidden"}
@@ -220,7 +205,6 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
         </div>
       </div>
 
-      {/* SECTION B: Shop Product Categories */}
       <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-4">
         <h2 className="text-lg font-heading font-bold text-primary flex items-center gap-2 border-b border-border pb-3">
           <Shirt size={20} /> Product Categories
@@ -253,13 +237,11 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
         </div>
       </div>
 
-      {/* SECTION C: Fabric Attributes Setup */}
       <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-6">
         <h2 className="text-lg font-heading font-bold text-primary flex items-center gap-2 border-b border-border pb-3">
           <Palette size={20} /> Fabric Options Builder
         </h2>
 
-        {/* Global Color Checklist Manager */}
         <div className="space-y-3">
           <label className="block text-xs font-heading font-bold text-primary uppercase tracking-wider">Manage Colors Checklist</label>
           <div className="flex gap-2">
@@ -278,7 +260,6 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
           </div>
         </div>
 
-        {/* Global Pattern Checklist Manager */}
         <div className="space-y-3 pt-2 border-t border-border">
           <label className="block text-xs font-heading font-bold text-primary uppercase tracking-wider">Manage Patterns Checklist</label>
           <div className="flex gap-2">

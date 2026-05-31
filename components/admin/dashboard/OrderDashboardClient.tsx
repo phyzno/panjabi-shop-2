@@ -19,22 +19,17 @@ export default function OrderDashboardClient() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Main View Switcher State
     const [mainView, setMainView] = useState<"analytics" | "orders">("analytics");
 
-    // Time Filter (Updated with 'lifetime')
     const [timeFilter, setTimeFilter] = useState<"weekly" | "monthly" | "yearly" | "lifetime">("monthly");
 
-    // Order Table Filters
     const [activeTab, setActiveTab] = useState<"all" | "pending" | "delivered" | "canceled" | "archived">("all");
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Bulk Selection & Printing State
     const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
     const [printingOrder, setPrintingOrder] = useState<any>(null);
     const [viewingOrder, setViewingOrder] = useState<any>(null);
 
-    // Initial Data Fetching
     useEffect(() => {
         const fetchOrders = async () => {
             setIsLoading(true);
@@ -49,14 +44,10 @@ export default function OrderDashboardClient() {
         fetchOrders();
     }, []);
 
-    // প্রিন্ট উইন্ডো ক্লোজ হলে স্টেট ক্লিয়ার করার জন্য useEffect
-    // প্রিন্ট উইন্ডো ক্লোজ হলে স্টেট ক্লিয়ার করার জন্য useEffect
     useEffect(() => {
-        // ১. ওয়েবসাইটের আসল টাইটেলটি সেভ করে রাখা
         let originalTitle = document.title; 
 
         if (printingOrder) {
-            // ২. প্রিন্ট হওয়ার ঠিক আগে টাইটেল চেঞ্জ করে অর্ডার আইডি বসানো
             document.title = `invoice-${printingOrder.id}`;
             
             setTimeout(() => {
@@ -65,7 +56,6 @@ export default function OrderDashboardClient() {
         }
 
         const handleAfterPrint = () => {
-            // ৩. প্রিন্ট শেষে আবার আগের টাইটেল ফিরিয়ে আনা
             document.title = originalTitle; 
             setPrintingOrder(null);
         };
@@ -73,12 +63,11 @@ export default function OrderDashboardClient() {
         window.addEventListener("afterprint", handleAfterPrint);
 
         return () => {
-            document.title = originalTitle; // ক্লিনআপ
+            document.title = originalTitle;
             window.removeEventListener("afterprint", handleAfterPrint);
         };
     }, [printingOrder]);
 
-    // ১. Time Filtering Logic
     const timeFilteredOrders = useMemo(() => {
         if (timeFilter === "lifetime") return orders;
 
@@ -95,7 +84,6 @@ export default function OrderDashboardClient() {
         });
     }, [orders, timeFilter]);
 
-    // ২. ওয়ান-ক্লিক বাল্ক সিলেক্ট লজিক
     const toggleSelectAll = (filteredOrdersList: Order[]) => {
         if (selectedOrderIds.length === filteredOrdersList.length) {
             setSelectedOrderIds([]);
@@ -110,7 +98,6 @@ export default function OrderDashboardClient() {
         );
     };
 
-    // ৩. ডাইনামিক ফিল্টারিং ও সার্চ ম্যাট্রিক্স
     const filteredTableOrders = timeFilteredOrders.filter(order => {
         const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -122,9 +109,7 @@ export default function OrderDashboardClient() {
         return order.orderStatus === activeTab && matchesSearch;
     });
 
-    // অর্ডার স্ট্যাটাস ও রিফান্ড সিঙ্ক করার ফাংশন (Optimistic UI + Server Action)
     const handleStatusChange = async (id: string, newStatus: string) => {
-        // Optimistic UI Update
         setOrders((prevOrders) =>
             prevOrders.map((order) => {
                 if (order.id === id) {
@@ -140,30 +125,25 @@ export default function OrderDashboardClient() {
             })
         );
 
-        // Server Action Call
         const res = await updateOrderStatus(id, newStatus);
         if (!res.success) {
             alert("Failed to update status. Please try again.");
-            // অপশনাল: এরর হলে ডাটাবেস থেকে আবার ডাটা ফেচ করে আগের অবস্থায় ফিরিয়ে আনা যেতে পারে।
         }
     };
 
     const handlePaymentStatusChange = async (id: string, newPaymentStatus: string) => {
-        // Optimistic UI Update
         setOrders((prevOrders) =>
             prevOrders.map((order) =>
                 order.id === id ? { ...order, paymentStatus: newPaymentStatus as any } : order
             )
         );
 
-        // Server Action Call
         const res = await updatePaymentStatus(id, newPaymentStatus);
         if (!res.success) {
             alert("Failed to update payment status.");
         }
     };
 
-    // ডায়নামিক অ্যানালিটিক্স ক্যালকুলেশন
     const totalRevenue = timeFilteredOrders
         .filter(o => o.paymentStatus === 'paid' && o.orderStatus !== 'returned' && o.orderStatus !== 'canceled')
         .reduce((sum, order) => sum + order.grandTotal, 0);
@@ -175,14 +155,12 @@ export default function OrderDashboardClient() {
     const activeCustomersCount = new Set(timeFilteredOrders.map(o => o.customerName)).size;
     const totalOrdersCount = timeFilteredOrders.length;
 
-    // ৪. ডাইনামিক বাল্ক আর্কাইভ/রিস্টোর লজিক (Optimistic UI + Server Action)
     const handleBulkAction = async () => {
         if (selectedOrderIds.length === 0) return;
 
         const isRestoring = activeTab === "archived";
         const targetArchiveState = !isRestoring;
 
-        // Optimistic UI Update
         setOrders((prevOrders) =>
             prevOrders.map((order) =>
                 selectedOrderIds.includes(order.id)
@@ -192,17 +170,15 @@ export default function OrderDashboardClient() {
         );
 
         const savedSelectedIds = [...selectedOrderIds];
-        setSelectedOrderIds([]); // ক্লিয়ার সিলেকশন
+        setSelectedOrderIds([]);
         alert(`Processing ${savedSelectedIds.length} orders...`);
 
-        // Server Action Call
         const res = await bulkToggleArchiveOrders(savedSelectedIds, targetArchiveState);
         if (!res.success) {
             alert("Failed to process bulk action.");
         }
     };
 
-    // Loading State
     if (isLoading) {
         return (
             <div className="w-full flex flex-col items-center justify-center py-24 space-y-4 text-muted-foreground animate-in fade-in duration-500">
@@ -214,12 +190,9 @@ export default function OrderDashboardClient() {
 
     return (
         <>
-            {/* মেইন ড্যাশবোর্ড */}
             <div className={`space-y-8 animate-in fade-in duration-500 ${printingOrder ? 'print:hidden' : ''}`}>
 
-                {/* ================= TOP CONTROLS (View Switcher & Global Time Filter) ================= */}
                 <div className="bg-background border border-border p-4 rounded-lg shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
-                    {/* View Switcher Tabs */}
                     <div className="flex bg-secondary p-1 rounded-md border border-border w-full md:w-auto">
                         <button
                             onClick={() => { setMainView("analytics"); setSelectedOrderIds([]); }}
@@ -235,7 +208,6 @@ export default function OrderDashboardClient() {
                         </button>
                     </div>
 
-                    {/* Global Time Filter Tabs */}
                     <div className="flex bg-secondary p-1 rounded-md border border-border w-full md:w-auto overflow-x-auto custom-scrollbar">
                         {(["weekly", "monthly", "yearly", "lifetime"] as const).map((time) => (
                             <button
@@ -249,10 +221,8 @@ export default function OrderDashboardClient() {
                     </div>
                 </div>
 
-                {/* ================= ANALYTICS VIEW ================= */}
                 {mainView === "analytics" && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 animate-in fade-in zoom-in-95 duration-300">
-                        {/* Revenue Card */}
                         <div className="bg-background border border-border p-6 rounded-xl flex items-center justify-between shadow-sm">
                             <div className="space-y-1">
                                 <p className="text-xs font-sans text-muted-foreground uppercase tracking-widest">Net Revenue</p>
@@ -261,7 +231,6 @@ export default function OrderDashboardClient() {
                             <div className="p-4 bg-secondary/60 text-primary rounded-lg border border-border"><DollarSign size={24} /></div>
                         </div>
 
-                        {/* Refund Card */}
                         <div className="bg-background border border-border p-6 rounded-xl flex items-center justify-between shadow-sm">
                             <div className="space-y-1">
                                 <p className="text-xs font-sans text-muted-foreground uppercase tracking-widest">Total Refunded</p>
@@ -270,7 +239,6 @@ export default function OrderDashboardClient() {
                             <div className="p-4 bg-amber-50 text-amber-600 rounded-lg border border-amber-200"><Archive size={24} /></div>
                         </div>
 
-                        {/* Total Orders Card */}
                         <div className="bg-background border border-border p-6 rounded-xl flex items-center justify-between shadow-sm">
                             <div className="space-y-1">
                                 <p className="text-xs font-sans text-muted-foreground uppercase tracking-widest">Total Orders</p>
@@ -279,7 +247,6 @@ export default function OrderDashboardClient() {
                             <div className="p-4 bg-secondary/60 text-primary rounded-lg border border-border"><ShoppingBag size={24} /></div>
                         </div>
 
-                        {/* Customers Card */}
                         <div className="bg-background border border-border p-6 rounded-xl flex items-center justify-between shadow-sm">
                             <div className="space-y-1">
                                 <p className="text-xs font-sans text-muted-foreground uppercase tracking-widest">Active Customers</p>
@@ -292,13 +259,10 @@ export default function OrderDashboardClient() {
                     </div>
                 )}
 
-                {/* ================= ORDERS VIEW ================= */}
                 {mainView === "orders" && (
                     <div className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
 
-                        {/* ================= FILTER TOOLBAR ================= */}
                         <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-4">
-                            {/* Life-cycle Tabs */}
                             <div className="hidden md:flex flex-row gap-2 justify-center">
                                 {(["all", "pending", "delivered", "canceled", "archived"] as const).map((tab) => (
                                     <button
@@ -318,7 +282,6 @@ export default function OrderDashboardClient() {
                                 ))}
                             </div>
 
-                            {/* Mobile View Dropdown */}
                             <div className="md:hidden relative">
                                 <select
                                     value={activeTab}
@@ -330,7 +293,7 @@ export default function OrderDashboardClient() {
                                 >
                                     <option value="all">📦 All Orders</option>
                                     <option value="pending">⏳ Pending</option>
-                                    <option value="delivered">🚀 Delivered</option>
+                                    <option value="delivered"> ✅ Delivered</option>
                                     <option value="canceled">❌ Canceled</option>
                                     <option value="archived">🗄️ Archived Tab</option>
                                 </select>
@@ -354,9 +317,7 @@ export default function OrderDashboardClient() {
                             </div>
                         </div>
 
-                        {/* ================= ORDER DATA LAYOUT ================= */}
                         <div className="bg-background border border-border rounded-lg shadow-sm overflow-hidden">
-                            {/* Desktop View Table */}
                             <div className="hidden md:block overflow-x-auto w-full max-h-[60vh] overflow-y-auto relative custom-scrollbar">
                                 <table className="w-full text-left table-auto border-collapse">
                                     <thead className="sticky top-0 z-10 bg-secondary shadow-sm">
@@ -462,7 +423,6 @@ export default function OrderDashboardClient() {
                                 </table>
                             </div>
 
-                            {/* Mobile View Cards */}
                             <div className="md:hidden flex flex-col gap-3 p-4 max-h-[65vh] overflow-y-auto custom-scrollbar bg-secondary/10">
                                 {filteredTableOrders.length === 0 ? (
                                     <div className="py-12 text-center text-muted-foreground font-sans text-sm italic">
@@ -551,7 +511,6 @@ export default function OrderDashboardClient() {
                     </div>
                 )}
 
-                {/* ================= FLOATING ACTION BAR ================= */}
                 {selectedOrderIds.length > 0 && mainView === "orders" && (
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:bottom-8 md:right-8 md:left-auto md:translate-x-0 z-50 animate-in slide-in-from-bottom-4 duration-300 print:hidden">
                         <div className="bg-background border border-border shadow-2xl rounded-full px-3 py-3 flex items-center gap-3 md:gap-4">
@@ -582,12 +541,10 @@ export default function OrderDashboardClient() {
                 )}
             </div>
 
-            {/* ================= ORDER DETAILS MODAL ================= */}
             {viewingOrder && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
                     <div className="bg-background border border-border w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
 
-                        {/* Modal Header */}
                         <div className="px-6 py-4 bg-secondary/50 border-b border-border flex justify-between items-center">
                             <div>
                                 <h2 className="text-sm font-mono font-bold text-foreground flex items-center gap-2">
@@ -604,7 +561,6 @@ export default function OrderDashboardClient() {
                             </button>
                         </div>
 
-                        {/* Modal Body */}
                         <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar flex-1 font-sans text-xs">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2 bg-secondary/20 p-4 rounded-lg border border-border/60">
@@ -671,7 +627,6 @@ export default function OrderDashboardClient() {
                                                 {item.sizeValue && (
                                                     <div><span className="font-medium text-foreground text-[12px]">Size:</span> {item.sizeValue}</div>
                                                 )}
-                                                {/* নতুন যুক্ত করা ফেব্রিক নেম */}
                                                 {item.fabricName && (
                                                     <div><span className="font-medium text-foreground text-[12px]">Fabric:</span> {item.fabricName}</div>
                                                 )}
@@ -681,7 +636,6 @@ export default function OrderDashboardClient() {
                                                 {item.collarType && (
                                                     <div><span className="font-medium text-foreground text-[12px]">Collar:</span> {item.collarType}</div>
                                                 )}
-                                                {/* নতুন যুক্ত করা স্টিচিং চার্জ ও কোয়ান্টিটি */}
                                                 {item.stitchingCharge > 0 && (
                                                     <div><span className="font-medium text-foreground text-[12px]">Stitching:</span> ৳ {item.stitchingCharge} × {item.quantity}</div>
                                                 )}

@@ -19,10 +19,8 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
 
       <div className="relative w-full max-w-4xl bg-[#F8F9F5] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
 
-        {/* Header - Hidden on Print */}
         <div className="relative px-4 sm:px-6 py-4 sm:py-5 bg-white border-b border-[#D4D7C9]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 print-hidden">
           
-          {/* Title Section */}
           <div className="pr-12 sm:pr-0">
             <h2 className="font-heading text-base sm:text-lg font-bold uppercase tracking-widest text-[#17210C]">
               Order Details
@@ -30,9 +28,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
             <p className="font-sans text-[10px] sm:text-[11px] text-[#1C221A]/60 mt-0.5 tracking-wider">#{order.id}</p>
           </div>
 
-          {/* Actions Section */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {/* Print Button - Clean unified color for all screens */}
             <button
               onClick={onPrint}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-primary border border-primary rounded-full text-[11px] sm:text-xs font-sans uppercase tracking-wider text-white hover:bg-[#4A5D23] hover:border-[#4A5D23] transition-all cursor-pointer shadow-sm"
@@ -40,7 +36,6 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
               <Printer className="w-4 h-4 sm:w-4 sm:h-4" /> Print Invoice
             </button>
 
-            {/* Close Button - Absolute Top-Right on Mobile, Static Side-by-Side on PC */}
             <button 
               onClick={onClose} 
               className="absolute top-4 right-4 sm:static p-2 bg-[#EBECE3] rounded-full text-accent hover:bg-red-50 transition-colors cursor-pointer shrink-0 shadow-sm sm:shadow-none"
@@ -50,10 +45,8 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
           </div>
         </div>
 
-        {/* Printable Area Content */}
         <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1 print-section bg-white">
 
-          {/* Invoice Header */}
           <div className="flex flex-col md:flex-row justify-between gap-6 mb-8 border-b border-[#D4D7C9]/40 pb-6">
             <div>
               <p className="font-sans text-[11px] font-medium underline uppercase tracking-widest text-[#4A5D23] mb-3">Shipping To</p>
@@ -81,7 +74,6 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
             </div>
           </div>
 
-          {/* Items List */}
           <div className="mb-8">
             <h3 className="font-heading text-sm font-bold uppercase tracking-widest text-[#17210C] mb-4 flex items-center gap-2">
               <Package className="w-4 h-4 text-[#4A5D23]" /> Ordered Items
@@ -93,7 +85,6 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                   <div className="flex flex-col md:flex-row justify-between gap-4">
                     <div className="flex-1">
 
-                      {/* Responsive Title & Badge */}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2.5 mb-2">
                         <h4 className="text-sm text-[#17210C] uppercase tracking-wide">
                           {idx + 1}.  {item.name}
@@ -103,14 +94,12 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                         </span>
                       </div>
 
-                      {/* Breakdown for Custom Tailored Items */}
                       {item.productType === 'custom_tailored' && (
                         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1 font-sans text-[13px] text-[#1C221A]/70">
                           {item.fabricName && <p><span className="text-[#17210C]">Fabric:</span> {item.fabricName}</p>}
                           {item.collarType && <p><span className="text-[#17210C]">Collar:</span> {item.collarType}</p>}
                           {item.fabricYards && <p><span className="text-[#17210C]">Fabric Length:</span> {item.fabricYards} Yards</p>}
 
-                          {/* Sizing Logic (Custom vs Preset) */}
                           {item.measurements ? (
                             <>
                               <p><span className="text-[#17210C]">Size:</span> Custom</p>
@@ -130,7 +119,6 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                             <p><span className="text-[#17210C]">Size:</span> {item.sizeValue}</p>
                           ) : null}
 
-                          {/* Stitching Cost with Qty */}
                           {item.stitchingCharge > 0 && (
                             <p className="col-span-full text-[#C25934] mt-1.5">
                               + Stitching Charge: ৳ {item.stitchingCharge.toLocaleString()} × {item.quantity}
@@ -139,7 +127,6 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                         </div>
                       )}
 
-                      {/* Regular Items Info */}
                       {item.productType !== 'custom_tailored' && item.sizeValue && (
                         <p className="font-sans text-[13px] text-[#1C221A]/70 mt-1.5"><span className="text-[#17210C]">Size:</span> {item.sizeValue}</p>
                       )}
@@ -158,7 +145,6 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
             </div>
           </div>
 
-          {/* Payment Summary */}
           <div className="flex justify-end pt-6 border-t border-[#D4D7C9]/40 font-sans">
             <div className="w-full md:w-1/2 lg:w-1/3 space-y-2.5 text-xs">
               <div className="flex justify-between text-[#1C221A]/70">

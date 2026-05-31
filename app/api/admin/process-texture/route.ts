@@ -173,10 +173,7 @@ function blendOppositeVerticalEdges(
   return output;
 }
 
-// ... (আপনার আগের সব sharp ম্যাথ লজিক: clampBandSize, getModeConfig ইত্যাদি হুবহু থাকবে) ...
-
 async function createSeamlessTexture(inputBuffer: Buffer, mode: TextureMode) {
-  // অপ্টিমাইজেশন: ইমেজ অনেক বড় হলে মেমরি লিক ঠেকাতে প্রথমেই রিসাইজ করে নেওয়া হচ্ছে (Max 1024x1024)
   const normalized = await sharp(inputBuffer)
     .resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true })
     .rotate()
@@ -199,7 +196,6 @@ async function createSeamlessTexture(inputBuffer: Buffer, mode: TextureMode) {
     pipeline = pipeline.blur(config.blurSigma);
   }
 
-  // লসলেস WebP তে কনভার্ট করা হচ্ছে যেন কোয়ালিটি সেরা থাকে কিন্তু সাইজ কমে যায়
   return pipeline.flatten({ background: '#ffffff' }).webp({ quality: 90, lossless: false }).toBuffer();
 }
 
@@ -217,12 +213,10 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     let currentBuffer: any = Buffer.from(arrayBuffer);
 
-    // 🚀 BLAZING FAST OPTIMIZATION: লুপ চালানোর আগেই ছবি ছোট করে নেওয়া
     currentBuffer = await sharp(currentBuffer)
       .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
       .toBuffer();
 
-    // Multi-pass Magic
     for (let i = 0; i < iterations; i++) {
       currentBuffer = (await createSeamlessTexture(currentBuffer, mode as TextureMode)) as any;
     }

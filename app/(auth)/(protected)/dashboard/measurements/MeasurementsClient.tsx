@@ -5,11 +5,8 @@ import { Plus, Ruler, Trash2, Scissors, X, Star, AlertTriangle } from 'lucide-re
 import { addMeasurementProfile, deleteMeasurementProfile, setDefaultProfile } from '@/lib/actions/measurement.actions';
 
 export default function MeasurementsClient({ userId, initialMeasurements }: { userId: string, initialMeasurements: any[] }) {
-  // Add Profile States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Delete Confirmation States
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: number | null }>({ isOpen: false, id: null });
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -44,7 +41,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
     setFormData({ profile_name: '', length: '', chest: '', shoulder: '', sleeve: '', is_default: false });
   };
 
-  // ডিলিট কনফার্ম করার ফাংশন
   const confirmDelete = async () => {
     if (!deleteModal.id) return;
     setIsDeleting(true);
@@ -56,7 +52,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
   return (
     <div className="space-y-6">
       
-      {/* Add New Profile Button */}
       <button 
         onClick={() => setIsModalOpen(true)}
         className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4A5D23] text-white rounded-xl font-sans text-xs uppercase tracking-widest shadow-md hover:bg-[#3D4C1D] transition-colors cursor-pointer"
@@ -64,7 +59,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
         <Plus className="w-4 h-4" /> Add New Profile
       </button>
 
-      {/* Profiles Grid */}
       {initialMeasurements.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {initialMeasurements.map((profile) => (
@@ -87,7 +81,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
                 </div>
                 
                 <div className="flex items-center gap-2.5">
-                  {/* Updated: Clearer Set Default Button */}
                   {!profile.is_default && (
                     <button 
                       onClick={() => setDefaultProfile(profile.id, userId)}
@@ -97,7 +90,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
                     </button>
                   )}
                   
-                  {/* Updated: Triggers Delete Modal instead of direct deletion */}
                   <button 
                     onClick={() => setDeleteModal({ isOpen: true, id: profile.id })}
                     className="p-2 text-accent hover:text-red-500 border border-[#4A5D23]/30 bg-[#F8F9F5] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
@@ -108,7 +100,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
                 </div>
               </div>
 
-              {/* Measurements Display */}
               <div className="grid grid-cols-2 gap-3 p-4 bg-[#F8F9F5]/50 rounded-xl border border-[#D4D7C9]/40">
                 <div className="flex flex-col">
                   <span className="font-sans text-[11px] uppercase tracking-widest text-[#1C221A]/50 ">Length</span>
@@ -138,7 +129,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setDeleteModal({ isOpen: false, id: null })} />
@@ -174,7 +164,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
         </div>
       )}
 
-      {/* Add Measurement Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
@@ -192,7 +181,6 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Form fields remain exactly the same as your original code */}
               <div>
                 <label className="block text-[11px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Profile Name *</label>
                 <input 

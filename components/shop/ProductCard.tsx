@@ -59,12 +59,10 @@ export function CollectionProductCard({
   const isWishlisted = wishlistedIds.includes(productIdNum); 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // স্টক ক্যালকুলেশন
   const productStock = typeof product.stock === 'string'
     ? JSON.parse(product.stock)
     : (product.stock || {});
     
-  // সব সাইজের স্টক যোগ করে দেখা হচ্ছে প্রোডাক্টটি আদৌ স্টকে আছে কি না
   const totalStock = Object.values(productStock).reduce((sum: any, val: any) => sum + (Number(val) || 0), 0) as number;
   const isCompletelyOutOfStock = (product.sizes?.length ?? 0) > 0 && totalStock === 0;
 
@@ -135,7 +133,6 @@ export function CollectionProductCard({
             )}
           />
 
-          {/* Out of Stock Overlay */}
           {isCompletelyOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/30 backdrop-blur-[2px]">
               <div className="bg-black/80 text-white px-4 py-2 rounded-sm font-sans text-[10px] font-bold uppercase tracking-[0.2em]">
@@ -230,13 +227,11 @@ export function CollectionProductCard({
         </div>
       </div>
 
-      {/* Quick Add Modal */}
       <QuickAddModal 
         product={product} 
         isOpen={isQuickAddOpen} 
         onClose={() => setIsQuickAddOpen(false)}
       />
-      {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6" onClick={(e) => e.stopPropagation()}>
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setShowLoginModal(false)} />

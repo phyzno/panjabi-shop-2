@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight, Star, Quote, ShieldCheck } from "lucide-react";
 
-// --- Mock Review Data ---
 const reviews = [
   {
     id: 1,
@@ -68,7 +67,6 @@ export default function ReviewSection() {
     if (diff === totalReviews - 1) handlePrev();
   };
 
-  // Touch Swipe Logic for Mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.targetTouches[0].clientX);
   };
@@ -90,21 +88,16 @@ export default function ReviewSection() {
     setTouchEnd(0);
   };
 
-  // Calculate 3D Card Positions
   const getCardStyle = (index: number) => {
     const diff = (index - activeIndex + totalReviews) % totalReviews;
 
     if (diff === 0) {
-      // Active Center Card
       return "translate-x-0 scale-100 opacity-100 z-30 shadow-[0_25px_60px_rgba(28,34,26,0.15)] rotate-0 blur-none pointer-events-auto";
     } else if (diff === 1) {
-      // Next Card (Right) - Increased spacing for mobile
       return "translate-x-[25%] sm:translate-x-[35%] md:translate-x-[50%] scale-[0.85] opacity-60 z-20 shadow-md rotate-6 blur-[1px] cursor-pointer hover:opacity-80 hover:scale-[0.88] pointer-events-auto";
     } else if (diff === totalReviews - 1) {
-      // Prev Card (Left) - Increased spacing for mobile
       return "-translate-x-[25%] sm:-translate-x-[35%] md:-translate-x-[50%] scale-[0.85] opacity-60 z-20 shadow-md -rotate-6 blur-[1px] cursor-pointer hover:opacity-80 hover:scale-[0.88] pointer-events-auto";
     } else {
-      // Hidden Background Cards
       return "translate-x-0 scale-75 opacity-0 z-10 rotate-0 pointer-events-none";
     }
   };
@@ -113,7 +106,6 @@ export default function ReviewSection() {
     <section className="py-20 md:py-24 relative border-t border-[#D4D7C9]/40 overflow-hidden">
       <div className="max-w-7xl mx-auto px-0 md:px-6">
         
-        {/* Section Header */}
         <div className="flex flex-col items-center mb-10 md:mb-16 px-6">
           <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[#4A5D23]/70 mb-3">
             Voice of Trust
@@ -124,7 +116,6 @@ export default function ReviewSection() {
           <div className="w-16 h-[2px] bg-[#C25934] mt-6"></div>
         </div>
 
-        {/* Stacked Cards Area */}
         <div 
           className="relative flex justify-center items-center w-full min-h-[400px] md:min-h-[430px] px-4 touch-pan-y"
           onTouchStart={handleTouchStart}
@@ -140,10 +131,8 @@ export default function ReviewSection() {
                 onClick={() => handleCardClick(index)}
                 className={`absolute w-[75vw] sm:w-[400px] lg:w-[440px] flex flex-col bg-[#F8F9F5] border border-[#D4D7C9]/60 p-6 md:p-10 rounded-[20px] transition-all duration-700 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] select-none ${getCardStyle(index)}`}
               >
-                {/* Decorative Quote Mark */}
                 <Quote className="absolute top-6 right-6 w-12 h-12 md:w-16 md:h-16 text-[#D4D7C9]/40 -rotate-12" />
 
-                {/* Stars & Verification */}
                 <div className="flex items-center justify-between mb-6 md:mb-8 relative z-10">
                   <div className="flex gap-1">
                     {[...Array(review.rating)].map((_, i) => (
@@ -156,12 +145,10 @@ export default function ReviewSection() {
                   </div>
                 </div>
 
-                {/* Review Text */}
                 <p className={`font-sans text-[13px] md:text-[15px] leading-relaxed tracking-wide mb-8 md:mb-10 flex-grow relative z-10 italic transition-colors duration-500 ${isActive ? 'text-[#1C221A]/80' : 'text-[#1C221A]/40'}`}>
                   "{review.text}"
                 </p>
 
-                {/* Customer Info */}
                 <div className="mt-auto border-t border-[#D4D7C9]/50 pt-4 md:pt-5 relative z-10 flex flex-col gap-1.5">
                   <h4 className={`font-heading text-base md:text-lg font-bold uppercase tracking-[0.1em] transition-colors duration-500 ${isActive ? 'text-[#1C221A]' : 'text-[#1C221A]/40'}`}>
                     {review.name}
@@ -175,7 +162,6 @@ export default function ReviewSection() {
           })}
         </div>
 
-        {/* Carousel Controls */}
         <div className="flex justify-center items-center gap-6 mt-6 md:mt-5 relative z-40">
           <button 
             onClick={handlePrev} 

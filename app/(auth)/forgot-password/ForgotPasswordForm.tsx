@@ -21,7 +21,6 @@ export default function ForgotPasswordForm({
 
   return (
     <div className="space-y-6">
-      {/* Messages */}
       {error && (
         <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-4 text-[11px] font-sans flex items-center gap-2 animate-in slide-in-from-top-2">
           <AlertCircle className="w-4 h-4 shrink-0" />

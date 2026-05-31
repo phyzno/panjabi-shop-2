@@ -1,8 +1,8 @@
 import { getCachedAllFabrics } from '@/lib/actions/fabric.actions';
 import { getCachedSiteSettings } from '@/lib/actions/settings.actions';
 import { CustomizeClient } from '@/components/customizer/CustomizeClient';
-import { createClient } from '@/utils/supabase/server'; // 👈 যুক্ত করা হলো
-import { getUserMeasurements } from '@/lib/actions/user.actions'; // 👈 যুক্ত করা হলো
+import { createClient } from '@/utils/supabase/server';
+import { getUserMeasurements } from '@/lib/actions/user.actions';
 
 export const metadata = {
   title: 'Customize Panjabi',
@@ -11,15 +11,13 @@ export const metadata = {
 export default async function CustomizePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
-  // ১. Supabase থেকে ইউজারের সেশন চেক করা
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // ২. Promise.all ব্যবহার করে একসাথে ফ্যাব্রিক, সেটিংস এবং মেজারমেন্ট ফেচ করা হচ্ছে
   const [
     { data: dbFabrics }, 
     settingsRes,
-    measurementsRes // 👈 মেজারমেন্ট ফেচ করা হচ্ছে
+    measurementsRes
   ] = await Promise.all([
     getCachedAllFabrics(),
     getCachedSiteSettings(),
@@ -40,7 +38,6 @@ export default async function CustomizePage({ params }: { params: Promise<{ id: 
         fabrics={fabrics} 
         filterColors={siteColors}
         filterPatterns={sitePatterns}
-        // 👈 নিচে এই দুটি প্রপস পাস করা অত্যন্ত জরুরি
         userId={user?.id || null} 
         savedMeasurements={savedMeasurements || []}
       />

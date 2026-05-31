@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle, Package, LayoutDashboard, ShoppingBag, Copy, Check } from "lucide-react";
 
-// মেইন কন্টেন্ট কম্পোনেন্ট
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId") || "Unknown Order";
@@ -15,7 +14,7 @@ function OrderSuccessContent() {
     if (orderId && orderId !== "Unknown Order") {
       navigator.clipboard.writeText(orderId);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // ২ সেকেন্ড পর আবার আগের আইকন ফিরে আসবে
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -23,20 +22,15 @@ function OrderSuccessContent() {
     <div className="min-h-screen bg-[#F8F9F5] flex flex-col items-center justify-center py-16 sm:py-24 px-4 sm:px-6 select-none">
       <div className="bg-white max-w-lg w-full p-6 sm:p-8 md:p-12 rounded-[24px] sm:rounded-[32px] border border-[#D4D7C9]/40 shadow-xl shadow-[#4A5D23]/5 text-center animate-in zoom-in-95 fade-in duration-500">
         
-        {/* Success Icon */}
         <div className="w-20 h-20 sm:w-24 sm:h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8 border-[6px] border-green-100/50">
           <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-500" />
         </div>
-
-        {/* Heading & Text */}
         <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-widest text-[#17210C] mb-3">
           Order Successful!
         </h1>
         <p className="font-sans text-xs sm:text-sm text-[#1C221A]/60 mb-8 leading-relaxed px-2 sm:px-4">
           Thank you for your purchase. We have received your order and our team will begin processing it right away.
         </p>
-
-        {/* Order ID Card with Click to Copy */}
         <div 
           onClick={handleCopy}
           className="group bg-[#F8F9F5] hover:bg-[#EBECE3] border border-[#D4D7C9]/50 rounded-2xl p-4 sm:p-5 mb-8 sm:mb-10 relative overflow-hidden cursor-pointer transition-colors"
@@ -50,7 +44,6 @@ function OrderSuccessContent() {
             <p className="font-mono text-lg sm:text-xl md:text-2xl font-bold text-[#4A5D23]">
               {orderId}
             </p>
-            {/* Copy Icon Feedback */}
             <div className="text-[#1C221A]/40 group-hover:text-[#4A5D23] transition-colors">
               {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
             </div>
@@ -61,8 +54,6 @@ function OrderSuccessContent() {
             </p>
           )}
         </div>
-
-        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
           <Link
             href={`/track-order?id=${orderId}`}
@@ -80,8 +71,6 @@ function OrderSuccessContent() {
             Dashboard
           </Link>
         </div>
-
-        {/* Continue Shopping Link */}
         <div className="mt-8 pt-6 border-t border-[#D4D7C9]/40">
           <Link
             href="/shop"
@@ -95,8 +84,6 @@ function OrderSuccessContent() {
     </div>
   );
 }
-
-// Next.js App Router-এ useSearchParams ব্যবহার করলে Suspense এর ভেতরে রাখা বেস্ট প্র্যাকটিস
 export default function OrderSuccessPage() {
   useEffect(() => {
     document.title = 'Order Successful | Panjabi Shop';

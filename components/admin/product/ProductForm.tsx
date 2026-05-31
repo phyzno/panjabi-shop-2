@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadImages, deleteUploadedImages } from "@/lib/actions/upload.actions";
-import { addProduct, updateProduct } from "@/lib/actions/product.actions"; // updateProduct ইমপোর্ট করা হয়েছে
+import { addProduct, updateProduct } from "@/lib/actions/product.actions";
 import { Loader2, UploadCloud, X, Star } from "lucide-react";
 import Image from "next/image";
 
@@ -69,17 +69,11 @@ export default function ProductForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-
-  // Image States
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>(initialData?.images || []);
   const [coverIndex, setCoverIndex] = useState<number>(0);
-
-  // Size Constants
   const STANDARD_SIZES = ["S", "M", "L", "XL", "XXL"];
   const NUMBERED_SIZES = ["38", "40", "42", "44", "46", "48"];
-
-  // Size State & Logic
   const [selectedSizes, setSelectedSizes] = useState<string[]>(initialData?.sizes || []);
 
   const toggleSize = (size: string) => {
@@ -98,9 +92,7 @@ export default function ProductForm({
       const formData = new FormData(e.currentTarget);
       const categoryId = Number(formData.get("category_id"));
       
-      // ১. ছবি কম্প্রেস এবং আপলোড
       if (imageFiles.length > 0) {
-        // WebWorker এর মাধ্যমে ব্যাকগ্রাউন্ডে প্যারালাল কম্প্রেশন
         const compressedFiles = await Promise.all(imageFiles.map(file => compressImageNative(file)));
         const base64Files = await Promise.all(compressedFiles.map(file => fileToBase64(file)));
         
@@ -135,7 +127,6 @@ export default function ProductForm({
         is_featured: initialData?.is_featured || false,
       };
 
-      // ২. ডাটাবেসে সেভ করার চেষ্টা
       let res;
       if (isEditMode && initialData?.id) {
         res = await updateProduct(initialData.id, productData);
@@ -143,20 +134,17 @@ export default function ProductForm({
         res = await addProduct(productData);
       }
 
-      // ৩. ডাটাবেস সেভ সফল হলে রিডাইরেক্ট
       if (res?.success) {
         router.push("/admin/products");
         router.refresh();
       } else {
-        // ৪. ডাটাবেস ফেইল করলে রোলব্যাক (ক্লাউডিনারি থেকে ছবি রিমুভ)
         if (uploadedUrls.length > 0) {
-          await deleteUploadedImages(uploadedUrls); // rollback action
+          await deleteUploadedImages(uploadedUrls);
         }
         alert(res?.error || "Error saving product");
       }
     } catch (error) {
       console.error(error);
-      // কোনো ক্যাশ এরর হলেও আপলোড হওয়া ছবি ক্লিন করে দেওয়া
       if (uploadedUrls.length > 0) {
         await deleteUploadedImages(uploadedUrls);
       }
@@ -185,7 +173,6 @@ export default function ProductForm({
 
   return (
     <form onSubmit={handleSubmit} className="bg-background border border-border rounded-lg p-6 md:p-8 shadow-sm space-y-8">
-      {/* Name and Category */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-heading font-bold text-primary mb-2">Product Name</label>
@@ -202,23 +189,19 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Price */}
       <div>
         <label className="block text-sm font-heading font-bold text-primary mb-2">Price (৳)</label>
         <input type="number" name="price" defaultValue={initialData?.price} required placeholder="e.g. 2500" className="w-full border border-border bg-secondary/50 rounded-md px-4 py-3 focus:ring-2 focus:ring-primary outline-none font-sans text-sm" />
       </div>
 
-      {/* Description */}
       <div>
         <label className="block text-sm font-heading font-bold text-primary mb-2">Description</label>
         <textarea name="description" defaultValue={initialData?.description} rows={4} placeholder="Premium quality fabric details..." className="w-full border border-border bg-secondary/50 rounded-md px-4 py-3 focus:ring-2 focus:ring-primary outline-none font-sans text-sm resize-none" />
       </div>
 
-      {/* Sizes Selection */}
       <div>
         <label className="block text-sm font-heading font-bold text-primary mb-3">Available Sizes</label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-secondary/20 p-4 md:p-5 border border-border rounded-lg">
-          {/* Standard Sizes */}
           <div>
             <span className="block text-xs font-sans text-muted-foreground mb-3 uppercase tracking-wider">Standard Sizes</span>
             <div className="flex flex-wrap gap-2">
@@ -239,7 +222,6 @@ export default function ProductForm({
             </div>
           </div>
 
-          {/* Numbered Sizes */}
           <div>
             <span className="block text-xs font-sans text-muted-foreground mb-3 uppercase tracking-wider">Numbered Sizes</span>
             <div className="flex flex-wrap gap-2">
@@ -262,7 +244,6 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Interactive Images Upload & Cover Selection */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-heading font-bold text-primary">Product Images</label>
@@ -312,7 +293,6 @@ export default function ProductForm({
         </div>
       </div>
 
-      {/* Submit Button */}
       <div className="pt-6 border-t border-border flex justify-end">
         <button type="submit" disabled={loading} className="w-full sm:w-auto bg-primary text-white px-10 py-3 rounded-md font-sans text-sm font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-70 cursor-pointer">
           {loading ? <><Loader2 size={18} className="animate-spin" /> {isEditMode ? 'Updating...' : 'Saving...'}</> : (isEditMode ? 'Update Product' : 'Save Product')}

@@ -27,7 +27,6 @@ export default async function AdminCollarsPage() {
         <h1 className="text-3xl font-heading font-bold text-primary">Manage Collars</h1>
       </div>
 
-      {/* Add Collar Form */}
       <div className="bg-white border border-border rounded-2xl p-6 shadow-sm mb-8">
         <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-2">
           <Plus size={20} /> Add New Collar
@@ -66,7 +65,6 @@ export default async function AdminCollarsPage() {
         </form>
       </div>
 
-      {/* Collars Table */}
       <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
