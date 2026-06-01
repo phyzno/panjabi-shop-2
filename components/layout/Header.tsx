@@ -8,8 +8,11 @@ import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/authStore";
 import { Search, User, ShoppingCart, Menu, X, LayoutDashboard, Package, Ruler, Heart, LogOut } from "lucide-react";
 
+export type HeaderVariant = "default" | "home";
+
 interface HeaderProps {
   activeOfferText?: string | null;
+  variant?: HeaderVariant;
 }
 
 function notifyAuthChange() {
@@ -25,11 +28,11 @@ function notifyAuthChange() {
   }
 }
 
-export function Header({ activeOfferText }: HeaderProps) {
+export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
+  const isHomePage = variant === "home";
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Shop", href: "/shop" },
@@ -95,7 +98,7 @@ export function Header({ activeOfferText }: HeaderProps) {
 
   return (
     <>
-      <div className={`site-header-shell ${isHomePage ? "absolute top-0 left-0 w-full z-50" : "relative w-full z-50"}`}>
+      <div className={isHomePage ? "absolute top-0 left-0 w-full z-50" : "relative w-full z-50"}>
 
         {activeOfferText && (
           <div className="bg-[#1A1A1A] text-[#C9A84C] text-xs py-2 px-4 text-center font-medium tracking-wide">
@@ -104,10 +107,7 @@ export function Header({ activeOfferText }: HeaderProps) {
         )}
 
         <header
-          className={`site-header w-full transition-colors duration-300 border-b ${isScrolled
-            ? "is-scrolled"
-            : ""
-            } ${isScrolled
+          className={`w-full transition-colors duration-300 border-b ${isScrolled
             ? "fixed top-0 left-0 z-50 bg-background/90 backdrop-blur-lg border-border/50 shadow-sm"
             : isHomePage
               ? "absolute top-full left-0 bg-transparent border-transparent"
@@ -130,7 +130,7 @@ export function Header({ activeOfferText }: HeaderProps) {
             <div className="flex-1 md:flex-none text-center md:text-left">
               <Link
                 href="/"
-                className={`site-logo font-heading text-2xl md:text-3xl font-bold tracking-[0.15em] flex items-center justify-center md:justify-start uppercase transition-colors duration-300 ${showScrolledStyle ? "text-primary" : "text-[#B5C18E]"
+                className={`font-heading text-2xl md:text-3xl font-bold tracking-[0.15em] flex items-center justify-center md:justify-start uppercase transition-colors duration-300 ${showScrolledStyle ? "text-primary" : "text-[#B5C18E]"
                   }`}
               >
                 Panjabi<span className="text-accent text-4xl leading-none font-sans">.</span>

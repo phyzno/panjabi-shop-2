@@ -121,34 +121,6 @@
     scroll-behavior: smooth;
   }
 
-  body:has(main > .home-page) .site-header-shell {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 50;
-    width: 100%;
-  }
-
-  body:has(main > .home-page) .site-header:not(.is-scrolled) {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: transparent;
-    border-color: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
-  body:has(main > .home-page) .site-header:not(.is-scrolled) nav > a,
-  body:has(main > .home-page) .site-header:not(.is-scrolled) > div > div > button,
-  body:has(main > .home-page) .site-header:not(.is-scrolled) .user-dropdown-container > button {
-    color: #ffffff;
-  }
-
-  body:has(main > .home-page) .site-header:not(.is-scrolled) .site-logo {
-    color: #B5C18E;
-  }
 }
 
 @media print {

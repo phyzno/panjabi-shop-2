@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <div className="home-page w-full">
+    <div className="w-full">
       <Hero/>
       <BrandValue/>
       <Collection/>
