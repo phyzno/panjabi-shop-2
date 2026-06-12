@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { PanjabiCanvas } from './PanjabiCanvas';
 import { useCustomizerStore } from '@/store/useCustomizerStore';
 import { resolveProductImageSrc } from '@/lib/productImages';
-import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calculator, ChevronLeft, ChevronRight, X, ShoppingCart, RotateCcw } from "lucide-react";
+import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calculator, ChevronLeft, ChevronRight, X, ShoppingCart, RotateCcw, Eye } from "lucide-react";
 import { useCartStore } from '@/store/cartStore';
 import { addMeasurementProfile } from '@/lib/actions/measurement.actions';
 import { useAuthStore } from '@/store/authStore';
@@ -208,7 +208,9 @@ export function CustomizeClient({
   const selectedCollar = CORE_COLLARS.find((c: any) => c.id === store.collarId) || CORE_COLLARS[0];
   const selectedFabricImageUrl = selectedFabric?.image_url ? resolveProductImageSrc(selectedFabric.image_url) : undefined;
   const selectedFabricTextureUrl = selectedFabric?.texture_url || undefined;
-  const selectedFabricRawUrl = selectedFabric?.raw_image_url || selectedFabric?.texture_url || undefined;
+  const selectedFabricCoverUrl = (Array.isArray(selectedFabric?.preview_images) && selectedFabric.preview_images.length > 0)
+    ? selectedFabric.preview_images[0]
+    : (selectedFabric?.raw_image_url || selectedFabric?.texture_url || undefined);
   const stitchingCharge = 450;
   const activeYardage = store.orderMode === 'tailoring' ? calculatedPanjabiYardage : store.yardage;
   const maxFabricYards = selectedFabric?.yards || 0;
@@ -303,7 +305,7 @@ export function CustomizeClient({
         ? `Custom Tailored Panjabi - ${selectedFabric?.name || 'Premium Fabric'}`
         : `Premium Fabric Bolt - ${selectedFabric?.name || 'Premium Fabric'}`,
       productType: isTailoring ? 'custom_tailored' : 'custom_fabric_only',
-      image: selectedFabric?.raw_image_url || selectedFabric?.texture_url || '/placeholder-image.jpg',
+      image: selectedFabricCoverUrl || '/placeholder-image.jpg',
       fabricId: selectedFabric?.id?.toString(),
       fabricName: selectedFabric?.name,
       fabricImage: selectedFabric?.texture_url,
@@ -420,6 +422,10 @@ export function CustomizeClient({
         {filteredFabrics.map((fabric: any) => {
           const outOfStock = fabric.yards <= 0;
 
+          const fabricCoverImage = (Array.isArray(fabric?.preview_images) && fabric.preview_images.length > 0)
+            ? fabric.preview_images[0]
+            : (fabric?.raw_image_url || fabric?.texture_url || '/placeholder-image.jpg');
+
           // Discount Calculation
           const rawPrice = Number(fabric.price || 0);
           const hasDiscount = (fabric.discount_percentage ?? 0) > 0;
@@ -440,7 +446,7 @@ export function CustomizeClient({
                 } ${store.selectedFabricId === String(fabric.id) ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23]' : 'border-[#EBECE3]'}`}
             >
               <div className="aspect-square bg-[#EBECE3] relative overflow-hidden">
-                <img src={fabric?.raw_image_url || fabric?.texture_url} alt={fabric.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img src={fabricCoverImage} alt={fabric.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
 
                 {outOfStock && (
                   <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10">
@@ -468,26 +474,29 @@ export function CustomizeClient({
                     setModalFabric(fabric);
                     setIsInfoModalOpen(true);
                   }}
-                  className="absolute bottom-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-[#1C221A]/70 hover:text-[#4A5D23] shadow-sm transition-all z-20"
+                  className="absolute bottom-2 right-2 w-fit h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-[10px] text-[#1C221A]/70 hover:text-[#4A5D23] shadow-sm transition-all z-20 gap-1 px-2"
                 >
-                  <Info className="w-3.5 h-3.5" />
+                  <Info className="w-3 h-3" /> Details
                 </button>
               </div>
 
               <div className="p-3 flex flex-col justify-between flex-1">
                 <h4 className="font-sans text-[12px] font-medium text-[#17210C] uppercase tracking-wide truncate">{fabric.name}</h4>
-                <div className="flex justify-between items-end mt-1">
-                  <div className="flex flex-col">
-                    <p className="font-sans text-[11px] text-[#C25934] uppercase tracking-widest">
+
+                <div className="flex flex-col mt-1.5 gap-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-sans text-[11px] font-medium text-[#C25934] uppercase tracking-widest">
                       ৳ {discountedPrice}/yd
                     </p>
                     {hasDiscount && (
-                      <p className="font-sans text-[9px] text-[#1C221A]/40 line-through tracking-wider mt-0.5">
+                      <p className="font-sans text-[9px] text-[#1C221A]/40 line-through tracking-wider">
                         ৳ {rawPrice}
                       </p>
                     )}
                   </div>
-                  <p className="font-sans text-[9px] text-[#1C221A]/50 pb-[2px]">{fabric.yards} yds</p>
+                  <p className="font-sans text-[9px] text-[#1C221A]/50 tracking-widest">
+                    {fabric.yards} yds in stock
+                  </p>
                 </div>
               </div>
             </div>
@@ -789,7 +798,7 @@ export function CustomizeClient({
         </div>
       </div>
 
-      <div className="hidden lg:flex w-full lg:w-1/2 min-h-screen px-4 md:px-8 lg:px-12 py-6 flex-col justify-start">
+      <div className="hidden lg:flex w-full lg:w-1/2 min-h-screen px-4 md:px-8 lg:px-8 py-6 flex-col justify-start">
         <div className="mb-8 flex justify-between items-center">
           <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.05em] text-[#17210C]">
             Bespoke Atelier
@@ -894,7 +903,7 @@ export function CustomizeClient({
             <div className="flex gap-6">
               <button onClick={() => setActiveBottomSheet('fabric')} className="flex flex-col items-center gap-1.5 group">
                 <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${activeBottomSheet === 'fabric' ? 'border-[#4A5D23] scale-105' : 'border-[#D4D7C9] group-hover:border-[#4A5D23]'}`}>
-                  <img src={selectedFabricRawUrl} alt="Fabric" className="w-full h-full object-cover bg-[#EBECE3]" />
+                  <img src={selectedFabricCoverUrl} alt="Fabric" className="w-full h-full object-cover bg-[#EBECE3]" />
                 </div>
                 <span className={`text-[12px] font-medium uppercase tracking-widest ${activeBottomSheet === 'fabric' ? 'text-[#4A5D23]' : 'text-[#1C221A]'}`}>Fabric</span>
               </button>
@@ -1000,16 +1009,6 @@ export function CustomizeClient({
           setIsInfoModalOpen(false); // মডাল ক্লোজ হবে
         }}
       />
-
-      {mobileStep === 'design' && (
-        <button
-          onClick={() => setIsResetModalOpen(true)}
-          className="lg:hidden fixed top-1/3 right-3 z-[1000] w-12 h-12 bg-white/80 backdrop-blur-xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.2)] rounded-full flex items-center justify-center text-[#1C221A]/70 hover:text-red-500 active:scale-[0.85] transition-all duration-200"
-          aria-label="Reset Customizer"
-        >
-          <RotateCcw className="w-5 h-5 stroke-[2.5]" />
-        </button>
-      )}
 
       {showLoginModal && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center p-6">
