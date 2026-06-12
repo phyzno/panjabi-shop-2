@@ -5,11 +5,6 @@ import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
 import { CollectionProductCard, type CollectionProduct } from '@/components/shop/ProductCard';
 import { CollectionQuickViewModal } from '@/components/shop/QuickViewModal';
 
-const presetSizes = ['S', 'M', 'L', 'XL', 'XXL'];
-const numericSizes = ['38', '40', '42', '44', '46', '48'];
-
-type SizeMode = 'preset' | 'number';
-
 const productCardSize = {
   categoryBadgeClassName: 'bg-white font-medium',
   buttonClassName: 'bg-white hover:bg-[#4A5D23] border-[1px] border-[#4A5D23] text-[#4A5D23] hover:text-white text-[8px] md:text-[11px] rounded-[16px]'
@@ -20,37 +15,83 @@ const quickViewSize = {
   secondaryButtonClassName: 'hover:border-[#1C221A]',
 };
 
+interface ShopCategory {
+  id: number;
+  name: string;
+  slug: string;
+  parent_id: number | null;
+  sort_order: number | null;
+  created_at: any;
+}
+
 interface ShopClientProps {
   initialProducts: CollectionProduct[];
-  initialCategories: string[];
+  initialCategories: ShopCategory[]; 
 }
 
 export default function ShopPage({ initialProducts, initialCategories }: ShopClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [sizeMode, setSizeMode] = useState<SizeMode>('preset');
+  const [activeCategoryId, setActiveCategoryId] = useState<number | 'all'>('all');
+  const [expandedCats, setExpandedCats] = useState<Set<number>>(new Set());
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 30000]);
   const [sortBy, setSortBy] = useState('newest');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<CollectionProduct | null>(null);
 
   const shopProducts = useMemo<CollectionProduct[]>(() => initialProducts, [initialProducts]);
-  const availableSizes = sizeMode === 'preset' ? presetSizes : numericSizes;
 
-  const toggleCategory = (cat: string) => {
-    setSelectedCategories((prev) => (prev.includes(cat) ? prev.filter((item) => item !== cat) : [...prev, cat]));
+  const categoryTree = useMemo(() => {
+    const map = new Map();
+    const tree: any[] = [];
+    initialCategories.forEach(c => map.set(c.id, { ...c, children: [] }));
+    initialCategories.forEach(c => {
+      if (c.parent_id) {
+        const parent = map.get(c.parent_id);
+        if (parent) parent.children.push(map.get(c.id));
+      } else {
+        tree.push(map.get(c.id));
+      }
+    });
+    return tree;
+  }, [initialCategories]);
+
+  const getDescendantIds = (categoryId: number) => {
+    const ids: number[] = [categoryId];
+    const findChildren = (parentId: number) => {
+      initialCategories.forEach((c: any) => {
+        if (c.parent_id === parentId) {
+          ids.push(c.id);
+          findChildren(c.id);
+        }
+      });
+    };
+    findChildren(categoryId);
+    return ids;
   };
 
-  const toggleSize = (size: string) => {
-    setSelectedSizes((prev) => (prev.includes(size) ? prev.filter((item) => item !== size) : [...prev, size]));
+  const toggleExpand = (id: number) => {
+    setExpandedCats(prev => {
+      if (prev.has(id)) {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      } else {
+        const next = new Set<number>();
+        let currentId: number | null = id;
+        
+        while (currentId !== null) {
+          next.add(currentId);
+          const node = initialCategories.find((c: any) => c.id === currentId);
+          currentId = node ? node.parent_id : null;
+        }
+        return next;
+      }
+    });
   };
 
   const resetFilters = () => {
     setSearchQuery('');
-    setSelectedCategories([]);
-    setSelectedSizes([]);
-    setSizeMode('preset');
+    setActiveCategoryId('all'); 
     setPriceRange([0, 30000]);
   };
 
@@ -69,14 +110,9 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
       result = result.filter((product) => product.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
-    if (selectedCategories.length > 0) {
-      result = result.filter((product) => selectedCategories.includes(product.category));
-    }
-
-    if (selectedSizes.length > 0) {
-      result = result.filter((product) =>
-        product.images.some((image) => image.includes('')),
-      );
+    if (activeCategoryId !== 'all') {
+      const validCategoryIds = getDescendantIds(activeCategoryId as number);
+      result = result.filter((product) => product.categoryId !== undefined && validCategoryIds.includes(product.categoryId));
     }
 
     result = result.filter((product) => {
@@ -97,7 +133,7 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
     }
 
     return result;
-  }, [priceRange, searchQuery, selectedCategories, selectedSizes, shopProducts, sortBy]);
+  }, [priceRange, searchQuery, activeCategoryId, shopProducts, sortBy]);
 
   useEffect(() => {
     if (isMobileFilterOpen) {
@@ -113,27 +149,101 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
 
   const renderFilterContent = () => (
     <div className="flex flex-col space-y-8">
-      <div>
-        <h3 className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C] mb-4 border-b border-[#D4D7C9]/40 pb-2">
-          Categories
+      {/* --- Premium Category Filter Layout --- */}
+      <div className="mb-8">
+        <h3 className="font-heading text-[12px] font-bold uppercase tracking-[0.2em] text-[#17210C] mb-4 border-b border-[#D4D7C9]/60 pb-2.5">
+          Product Categories
         </h3>
-        <div className="flex flex-col space-y-3">
-          {initialCategories.map((cat) => (
-            <label key={cat} className="flex items-center gap-3 cursor-pointer group">
-              <div className="relative flex items-center justify-center w-4 h-4 border border-[#D4D7C9] rounded-sm bg-white transition-colors group-hover:border-[#4A5D23]">
-                <input
-                  type="checkbox"
-                  checked={selectedCategories.includes(cat)}
-                  onChange={() => toggleCategory(cat)}
-                  className="peer absolute opacity-0 w-full h-full cursor-pointer"
-                />
-                <div className="w-2.5 h-2.5 bg-[#4A5D23] rounded-[1px] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-              </div>
-              <span className="font-sans text-[13px] text-[#1C221A]/80 uppercase tracking-wide group-hover:text-[#4A5D23] transition-colors">
-                {cat}
-              </span>
-            </label>
-          ))}
+        
+        <div className="flex flex-col space-y-1.5">
+          <button
+            onClick={() => setActiveCategoryId('all')}
+            className={`w-full text-left flex items-center justify-between py-2 px-3 rounded-lg font-sans text-[13px] uppercase tracking-wider transition-all cursor-pointer ${
+              activeCategoryId === 'all' 
+                ? 'bg-[#4A5D23]/10 text-[#4A5D23] border-l-2 border-[#4A5D23]' 
+                : 'text-[#1C221A]/80 hover:bg-[#EBECE3]/40 hover:text-[#4A5D23]'
+            }`}
+          >
+            <span>All Collection Pieces ➔</span>
+            <span className="text-[10px] opacity-60">({initialProducts.length})</span>
+          </button>
+
+          <div className="h-[1px] bg-[#D4D7C9]/40 my-2" /> 
+
+          {(() => {
+            const renderNode = (node: any, depth = 0) => {
+              const hasChildren = node.children && node.children.length > 0;
+              const isExpanded = expandedCats.has(node.id);
+              const isActiveExact = activeCategoryId === node.id;
+              const isChildActive = activeCategoryId !== 'all' && getDescendantIds(node.id).includes(activeCategoryId as number) && activeCategoryId !== node.id;
+
+              const paddingLeftStyles = depth > 0 ? { paddingLeft: `${depth * 1.2 + 0.75}rem` } : {};
+
+              return (
+                <div key={node.id} className="flex flex-col w-full">
+                  <div 
+                    style={paddingLeftStyles}
+                    className={`flex items-center justify-between py-1.5 rounded-md group transition-all`}
+                  >
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <div 
+                        onClick={() => setActiveCategoryId(node.id)}
+                        className={`w-3.5 h-3.5 rounded border transition-all shrink-0 flex items-center justify-center cursor-pointer ${
+                          isActiveExact 
+                            ? 'border-[#4A5D23] bg-[#4A5D23] text-white shadow-sm' 
+                            : isChildActive 
+                              ? 'border-[#4A5D23] bg-[#4A5D23]/10' 
+                              : 'border-[#D4D7C9] bg-white group-hover:border-[#4A5D23]'
+                        }`}
+                      >
+                        {isActiveExact && <div className="w-1.5 h-1.5 bg-white rounded-sm" />}
+                        {!isActiveExact && isChildActive && <div className="w-1.5 h-[2px] bg-[#4A5D23]" />}
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          setActiveCategoryId(node.id);
+                          if (hasChildren && !isExpanded) toggleExpand(node.id);
+                        }}
+                        className={`text-left font-sans text-[13px] uppercase tracking-wide truncate transition-colors cursor-pointer ${
+                          isActiveExact || isChildActive ? 'text-accent underline' : 'text-[#1C221A]/80 hover:text-[#4A5D23]'
+                        }`}
+                      >
+                        {node.name}
+                      </button>
+                    </div>
+
+                    {hasChildren && (
+                      <button 
+                        onClick={() => toggleExpand(node.id)}
+                        className={`p-1 text-[#1C221A]/50 hover:text-[#4A5D23] transition-transform duration-300 cursor-pointer ${isExpanded ? 'rotate-180' : ''}`}
+                      >
+                        <ChevronDown className="w-3.5 h-3.5 stroke-[1.5]" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {hasChildren && isExpanded && (
+                    <div className="flex flex-col mt-0.5 border-l border-[#D4D7C9]/50 ml-2.5">
+                      <button
+                        onClick={() => setActiveCategoryId(node.id)}
+                        style={{ paddingLeft: `${(depth + 1) * 1.2 + 0.75}rem` }}
+                        className={`text-left py-1.5 font-sans text-[12px] uppercase tracking-wider transition-colors cursor-pointer ${
+                          isActiveExact ? 'text-accent underline underline-offset-4' : 'text-[#1C221A]/60 hover:text-[#4A5D23]'
+                        }`}
+                      >
+                        ↳ All {node.name}
+                      </button>
+                      
+                      {node.children.map((child: any) => renderNode(child, depth + 1))}
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
+            return categoryTree.map((node: any) => renderNode(node, 0));
+          })()}
         </div>
       </div>
 
@@ -187,57 +297,6 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
             }}
             className="absolute w-full h-1.5 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-[#4A5D23] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_5px_rgba(0,0,0,0.2)]"
           />
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-4 border-b border-[#D4D7C9]/40 pb-2">
-          <h3 className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">
-            Sizes
-          </h3>
-          <div className="inline-flex rounded-full bg-[#EBECE3] p-0.5">
-            <button
-              type="button"
-              onClick={() => {
-                setSizeMode('preset');
-                setSelectedSizes([]);
-              }}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.15em] transition-all cursor-pointer ${sizeMode === 'preset'
-                  ? 'bg-white text-[#4A5D23] shadow-sm'
-                  : 'text-[#1C221A]/70 hover:text-[#1C221A]'
-                }`}
-            >
-              Preset
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSizeMode('number');
-                setSelectedSizes([]);
-              }}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.15em] transition-all cursor-pointer ${sizeMode === 'number'
-                  ? 'bg-white text-[#4A5D23] shadow-sm'
-                  : 'text-[#1C221A]/70 hover:text-[#1C221A]'
-                }`}
-            >
-              Number
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2.5">
-          {availableSizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => toggleSize(size)}
-              className={`w-10 h-10 flex items-center justify-center border text-[12px] font-sans font-medium uppercase transition-all duration-300 cursor-pointer ${selectedSizes.includes(size)
-                  ? 'border-[#4A5D23] bg-[#4A5D23] text-white'
-                  : 'border-[#D4D7C9] bg-white text-[#1C221A] hover:border-[#4A5D23] hover:text-[#4A5D23]'
-                }`}
-            >
-              {size}
-            </button>
-          ))}
         </div>
 
         <div className="pt-10">
@@ -335,13 +394,12 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
                 <button
                   onClick={() => {
                     setSearchQuery('');
-                    setSelectedCategories([]);
-                    setSelectedSizes([]);
+                    setActiveCategoryId('all');
                     setPriceRange([0, 30000]);
                   }}
                   className="mt-6 border-b border-[#4A5D23] text-[#4A5D23] pb-1 font-sans text-xs uppercase tracking-widest font-medium hover:text-[#C25934] hover:border-[#C25934] transition-colors"
                 >
-                  Clear All Filters
+                  Clear Filters
                 </button>
               </div>
             )}

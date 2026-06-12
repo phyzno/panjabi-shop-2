@@ -26,6 +26,8 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
 
   const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
   const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
+  
+  const hasBothModes = dbPresetSizes.length > 0 && dbNumericSizes.length > 0;
   const activeSizes = sizeMode === 'preset' ? dbPresetSizes : dbNumericSizes;
 
   const maxStock = productStock[selectedSize] || 0;
@@ -98,30 +100,32 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
             <span className="font-sans text-[11px] font-medium uppercase tracking-[0.15em] text-[#1C221A]">
               Select Size
             </span>
-            <div className="inline-flex rounded-full bg-[#EBECE3] p-1">
-              <button
-                disabled={dbPresetSizes.length === 0}
-                onClick={() => { setSizeMode('preset'); setSelectedSize(dbPresetSizes[0] || ''); }}
-                className={cn(
-                  'rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider transition-all cursor-pointer',
-                  dbPresetSizes.length === 0 && 'opacity-50 cursor-not-allowed',
-                  sizeMode === 'preset' ? 'bg-white text-[#4A5D23] shadow-sm' : 'text-[#1C221A]/70'
-                )}
-              >
-                Preset
-              </button>
-              <button
-                disabled={dbNumericSizes.length === 0}
-                onClick={() => { setSizeMode('number'); setSelectedSize(dbNumericSizes[0] || ''); }}
-                className={cn(
-                  'rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider transition-all cursor-pointer',
-                  dbNumericSizes.length === 0 && 'opacity-50 cursor-not-allowed',
-                  sizeMode === 'number' ? 'bg-white text-[#4A5D23] shadow-sm' : 'text-[#1C221A]/70'
-                )}
-              >
-                Number
-              </button>
-            </div>
+            {hasBothModes && (
+              <div className="inline-flex rounded-full bg-[#EBECE3] p-1">
+                <button
+                  disabled={dbPresetSizes.length === 0}
+                  onClick={() => { setSizeMode('preset'); setSelectedSize(dbPresetSizes[0] || ''); }}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider transition-all cursor-pointer',
+                    dbPresetSizes.length === 0 && 'opacity-50 cursor-not-allowed',
+                    sizeMode === 'preset' ? 'bg-white text-[#4A5D23] shadow-sm' : 'text-[#1C221A]/70'
+                  )}
+                >
+                  Preset
+                </button>
+                <button
+                  disabled={dbNumericSizes.length === 0}
+                  onClick={() => { setSizeMode('number'); setSelectedSize(dbNumericSizes[0] || ''); }}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider transition-all cursor-pointer',
+                    dbNumericSizes.length === 0 && 'opacity-50 cursor-not-allowed',
+                    sizeMode === 'number' ? 'bg-white text-[#4A5D23] shadow-sm' : 'text-[#1C221A]/70'
+                  )}
+                >
+                  Number
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2">

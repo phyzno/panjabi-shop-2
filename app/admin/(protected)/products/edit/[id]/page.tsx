@@ -1,5 +1,5 @@
 import { getProductById } from "@/lib/actions/product.actions";
-import { getCategories } from "@/lib/actions/category.actions";
+import { getCategoryTree } from "@/lib/actions/category.actions";
 import ProductForm from "@/components/admin/product/ProductForm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,8 +13,8 @@ export const metadata = {
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
-  const { data: product } = await getProductById(Number(id));
-  const { data: categories } = await getCategories();
+  const { data: product } = await getProductById(id);
+  const { data: categories } = await getCategoryTree();
 
   if (!product) {
     notFound();

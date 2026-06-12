@@ -2,12 +2,10 @@
  * Seeds products (and fabrics if empty) using the service role key.
  * Run: node --env-file=.env.local scripts/seed-catalog.cjs
  *
- * First apply DB columns (if your project predates the full schema):
- *   supabase/migrations/0001_add_missing_product_columns.sql
- * in Supabase → SQL Editor, or `supabase db push`.
+ * This seed targets the current app schema:
+ *   products.id and fabrics.id are text IDs/SKUs.
  *
- * Dummy images: paths under public/assets/punjabi (bundled WebP in repo).
- * Admin uploads: full https://...supabase.co/storage/... URLs in image_urls.
+ * Local placeholder images live under public/assets.
  *
  * The anon key cannot insert past RLS; use the service role only on your machine / CI, never in the browser.
  */
@@ -42,54 +40,49 @@ async function main() {
   } else {
     const { error: insErr } = await sb.from('products').insert([
       {
-        type: 'panjabi',
-        category: 'casual',
+        id: 'PNJ-001',
         name: 'Classic Casual Panjabi',
-        name_bn: 'ক্লাসিক পাঞ্জাবি',
-        base_price: 800,
-        stitching_charge: 450,
-        image_urls: [`${P}/1-2.webp`, `${P}/1-1.webp`],
-        is_active: true,
+        description: 'A comfortable everyday panjabi for regular wear.',
+        price: 800,
+        discount_percentage: 0,
+        sizes: ['S', 'M', 'L', 'XL'],
+        stock: { S: 12, M: 18, L: 14, XL: 8 },
+        images: ['/assets/customizable-punjabi.png'],
       },
       {
-        type: 'panjabi',
-        category: 'premium',
+        id: 'PNJ-002',
         name: 'Premium Navy Panjabi',
-        name_bn: 'প্রিমিয়াম নেভি পাঞ্জাবি',
-        base_price: 1200,
-        stitching_charge: 450,
-        image_urls: [`${P}/1-1.webp`, `${P}/Blue-1-1.webp`],
-        is_active: true,
+        description: 'A richer option with a polished look.',
+        price: 1200,
+        discount_percentage: 10,
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        stock: { S: 6, M: 10, L: 10, XL: 5, XXL: 3 },
+        images: ['/assets/customizable-punjabi.png'],
       },
       {
-        type: 'panjabi',
-        category: 'wedding',
+        id: 'PNJ-003',
         name: 'Wedding Embroidered',
-        name_bn: 'ওয়েডিং পাঞ্জাবি',
-        base_price: 2500,
-        stitching_charge: 550,
-        image_urls: [`${P}/Merun-KC-2.webp`, `${P}/1-34.webp`],
-        is_active: true,
+        description: 'Statement piece for wedding and festive wear.',
+        price: 2500,
+        discount_percentage: 0,
+        sizes: ['38', '40', '42', '44', '46'],
+        stock: { '38': 4, '40': 6, '42': 5, '44': 3, '46': 2 },
+        images: ['/assets/customizable-punjabi.png'],
       },
       {
-        type: 'panjabi',
-        category: 'casual',
+        id: 'PNJ-004',
         name: 'Off White Summer',
-        name_bn: 'অফ হোয়াইট পাঞ্জাবি',
-        base_price: 900,
-        stitching_charge: 450,
-        image_urls: [`${P}/Off-White-1.webp`],
-        is_active: true,
+        description: 'Lightweight option for warmer days.',
+        price: 900,
+        discount_percentage: 0,
+        sizes: ['S', 'M', 'L'],
+        stock: { S: 10, M: 10, L: 7 },
+        images: ['/assets/customizable-punjabi.png'],
       },
     ])
 
     if (insErr) {
       console.error('Product seed failed:', insErr.message)
-      if (String(insErr.message).includes('image_urls')) {
-        console.error(
-          '\nAdd the missing column: open supabase/migrations/0001_add_missing_product_columns.sql in the Supabase SQL Editor and run it, then try again.\n'
-        )
-      }
       process.exit(1)
     }
     console.log('Inserted 4 sample products.')
@@ -101,12 +94,96 @@ async function main() {
 
   if (!fabricCount) {
     const { error: fErr } = await sb.from('fabrics').insert([
-      { name: 'Premium Cotton', name_bn: 'প্রিমিয়াম কটন', fabric_type: 'plain', price_per_yard: 180, description: 'Soft breathable cotton' },
-      { name: 'Linen Blend', name_bn: 'লিনেন ব্লেন্ড', fabric_type: 'linen', price_per_yard: 220, description: 'Cool and lightweight' },
-      { name: 'Silk Blend', name_bn: 'সিল্ক মিশ্রণ', fabric_type: 'silk', price_per_yard: 350, description: 'Lustrous premium fabric' },
-      { name: 'Cotton Check', name_bn: 'চেক কটন', fabric_type: 'check', price_per_yard: 200, description: 'Classic check pattern' },
-      { name: 'Striped Cotton', name_bn: 'স্ট্রাইপ কটন', fabric_type: 'stripe', price_per_yard: 190, description: 'Elegant vertical stripes' },
-      { name: 'Embroidered Muslin', name_bn: 'এমব্রয়ডারি মসলিন', fabric_type: 'embroidery', price_per_yard: 420, description: 'Traditional embroidered' },
+      {
+        id: 'FAB-001',
+        name: 'Premium Cotton',
+        description: 'Soft breathable cotton',
+        price: 180,
+        discount_percentage: 0,
+        colors: ['White', 'Ivory'],
+        patterns: ['Plain'],
+        yards: 120,
+        texture_url: '/assets/customizable-punjabi.png',
+        raw_image_url: '/assets/customizable-punjabi.png',
+        preview_images: ['/assets/customizable-punjabi.png'],
+        allowed_products: ['Panjabi', 'Shirt'],
+        is_active: true,
+      },
+      {
+        id: 'FAB-002',
+        name: 'Linen Blend',
+        description: 'Cool and lightweight',
+        price: 220,
+        discount_percentage: 0,
+        colors: ['Sand', 'Beige'],
+        patterns: ['Plain'],
+        yards: 90,
+        texture_url: '/assets/customizable-punjabi.png',
+        raw_image_url: '/assets/customizable-punjabi.png',
+        preview_images: ['/assets/customizable-punjabi.png'],
+        allowed_products: ['Panjabi', 'Jubba'],
+        is_active: true,
+      },
+      {
+        id: 'FAB-003',
+        name: 'Silk Blend',
+        description: 'Lustrous premium fabric',
+        price: 350,
+        discount_percentage: 0,
+        colors: ['Navy', 'Black'],
+        patterns: ['Solid'],
+        yards: 70,
+        texture_url: '/assets/customizable-punjabi.png',
+        raw_image_url: '/assets/customizable-punjabi.png',
+        preview_images: ['/assets/customizable-punjabi.png'],
+        allowed_products: ['Panjabi'],
+        is_active: true,
+      },
+      {
+        id: 'FAB-004',
+        name: 'Cotton Check',
+        description: 'Classic check pattern',
+        price: 200,
+        discount_percentage: 0,
+        colors: ['Blue', 'White'],
+        patterns: ['Check'],
+        yards: 100,
+        texture_url: '/assets/customizable-punjabi.png',
+        raw_image_url: '/assets/customizable-punjabi.png',
+        preview_images: ['/assets/customizable-punjabi.png'],
+        allowed_products: ['Panjabi', 'Shirt'],
+        is_active: true,
+      },
+      {
+        id: 'FAB-005',
+        name: 'Striped Cotton',
+        description: 'Elegant vertical stripes',
+        price: 190,
+        discount_percentage: 0,
+        colors: ['Blue', 'White'],
+        patterns: ['Stripe'],
+        yards: 110,
+        texture_url: '/assets/customizable-punjabi.png',
+        raw_image_url: '/assets/customizable-punjabi.png',
+        preview_images: ['/assets/customizable-punjabi.png'],
+        allowed_products: ['Panjabi', 'Jubba'],
+        is_active: true,
+      },
+      {
+        id: 'FAB-006',
+        name: 'Embroidered Muslin',
+        description: 'Traditional embroidered',
+        price: 420,
+        discount_percentage: 0,
+        colors: ['Cream', 'Gold'],
+        patterns: ['Embroidery'],
+        yards: 45,
+        texture_url: '/assets/customizable-punjabi.png',
+        raw_image_url: '/assets/customizable-punjabi.png',
+        preview_images: ['/assets/customizable-punjabi.png'],
+        allowed_products: ['Panjabi'],
+        is_active: true,
+      },
     ])
     if (fErr) console.warn('Fabric seed skipped:', fErr.message)
     else console.log('Inserted sample fabrics.')

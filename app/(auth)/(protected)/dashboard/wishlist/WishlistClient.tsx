@@ -12,7 +12,7 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
   
   const [selectedProduct, setSelectedProduct] = useState<ExtendedCollectionProduct | null>(null);
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; productId: number | null; wishlistId: number | null }>({ 
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; productId: string | null; wishlistId: number | null }>({ 
     isOpen: false, 
     productId: null, 
     wishlistId: null 

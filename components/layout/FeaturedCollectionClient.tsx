@@ -10,7 +10,8 @@ import {
 import { CollectionQuickViewModal, type CollectionQuickViewSizeProps } from '@/components/shop/QuickViewModal';
 
 interface FeaturedCollectionClientProps {
-  products: CollectionProduct[];
+  // TypeScript টাইপ সেইফটি ঠিক রাখতে motherCategory প্রপার্টি এক্সটেন্ড করা হলো
+  products: (CollectionProduct & { motherCategory: string })[];
   categories: string[];
   cardSize?: CollectionProductCardSizeProps;
   quickViewSize?: CollectionQuickViewSizeProps;
@@ -33,7 +34,8 @@ export default function FeaturedCollectionClient({
   const carouselRef = useRef<HTMLDivElement>(null);
   const tabsContainerRef = useRef<HTMLDivElement>(null);
 
-  const activeProducts = products.filter((product) => product.category === activeCategory);
+  // ফিল্টারিং লজিক আপডেট: এখন মাদার ক্যাটাগরি ট্র্যাক করে প্রোডাক্টস ফিল্টার হবে
+  const activeProducts = products.filter((product) => product.motherCategory === activeCategory);
   
   const checkOverflow = () => {
     if (carouselRef.current) {

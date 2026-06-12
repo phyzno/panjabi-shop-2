@@ -14,20 +14,26 @@ export default async function ShopPage() {
   const formattedProducts = (dbProducts || []).map(p => ({
     id: p.id.toString(),
     name: p.name,
+    categoryId: p.categoryId ?? undefined,
     category: p.categoryName || 'Uncategorized',
     price: `৳ ${p.price}`,
+    discount_percentage: p.discount_percentage || 0, // যুক্ত করা হয়েছে
     images: (p.images as string[]) || [],
     description: p.description || '',
     sizes: (p.sizes as string[]) || [],
     stock: p.stock as Record<string, any> || {},
+    video_url: p.video_url || null,
+    group_id: p.group_id || null,
+    color_name: p.color_name || null,
+    color_hex: p.color_hex || null,
   }));
 
-  const formattedCategories = (dbCategories || []).map(c => c.name);
+  const formattedCategories = dbCategories || [];
 
   return (
-    <ShopClient 
-      initialProducts={formattedProducts} 
-      initialCategories={formattedCategories} 
+    <ShopClient
+      initialProducts={formattedProducts}
+      initialCategories={formattedCategories}
     />
   );
 }

@@ -14,7 +14,7 @@ export default async function EditFabricPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   
   const [{ data: fabric }, settingsRes] = await Promise.all([
-    getFabricById(Number(id)),
+    getFabricById(id),
     getCachedSiteSettings()
   ]);
 

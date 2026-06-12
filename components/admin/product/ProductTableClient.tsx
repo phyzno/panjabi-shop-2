@@ -1,25 +1,90 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import { Search, Plus, Trash2, Edit3, Image as ImageIcon, Loader2, MoreVertical } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { deleteProduct } from "@/lib/actions/product.actions"; 
 import { useRouter } from "next/navigation";
 
-export default function ProductTableClient({ products }: { products: any[] }) {
+export default function ProductTableClient({ 
+  products, 
+  categories 
+}: { 
+  products: any[]; 
+  categories: any[]; 
+}) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">("all");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.id.toString().includes(searchTerm)
-  );
+  // ক্যাটাগরি ট্রি-কে ড্রপডাউনে দেখানোর জন্য ফ্ল্যাট লিস্টে রূপান্তর করার হেল্পার
+  const flatCategories = useMemo(() => {
+    const flatten = (nodes: any[], depth = 0): any[] => {
+      let result: any[] = [];
+      nodes.forEach((node) => {
+        result.push({ id: node.id, name: node.name, depth });
+        if (node.children && node.children.length > 0) {
+          result.push(...flatten(node.children, depth + 1));
+        }
+      });
+      return result;
+    };
+    return flatten(categories);
+  }, [categories]);
 
-  const handleDelete = async (id: number, imageUrls: string[]) => {
+  // নির্দিষ্ট ক্যাটাগরি এবং তার অধীনস্থ সকল সাব-ক্যাটাগরির ID রিকার্সিভলি খুঁজে বের করার ফাংশন
+  const getDescendantIds = (catId: number): number[] => {
+    const ids: number[] = [];
+    
+    const findNode = (nodes: any[]): any => {
+      for (const node of nodes) {
+        if (node.id === catId) return node;
+        if (node.children && node.children.length > 0) {
+          const found = findNode(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const collectIds = (node: any) => {
+      if (!node) return;
+      ids.push(node.id);
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child: any) => collectIds(child));
+      }
+    };
+
+    const targetNode = findNode(categories);
+    collectIds(targetNode);
+    return ids;
+  };
+
+  // ফিল্টারিং পারফরম্যান্স অপ্টিমাইজ করার জন্য লুপের বাইরে অ্যালাউড ID বের করা
+  const allowedCategoryIds = useMemo(() => {
+    if (selectedCategoryId === "all") return [];
+    return getDescendantIds(Number(selectedCategoryId));
+  }, [selectedCategoryId, categories]);
+
+  // সার্চ এবং ক্যাটাগরি ফিল্টার কম্বাইন লজিক
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.id.toString().includes(searchTerm);
+
+    if (selectedCategoryId === "all") {
+      return matchesSearch;
+    }
+
+    const matchesCategory = allowedCategoryIds.includes(product.category_id);
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleDelete = async (id: string, imageUrls: string[]) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     setDeletingId(id);
@@ -85,39 +150,73 @@ export default function ProductTableClient({ products }: { products: any[] }) {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-background border border-border p-6 shadow-sm rounded-lg gap-4">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-primary">Manage Products</h1>
-          <p className="text-sm font-sans text-muted-foreground mt-1">
-            Add, update, or remove products from your catalog.
-          </p>
+      {/* Unified Top Control Panel */}
+      <div className="bg-background border border-border p-6 shadow-sm rounded-lg space-y-5">
+        
+        {/* Row 1: Title & Add New Button */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-primary">Manage Products</h1>
+            <p className="text-sm font-sans text-muted-foreground mt-1">
+              Add, update, or remove products from your catalog.
+            </p>
+          </div>
+
+          <Link
+            href="/admin/products/new"
+            className="w-full sm:w-auto bg-primary text-white px-6 py-2 font-sans text-sm font-medium rounded-md flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm active:scale-95 whitespace-nowrap"
+          >
+            <Plus size={18} /> Add New
+          </Link>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64 order-2 md:order-1">
+        {/* Dynamic Divider */}
+        <div className="border-t border-border" />
+
+        {/* Row 2: Filters (Category & Search Box) */}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          
+          {/* Category Filter Dropdown */}
+          <div className="w-full sm:w-56 order-1">
+            <select
+              value={selectedCategoryId}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedCategoryId(val === "all" ? "all" : Number(val));
+              }}
+              className="w-full px-3 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm cursor-pointer h-10"
+            >
+              <option value="all">All Categories</option>
+              {flatCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {"\u00A0\u00A0".repeat(cat.depth)}
+                  {cat.depth > 0 ? "└─ " : ""}
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Search Bar - Mobile-এ সবার নিচে থাকার জন্য order-2 দেওয়া হয়েছে */}
+          <div className="relative w-full sm:w-72 order-2">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <input
               type="text"
               placeholder="Search by name or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm"
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm h-10"
             />
           </div>
 
-          <Link
-            href="/admin/products/new"
-            className="w-full sm:w-auto bg-primary text-white px-6 py-2 font-sans text-sm font-medium rounded-md flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm active:scale-95 whitespace-nowrap order-1 md:order-2"
-          >
-            <Plus size={18} /> Add New
-          </Link>
         </div>
       </div>
 
+      {/* Desktop Table View */}
       <div className="hidden md:block bg-background border border-border rounded-lg shadow-sm">
-        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-220px)] w-full">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-260px)] w-full">
           <table className="w-full text-left table-auto border-collapse">
             <thead>
               <tr className="bg-secondary border-b border-border sticky top-0 z-10">
@@ -132,7 +231,7 @@ export default function ProductTableClient({ products }: { products: any[] }) {
                 <tr>
                   <td colSpan={4} className="py-16 text-center">
                     <p className="text-muted-foreground font-sans text-sm italic">
-                      {searchTerm ? `No products found for "${searchTerm}"` : "No products found. Click 'Add New' to get started."}
+                      {searchTerm || selectedCategoryId !== "all" ? "No products found for the selected criteria." : "No products found. Click 'Add New' to get started."}
                     </p>
                   </td>
                 </tr>
@@ -176,11 +275,12 @@ export default function ProductTableClient({ products }: { products: any[] }) {
         </div>
       </div>
 
-      <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-195px)] w-full">
+      {/* Mobile Card View */}
+      <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-240px)] w-full">
         {filteredProducts.length === 0 ? (
           <div className="bg-background border border-border p-12 text-center rounded-lg shadow-sm">
             <p className="text-muted-foreground font-sans text-sm italic">
-              {searchTerm ? `No products found for "${searchTerm}"` : "No products found."}
+              {searchTerm || selectedCategoryId !== "all" ? "No products found for the selected criteria." : "No products found."}
             </p>
           </div>
         ) : (

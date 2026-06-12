@@ -1,7 +1,8 @@
-import { pgTable, serial, text, boolean, integer, jsonb, timestamp, real } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, integer, jsonb, timestamp, real, AnyPgColumn } from "drizzle-orm/pg-core";
 
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
+  parent_id: integer("parent_id").references((): AnyPgColumn => categories.id, { onDelete: "set null" }), // Self-referencing for Sub-categories
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   sort_order: integer("sort_order").default(0),
@@ -9,29 +10,47 @@ export const categories = pgTable("categories", {
 });
 
 export const products = pgTable("products", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(), // Changed from serial to text for Custom ID/SKU
   category_id: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   description: text("description"),
   price: integer("price").notNull(),
+  discount_percentage: integer("discount_percentage").default(0), // New field for product specific discount
   sizes: jsonb("sizes").notNull(),
   stock: jsonb("stock").default({}),
   is_featured: boolean("is_featured").default(false),
   images: jsonb("images").notNull(),
+  video_url: text("video_url"),
+  
+  // Multi-color Product Variants এর জন্য নতুন ৩টি কলাম
+  group_id: text("group_id"), 
+  color_name: text("color_name"), 
+  color_hex: text("color_hex"), 
+
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
 export const fabrics = pgTable("fabrics", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(), // Custom ID/SKU, same contract as products.id
   name: text("name").notNull(),
   description: text("description"),
   price: integer("price").notNull(),
+  discount_percentage: integer("discount_percentage").default(0), // নতুন ফিল্ড ডিসকাউন্টের জন্য
   colors: jsonb("colors"),
   patterns: jsonb("patterns"),
   yards: real("yards").default(0),
   texture_url: text("texture_url").notNull(),
   raw_image_url: text("raw_image_url"),
+  
+  // নতুন যুক্ত করা কলামগুলো (Products টেবিলের মতো)
+  preview_images: jsonb("preview_images").default([]), 
+  video_url: text("video_url"),
+  group_id: text("group_id"), 
+  color_name: text("color_name"), 
+  color_hex: text("color_hex"), 
+  allowed_products: jsonb("allowed_products").default([]), // ["Panjabi", "Jubba", "Shirt", "Pant", "Pajama"] এর মতো স্ট্রিং রাখার জন্য
+
   is_featured: boolean("is_featured").default(false),
   is_active: boolean("is_active").default(true),
   created_at: timestamp("created_at").defaultNow(),
@@ -69,7 +88,7 @@ export const savedMeasurements = pgTable("saved_measurements", {
 export const wishlists = pgTable("wishlists", {
   id: serial("id").primaryKey(),
   user_id: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  product_id: integer("product_id").references(() => products.id, { onDelete: "cascade" }),
+  product_id: text("product_id").references(() => products.id, { onDelete: "cascade" }), // Changed from integer to text
   created_at: timestamp("created_at").defaultNow(),
 });
 

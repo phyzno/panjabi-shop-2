@@ -24,7 +24,10 @@ export default async function CustomizePage({ params }: { params: Promise<{ id: 
     user ? getUserMeasurements(user.id) : Promise.resolve({ success: false, data: [] })
   ]);
 
-  const fabrics = dbFabrics || [];
+  const fabrics = (dbFabrics || []).map((fabric: any) => ({
+    ...fabric,
+    id: String(fabric.id),
+  }));
   const settings = settingsRes?.data;
   const savedMeasurements = measurementsRes.success ? measurementsRes.data : [];
   

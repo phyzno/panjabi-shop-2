@@ -10,23 +10,23 @@ import { deleteFabric } from "@/lib/actions/fabric.actions";
 export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filteredFabrics = fabrics.filter(fabric => 
-    fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredFabrics = fabrics.filter(fabric =>
+    fabric.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     fabric.id.toString().includes(searchTerm)
   );
 
-  const handleDelete = async (id: number, textureUrl?: string, rawImageUrl?: string) => {
+  const handleDelete = async (id: string, textureUrl?: string, rawImageUrl?: string) => {
     if (!window.confirm("Are you sure you want to delete this fabric permanently?")) return;
-    
+
     setDeletingId(id);
     try {
       const imageUrls = [textureUrl, rawImageUrl].filter(Boolean) as string[];
       const res = await deleteFabric(id, imageUrls);
-      
+
       if (res.success) {
         startTransition(() => {
           router.refresh();
@@ -53,9 +53,9 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
 
       {openDropdownId === fabric.id && (
         <>
-          <div 
-            className="fixed inset-0 z-20" 
-            onClick={() => setOpenDropdownId(null)} 
+          <div
+            className="fixed inset-0 z-20"
+            onClick={() => setOpenDropdownId(null)}
           />
           <div className="absolute right-0 mt-1 w-36 bg-background border border-border rounded-md shadow-lg py-1 z-30 animate-in fade-in slide-in-from-top-1 duration-100">
             <Link
@@ -88,7 +88,7 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-background border border-border p-6 shadow-sm rounded-lg gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-primary">Manage Fabrics</h1>
@@ -96,20 +96,20 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
             Manage your customization fabric materials, prices, and textures.
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-64 order-2 md:order-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search by name or ID..." 
+            <input
+              type="text"
+              placeholder="Search by name or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm"
             />
           </div>
 
-          <Link 
+          <Link
             href="/admin/fabrics/new"
             className="w-full sm:w-auto bg-primary text-white px-6 py-2 font-sans text-sm font-medium rounded-md flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm active:scale-95 whitespace-nowrap order-1 md:order-2"
           >
@@ -152,7 +152,9 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
                     </td>
                     <td className="px-6 py-4 align-middle">
                       <div className="font-sans text-sm text-foreground line-clamp-2">{fabric.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">ID: {fabric.id}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ID: {fabric.id}
+                      </div>
                     </td>
                     <td className="px-6 py-4 align-middle font-sans text-primary whitespace-nowrap">৳ {fabric.price}</td>
                     <td className="px-6 py-4 align-middle text-right whitespace-nowrap">
@@ -160,8 +162,8 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
                         <Link href={`/admin/fabrics/edit/${fabric.id}`} className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary rounded-md transition-colors cursor-pointer">
                           <Edit3 size={18} />
                         </Link>
-                        
-                        <button 
+
+                        <button
                           onClick={() => handleDelete(fabric.id, fabric.texture_url, fabric.raw_image_url)}
                           disabled={deletingId === fabric.id}
                           className="p-2 text-red-400 hover:text-white hover:bg-red-500 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
@@ -187,18 +189,18 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
           </div>
         ) : (
           filteredFabrics.map((fabric) => (
-            <div 
-              key={fabric.id} 
+            <div
+              key={fabric.id}
               className="bg-background border border-border rounded-lg p-4 flex gap-4 relative shadow-sm hover:border-muted-foreground/30 transition-colors"
             >
               <div className="w-16 h-20 rounded-md overflow-hidden bg-secondary border border-border shrink-0 relative">
                 {fabric.texture_url ? (
-                  <Image 
-                    src={fabric.texture_url} 
-                    alt={fabric.name} 
-                    width={64} 
-                    height={80} 
-                    className="w-full h-full object-cover" 
+                  <Image
+                    src={fabric.texture_url}
+                    alt={fabric.name}
+                    width={64}
+                    height={80}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <Palette className="w-full h-full p-4 text-muted-foreground" />
@@ -209,7 +211,9 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
                 <h3 className="font-sans text-sm font-medium text-foreground line-clamp-2 leading-snug">
                   {fabric.name}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-1">ID: {fabric.id}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  ID: {fabric.id}
+                </p>
                 <p className="font-sans text-primary text-base mt-2">৳ {fabric.price}</p>
               </div>
 

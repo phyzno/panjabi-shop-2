@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { renderPanjabiTexture, TextureConfig } from '@/lib/canvas/textureEngine';
-import { Loader2, AlertTriangle, RotateCcw } from 'lucide-react';
+import { Loader2, AlertTriangle, RotateCcw, Info } from 'lucide-react';
 
 interface PanjabiCanvasProps {
   color: string;
@@ -15,6 +15,7 @@ interface PanjabiCanvasProps {
   isProcessingExternal?: boolean;
   onRenderComplete?: (dataUrl: string) => void;
   onReset?: () => void;
+  onInfoClick?: () => void;
 }
 
 export function PanjabiCanvas({
@@ -28,6 +29,7 @@ export function PanjabiCanvas({
   isProcessingExternal = false,
   onRenderComplete,
   onReset,
+  onInfoClick,
 }: PanjabiCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isRendering, setIsRendering] = useState(true);
@@ -35,7 +37,7 @@ export function PanjabiCanvas({
   const [imagesLoaded, setImagesLoaded] = useState(0);
 
   const [isMounted, setIsMounted] = useState(false);
-  
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -62,7 +64,7 @@ export function PanjabiCanvas({
   const render = useCallback(async () => {
     if (!canvasRef.current) return;
     setIsRendering(true);
-    
+
     if (canvasRef.current) {
       canvasRef.current.style.opacity = '0.6';
       canvasRef.current.style.transition = 'opacity 0.15s';
@@ -122,58 +124,67 @@ export function PanjabiCanvas({
     }
   };
 
-return (
-  <div className="relative w-full h-full z-[999] lg:h-auto lg:max-w-[500px] lg:aspect-square mx-auto lg:bg-[#F5F0EA] lg:rounded-2xl lg:shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden group flex items-center justify-center">
-    
-    <div className="absolute top-4 left-4 lg:top-4 lg:left-4 z-20 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-medium text-gray-800 shadow-sm border border-gray-100">
-      Front View
-    </div>
+  return (
+    <div className="relative w-full h-full z-[999] lg:h-auto lg:max-w-[500px] lg:aspect-square mx-auto lg:bg-[#F5F0EA] lg:rounded-2xl lg:shadow-[0_8px_40px_rgba(0,0,0,0.12)] overflow-hidden group flex items-center justify-center">
 
-    <div className="absolute top-4 left-4 lg:top-4 lg:left-4 z-20 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-medium text-gray-800 shadow-sm border border-gray-100">
-      Front View
-    </div>
-
-    {onReset && (
-      <button
-        onClick={onReset}
-        className="absolute top-4 right-4 lg:top-4 lg:right-4 z-20 bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-500 hover:text-[#C25934] hover:bg-[#C25934]/10 shadow-sm border border-gray-100 transition-all cursor-pointer"
-        title="Reset Design"
-      >
-        <RotateCcw className="w-3.5 h-3.5" />
-      </button>
-    )}
-
-    <canvas
-      ref={canvasRef}
-      className={`w-full h-full lg:h-auto lg:max-h-none object-contain scale-[1.25] translate-y-6 lg:scale-100 lg:translate-y-0 transition-all duration-300 group-hover:scale-[1.02] lg:group-hover:scale-[1.02] ${
-        (isRendering || isProcessingExternal) ? 'opacity-40 blur-sm' : 'opacity-100 blur-0'
-      }`}
-    />
-
-    {(isRendering || isProcessingExternal) && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#C9A84C]" />
+      {/* Front View Badge */}
+      <div className="absolute top-4 left-4 lg:top-4 lg:left-4 z-20 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-medium text-gray-800 shadow-sm border border-gray-100">
+        Front View
       </div>
-    )}
 
-    {!hideControls && (
-      <div className="absolute bottom-4 left-0 right-0 lg:left-4 lg:right-4 flex flex-row justify-between items-center gap-1 text-[10px] lg:text-xs text-gray-500 bg-white/80 backdrop-blur-md px-3 lg:px-4 py-2 rounded-t-xl lg:rounded-xl shadow-sm z-20 border border-white/50 lg:border-gray-100">
-        <span className="flex items-center gap-1 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-          <AlertTriangle className="w-3 h-3 text-[#D1B875] shrink-0" />
-          Actual fabric variation may occur.
-        </span>
-        <div className="flex gap-2 lg:gap-4 shrink-0">
-          <button onClick={handleDownload} className="hover:text-[#4A5D23] transition-colors uppercase tracking-wider text-[#1C221A] text-[9px] lg:text-[11px] cursor-pointer">
-            Download
-          </button>
-          {isMounted && !!navigator.share && (
-            <button onClick={handleShare} className="hover:text-[#4A5D23] transition-colors uppercase tracking-wider text-[#1C221A] text-[9px] lg:text-[11px] cursor-pointer">
-            Share
-          </button>
-          )}
+      {/* Fabric Details Badge (Mobile: Rotated Left, PC: Normal Left Edge) */}
+      {onInfoClick && (
+        <button
+          onClick={onInfoClick}
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-[10px] font-medium uppercase tracking-wider text-[#1C221A] shadow-sm border border-[#D4D7C9]/50 hover:text-[#4A5D23] hover:border-[#4A5D23]/30 transition-all cursor-pointer -rotate-90 origin-left translate-y-[20px] lg:rotate-0 lg:origin-center lg:translate-y-[-50%] lg:left-4"
+          title="View Fabric Details"
+        >
+          <Info className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
+          <span className="whitespace-nowrap">Fabric Details</span>
+        </button>
+      )}
+
+      {/* Reset Button */}
+      {onReset && (
+        <button
+          onClick={onReset}
+          className="absolute top-4 right-4 lg:top-4 lg:right-4 z-20 bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-500 hover:text-[#C25934] hover:bg-[#C25934]/10 shadow-sm border border-gray-100 transition-all cursor-pointer"
+          title="Reset Design"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
+      )}
+
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full lg:h-auto lg:max-h-none object-contain scale-[1.25] translate-y-6 lg:scale-100 lg:translate-y-0 transition-all duration-300 group-hover:scale-[1.02] lg:group-hover:scale-[1.02] ${(isRendering || isProcessingExternal) ? 'opacity-40 blur-sm' : 'opacity-100 blur-0'
+          }`}
+      />
+
+      {(isRendering || isProcessingExternal) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-[#C9A84C]" />
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+
+      {!hideControls && (
+        <div className="absolute bottom-4 left-0 right-0 lg:left-4 lg:right-4 flex flex-row justify-between items-center gap-1 text-[10px] lg:text-xs text-gray-500 bg-white/80 backdrop-blur-md px-3 lg:px-4 py-2 rounded-t-xl lg:rounded-xl shadow-sm z-20 border border-white/50 lg:border-gray-100">
+          <span className="flex items-center gap-1 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+            <AlertTriangle className="w-3 h-3 text-[#D1B875] shrink-0" />
+            Actual fabric variation may occur.
+          </span>
+          <div className="flex gap-2 lg:gap-4 shrink-0">
+            <button onClick={handleDownload} className="hover:text-[#4A5D23] transition-colors uppercase tracking-wider text-[#1C221A] text-[9px] lg:text-[11px] cursor-pointer">
+              Download
+            </button>
+            {isMounted && !!navigator.share && (
+              <button onClick={handleShare} className="hover:text-[#4A5D23] transition-colors uppercase tracking-wider text-[#1C221A] text-[9px] lg:text-[11px] cursor-pointer">
+                Share
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

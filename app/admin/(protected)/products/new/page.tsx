@@ -1,4 +1,4 @@
-import { getCategories } from "@/lib/actions/category.actions";
+import { getCategoryTree } from "@/lib/actions/category.actions";
 import ProductForm from "@/components/admin/product/ProductForm";
 import Link from "next/link";
 
@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function AddProductPage() {
-  const { data: categories } = await getCategories();
+  const { data: categories } = await getCategoryTree();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

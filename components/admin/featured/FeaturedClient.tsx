@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useMemo } from "react";
 import { Search, Star, Shirt, Palette, Trash2, Plus, X, Check, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -9,34 +9,89 @@ import { toggleFabricFeatured } from "@/lib/actions/fabric.actions";
 
 export default function FeaturedClient({ 
   initialProducts, 
-  initialFabrics 
+  initialFabrics,
+  categories
 }: { 
   initialProducts: any[], 
-  initialFabrics: any[] 
+  initialFabrics: any[],
+  categories: any[]
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<"products" | "fabrics">("products");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSearchTerm, setModalSearchTerm] = useState("");
-  const [selectedToAdd, setSelectedToAdd] = useState<number[]>([]);
-  const displayedFeaturedProducts = initialProducts.filter(p => 
-    p.is_featured && (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.toString().includes(searchTerm))
-  );
+  const [selectedToAdd, setSelectedToAdd] = useState<string[]>([]);
+
+  // ক্যাটাগরি ট্রি-কে ড্রপডাউনে দেখানোর জন্য ফ্ল্যাট লিস্টে রূপান্তর করার হেল্পার
+  const flatCategories = useMemo(() => {
+    const flatten = (nodes: any[], depth = 0): any[] => {
+      let result: any[] = [];
+      nodes.forEach((node) => {
+        result.push({ id: node.id, name: node.name, depth });
+        if (node.children && node.children.length > 0) {
+          result.push(...flatten(node.children, depth + 1));
+        }
+      });
+      return result;
+    };
+    return flatten(categories);
+  }, [categories]);
+
+  // নির্দিষ্ট ক্যাটাগরি এবং তার অধীনস্থ সকল সাব-ক্যাটাগরির ID রিকার্সিভলি খুঁজে বের করার ফাংশন
+  const getDescendantIds = (catId: number): number[] => {
+    const ids: number[] = [];
+    const findNode = (nodes: any[]): any => {
+      for (const node of nodes) {
+        if (node.id === catId) return node;
+        if (node.children && node.children.length > 0) {
+          const found = findNode(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    const collectIds = (node: any) => {
+      if (!node) return;
+      ids.push(node.id);
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child: any) => collectIds(child));
+      }
+    };
+    const targetNode = findNode(categories);
+    collectIds(targetNode);
+    return ids;
+  };
+
+  const allowedCategoryIds = useMemo(() => {
+    if (selectedCategoryId === "all") return [];
+    return getDescendantIds(Number(selectedCategoryId));
+  }, [selectedCategoryId, categories]);
+
+  // সার্চ এবং ক্যাটাগরি কম্বাইন ফিল্টার লজিক
+  const displayedFeaturedProducts = initialProducts.filter(p => {
+    const matchesFeaturedAndSearch = p.is_featured && (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.toString().includes(searchTerm));
+    if (selectedCategoryId === "all") return matchesFeaturedAndSearch;
+    return matchesFeaturedAndSearch && allowedCategoryIds.includes(p.category_id);
+  });
+
   const displayedFeaturedFabrics = initialFabrics.filter(f => 
     f.is_featured && (f.name.toLowerCase().includes(searchTerm.toLowerCase()) || f.id.toString().includes(searchTerm))
   );
+
   const modalAvailableProducts = initialProducts.filter(p => 
     !p.is_featured && (p.name.toLowerCase().includes(modalSearchTerm.toLowerCase()) || p.id.toString().includes(modalSearchTerm))
   );
   const modalAvailableFabrics = initialFabrics.filter(f => 
     !f.is_featured && (f.name.toLowerCase().includes(modalSearchTerm.toLowerCase()) || f.id.toString().includes(modalSearchTerm))
   );
+  
   const featuredProductsCount = initialProducts.filter(p => p.is_featured).length;
   const featuredFabricsCount = initialFabrics.filter(f => f.is_featured).length;
 
-  const handleRemoveFeatured = (id: number) => {
+  const handleRemoveFeatured = (id: string) => {
     if (!confirm("Are you sure you want to remove this from featured?")) return;
     
     startTransition(async () => {
@@ -55,7 +110,7 @@ export default function FeaturedClient({
     setIsModalOpen(true);
   };
 
-  const toggleModalSelection = (id: number) => {
+  const toggleModalSelection = (id: string) => {
     setSelectedToAdd(prev => 
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
@@ -74,9 +129,10 @@ export default function FeaturedClient({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
       
-      <div className="bg-background border border-border p-4 sm:p-6 rounded-lg shadow-sm space-y-6">
+      {/* Top Header and Control Panel */}
+      <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-5">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-heading font-bold text-primary flex items-center gap-2">
@@ -94,47 +150,77 @@ export default function FeaturedClient({
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-4 border-t border-border">
-          <div className="flex bg-secondary p-1 rounded-md border border-border w-full md:w-auto shrink-0">
+        <div className="border-t border-border" />
+
+        {/* Controls Row: Tabs, Filters, Add Button, and Search Box */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+          
+          {/* Tab Switcher */}
+          <div className="flex bg-secondary p-1 rounded-md border border-border w-full sm:w-auto shrink-0 order-1">
             <button 
-              onClick={() => { setActiveTab("products"); setSearchTerm(""); }}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded text-sm transition-colors ${activeTab === "products" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-primary cursor-pointer"}`}
+              onClick={() => { setActiveTab("products"); setSearchTerm(""); setSelectedCategoryId("all"); }}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded text-sm transition-colors ${activeTab === "products" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-primary cursor-pointer"}`}
             >
               <Shirt size={16} /> Products
             </button>
             <button 
-              onClick={() => { setActiveTab("fabrics"); setSearchTerm(""); }}
-              className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded text-sm transition-colors ${activeTab === "fabrics" ? "bg-accent text-white shadow-sm" : "text-muted-foreground hover:text-primary cursor-pointer"}`}
+              onClick={() => { setActiveTab("fabrics"); setSearchTerm(""); setSelectedCategoryId("all"); }}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded text-sm transition-colors ${activeTab === "fabrics" ? "bg-accent text-white shadow-sm" : "text-muted-foreground hover:text-primary cursor-pointer"}`}
             >
               <Palette size={16} /> Fabrics
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-            <div className="relative w-full sm:w-64 order-2 sm:order-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input 
-                type="text" 
-                placeholder={`Search featured ${activeTab}...`} 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm"
-              />
+          {/* Category Filter Dropdown - Only visible on Products Tab */}
+          {activeTab === "products" && (
+            <div className="w-full sm:w-48 order-2 animate-in fade-in duration-200">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedCategoryId(val === "all" ? "all" : Number(val));
+                }}
+                className="w-full px-3 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm cursor-pointer h-10"
+              >
+                <option value="all">All Categories</option>
+                {flatCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {"\u00A0\u00A0".repeat(cat.depth)}
+                    {cat.depth > 0 ? "└─ " : ""}
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
             </div>
+          )}
 
-            <button 
-              onClick={openModal}
-              disabled={isPending}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-colors shadow-sm shrink-0 cursor-pointer disabled:opacity-50 order-1 sm:order-2"
-            >
-              <Plus size={16} /> Add New
-            </button>
+          {/* Add New Button - Placed before search on mobile layout order, pushes right on PC */}
+          <button 
+            onClick={openModal}
+            disabled={isPending}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-all shadow-sm shrink-0 cursor-pointer disabled:opacity-50 order-3 sm:order-4 sm:h-10 active:scale-95"
+          >
+            <Plus size={16} /> Add New
+          </button>
+
+          {/* Search Input Bar - Kept at absolute bottom on Mobile view via order-4 & sm:ml-auto for PC right-alignment */}
+          <div className="relative w-full sm:w-64 order-4 sm:order-3 sm:ml-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+            <input 
+              type="text" 
+              placeholder={`Search featured ${activeTab}...`} 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm h-10"
+            />
           </div>
+
         </div>
       </div>
 
+      {/* Desktop View Table */}
       <div className="hidden md:block bg-background border border-border rounded-lg shadow-sm overflow-hidden w-full">
-        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-220px)] w-full">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100dvh-260px)] w-full">
           <table className="w-full text-left table-auto border-collapse">
             <thead>
               <tr className="bg-secondary/50 border-b border-border sticky top-0 z-10">
@@ -160,9 +246,6 @@ export default function FeaturedClient({
                         <div className="font-sans text-sm text-foreground truncate max-w-xs">{product.name}</div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs text-muted-foreground font-mono">ID: {product.id}</span>
-                          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-secondary text-primary rounded-sm border border-border">
-                            Cat: {product.category_id}
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -228,7 +311,8 @@ export default function FeaturedClient({
         </div>
       </div>
 
-      <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-195px)] w-full">
+      {/* Mobile Card View */}
+      <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-240px)] w-full">
         
         {activeTab === "products" && (
           displayedFeaturedProducts.length === 0 ? (
@@ -315,6 +399,7 @@ export default function FeaturedClient({
         )}
       </div>
 
+      {/* Select Item Modal Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-background w-full max-w-lg border border-border rounded-xl shadow-2xl relative flex flex-col max-h-[85vh]">
@@ -354,11 +439,12 @@ export default function FeaturedClient({
 
               <div className="flex flex-col gap-1">
                 {(activeTab === "products" ? modalAvailableProducts : modalAvailableFabrics).map((item) => {
-                  const isSelected = selectedToAdd.includes(item.id);
+                  const itemId = String(item.id);
+                  const isSelected = selectedToAdd.includes(itemId);
                   return (
                     <div 
                       key={item.id} 
-                      onClick={() => !isPending && toggleModalSelection(item.id)}
+                      onClick={() => !isPending && toggleModalSelection(itemId)}
                       className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all border ${
                         isSelected 
                           ? "bg-primary/5 border-primary" 

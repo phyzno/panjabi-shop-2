@@ -14,7 +14,7 @@ interface CheckoutPayload {
   discount: number;
   paymentMethod: "cod" | "online";
   items: Array<{
-    productId?: string | number;
+    productId?: string;
     productName: string;
     productType: string;
     quantity: number;
@@ -45,7 +45,7 @@ export async function createOrder(payload: CheckoutPayload) {
       for (const item of payload.items) {
         
         if (item.productType === "readymade" && item.productId && item.sizeValue) {
-          const productRecord = await tx.select().from(products).where(eq(products.id, Number(item.productId))).limit(1);
+          const productRecord = await tx.select().from(products).where(eq(products.id, String(item.productId))).limit(1);
           
           if (productRecord.length === 0) throw new Error(`Product ${item.productName} not found.`);
           
@@ -57,11 +57,11 @@ export async function createOrder(payload: CheckoutPayload) {
           }
 
           const updatedStock = { ...currentStockObj, [item.sizeValue]: currentSizeStock - item.quantity };
-          await tx.update(products).set({ stock: updatedStock }).where(eq(products.id, Number(item.productId)));
+          await tx.update(products).set({ stock: updatedStock }).where(eq(products.id, String(item.productId)));
         }
 
         if ((item.productType === "custom_fabric_only" || item.productType === "custom_tailored") && item.fabricId && item.yardage) {
-          const fabricRecord = await tx.select().from(fabrics).where(eq(fabrics.id, Number(item.fabricId))).limit(1);
+          const fabricRecord = await tx.select().from(fabrics).where(eq(fabrics.id, String(item.fabricId))).limit(1);
           
           if (fabricRecord.length === 0) throw new Error(`Fabric ${item.fabricName} not found.`);
           
@@ -73,7 +73,7 @@ export async function createOrder(payload: CheckoutPayload) {
           }
 
           const newYards = currentYards - requiredYards;
-          await tx.update(fabrics).set({ yards: newYards }).where(eq(fabrics.id, Number(item.fabricId)));
+          await tx.update(fabrics).set({ yards: newYards }).where(eq(fabrics.id, String(item.fabricId)));
         }
       }
 

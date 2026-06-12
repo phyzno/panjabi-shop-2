@@ -13,11 +13,17 @@ export type CollectionProduct = {
   id: string;
   name: string;
   category: string;
+  categoryId?: number;
   price: string;
+  discount_percentage?: number; // যুক্ত করা হয়েছে
   images: string[];
   description: string;
   sizes?: string[];
   stock?: Record<string, number> | string;
+  video_url?: string | null;
+  group_id?: string | null;
+  color_name?: string | null;
+  color_hex?: string | null;
 };
 
 export interface CollectionProductCardSizeProps {
@@ -53,10 +59,10 @@ export function CollectionProductCard({
   const { user } = useAuthStore();
 
   const { wishlistedIds, addWishlistId, removeWishlistId } = useWishlistStore();
-  const productIdNum = Number(product.id);  
+  const productId = String(product.id);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-  const isWishlisted = wishlistedIds.includes(productIdNum); 
+  const isWishlisted = wishlistedIds.includes(productId);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const productStock = typeof product.stock === 'string'
@@ -65,6 +71,13 @@ export function CollectionProductCard({
     
   const totalStock = Object.values(productStock).reduce((sum: any, val: any) => sum + (Number(val) || 0), 0) as number;
   const isCompletelyOutOfStock = (product.sizes?.length ?? 0) > 0 && totalStock === 0;
+
+  // Pricing Logic
+  const rawPrice = Number(product.price.replace(/[^0-9.]/g, ''));
+  const hasDiscount = (product.discount_percentage ?? 0) > 0;
+  const discountedPrice = hasDiscount 
+    ? Math.round(rawPrice - (rawPrice * (product.discount_percentage! / 100))) 
+    : rawPrice;
 
   const handleCardClick = () => {
     router.push(`/shop/${product.id}`);
@@ -80,12 +93,12 @@ export function CollectionProductCard({
 
     setIsWishlistLoading(true);
     try {
-      const res = await toggleWishlistItem(user.id, productIdNum);
+      const res = await toggleWishlistItem(user.id, productId);
       if (res.success) {
         if (isWishlisted) {
-          removeWishlistId(productIdNum);
+          removeWishlistId(productId);
         } else {
-          addWishlistId(productIdNum);
+          addWishlistId(productId);
         }
       }
     } catch (error) {
@@ -123,6 +136,13 @@ export function CollectionProductCard({
             {product.category}
           </div>
 
+          {/* Discount Badge */}
+          {hasDiscount && (
+            <div className="absolute top-10 left-3 rounded-sm bg-[#C25934] px-2 py-0.5 text-[12px] uppercase tracking-wider text-white z-10 shadow-sm">
+              -{product.discount_percentage}% OFF
+            </div>
+          )}
+
           <img
             src={product.images[0]}
             alt={product.name}
@@ -135,7 +155,7 @@ export function CollectionProductCard({
 
           {isCompletelyOutOfStock && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/30 backdrop-blur-[2px]">
-              <div className="bg-black/80 text-white px-4 py-2 rounded-sm font-sans text-[10px] font-bold uppercase tracking-[0.2em]">
+              <div className="bg-black/80 text-white px-4 py-2 rounded-sm font-sans text-[10px] md:text-[12px] uppercase tracking-[0.2em]">
                 Out of Stock
               </div>
             </div>
@@ -192,14 +212,23 @@ export function CollectionProductCard({
             >
               {product.name}
             </h3>
-            <span
-              className={cn(
-                'font-sans text-[13px] font-medium uppercase tracking-[0.15em] text-[#C25934]',
-                size?.priceClassName,
+            
+            {/* Pricing Details */}
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'font-sans text-[13px] font-medium uppercase tracking-[0.15em] text-[#C25934]',
+                  size?.priceClassName,
+                )}
+              >
+                ৳ {hasDiscount ? discountedPrice : rawPrice}
+              </span>
+              {hasDiscount && (
+                <span className="line-through text-[#1C221A]/40 text-[11px] font-sans ml-1">
+                  ৳ {rawPrice}
+                </span>
               )}
-            >
-              {product.price}
-            </span>
+            </div>
           </div>
 
           <button

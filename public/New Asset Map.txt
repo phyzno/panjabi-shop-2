@@ -1,0 +1,274 @@
+﻿public/
+|-- New Asset Map.txt
+|-- assets/ [OLD]
+|   |-- customizable-punjabi.png
+|   |-- collars/
+|   |   |-- band-collar.png
+|   |   |-- mandarin-collar.png
+|   |   |-- round-collar.png
+|   |   \-- vneck-collar.png
+|   \-- punjabi/
+|       |-- collar-band.png
+|       |-- collar-mandarin.png
+|       |-- collar-round.png
+|       \-- collar-vneck.png
+|-- Canvas/
+|   |-- Jubba/
+|   |   |-- Band Collar/
+|   |   |   |-- Hidden Placket/
+|   |   |   |   |-- Chest Pocket/
+|   |   |   |   |   \-- 02 - jubba_band_hidden_pocket-Photoroom.png
+|   |   |   |   \-- No Pocket & Side Pocket/
+|   |   |   |       \-- 01 - jubba_band_hidden_nopocket-Photoroom.png
+|   |   |   \-- Visible Placket/
+|   |   |       |-- Chest Pocket/
+|   |   |       |   \-- 04 - jubba_band_visible_pocket-Photoroom.png
+|   |   |       \-- No Pocket & Side Pocket/
+|   |   |           \-- 03 - jubba_band_visible_nopocket-Photoroom.png
+|   |   \-- Round Collar/
+|   |       |-- Hidden Placket/
+|   |       |   |-- Chest Pocket/
+|   |       |   |   \-- 06 - jubba_round_hidden_pocket-Photoroom.png
+|   |       |   \-- No Pocket & Side Pocket/
+|   |       |       \-- 05 - jubba_round_hidden_nopocket-Photoroom.png
+|   |       \-- Visible Placket/
+|   |           |-- Chest Pocket/
+|   |           |   \-- 08 - jubba_round_visible_pocket-Photoroom.png
+|   |           \-- No Pocket & Side Pocket/
+|   |               \-- 07 - jubba_round_visible_nopocket-Photoroom.png
+|   |-- Pajama/
+|   |   |-- Aligarhi/
+|   |   |   \-- 01 - Aligarhi Pajama-Photoroom.png
+|   |   |-- Churidar/
+|   |   |   \-- 02 - Churidar pajama-Photoroom.png
+|   |   \-- Kabuli Salwar Pajama/
+|   |       \-- 04 - Kabuli Salwar pajama - 2-Photoroom.png
+|   |-- Panjabi/
+|   |   |-- Kabuli/
+|   |   |   |-- Band Collar/
+|   |   |   |   \-- Visible Placket/
+|   |   |   |       |-- Double Chest Flap Pocket/
+|   |   |   |       |   \-- 03 - Band Collar + Visible Placket + Double Chest Pocket-Photoroom.png
+|   |   |   |       \-- Single Pocket/
+|   |   |   |           \-- 04 - Band Collar + Visible Placket + Single Chest Pocket-Photoroom.png
+|   |   |   \-- Shirt Collar/
+|   |   |       \-- Visible Placket/
+|   |   |           |-- Double Chest Flap Pocket/
+|   |   |           |   \-- 01 - Shirt Collar + Visible Placket + Double Chest Pocket(with flaps)-Photoroom.png
+|   |   |           \-- Single Pocket/
+|   |   |               \-- 02 - Shirt Collar + Visible Placket + Single Chest Pocket-Photoroom.png
+|   |   |-- Madani/
+|   |   |   |-- Band Collar/
+|   |   |   |   |-- Hidden Placket/
+|   |   |   |   |   |-- Chest Pocket/
+|   |   |   |   |   |   \-- 06 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.png
+|   |   |   |   |   \-- No Pocket & Side Pocket/
+|   |   |   |   |       \-- 05 - Band Collar + Hidden Placket + No Pocket-Photoroom.png
+|   |   |   |   \-- Visible Placket/
+|   |   |   |       |-- Chest Pocket/
+|   |   |   |       |   \-- 08 - Band Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |   |   |       \-- No Pocket & Side Pocket/
+|   |   |   |           \-- 07 - Band Collar + Visible Placket + No Pocket-Photoroom.png
+|   |   |   \-- Round Neck Collar/
+|   |   |       |-- Hidden Placket/
+|   |   |       |   |-- Chest Pocket/
+|   |   |       |   |   \-- 02 - Round Neck + Hidden Placket + Chest Pocket-Photoroom.png
+|   |   |       |   \-- No Pocket & Side Pocket/
+|   |   |       |       \-- 01 - Round Neck + Hidden Placket + No Pocket-Photoroom.png
+|   |   |       \-- Visible Placket/
+|   |   |           |-- Chest Pocket/
+|   |   |           |   \-- 04 - Round Neck + Visible Placket + Chest Pocket-Photoroom.png
+|   |   |           \-- No Pocket & Side Pocket/
+|   |   |               \-- 03 - Round Neck + Visible Placket + No Pocket-Photoroom.png
+|   |   |-- Regular-Classic Panjabi/
+|   |   |   |-- Band Collar/
+|   |   |   |   |-- Hidden Placket/
+|   |   |   |   |   |-- Chest Pocket/
+|   |   |   |   |   |   \-- 02 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.png
+|   |   |   |   |   \-- No Pocket/
+|   |   |   |   |       \-- 01 - Band Collar + Hidden Placket + No Pocket-Photoroom.png
+|   |   |   |   \-- Visible Placket/
+|   |   |   |       |-- Chest Pocket/
+|   |   |   |       |   \-- 04 - Band Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |   |   |       \-- No Pocket/
+|   |   |   |           \-- 03 - Band Collar + Visible Placket + No Pocket-Photoroom.png
+|   |   |   |-- Mandarin Collar/
+|   |   |   |   |-- Hidden Placket/
+|   |   |   |   |   |-- Chest Pocket/
+|   |   |   |   |   |   \-- 06 - Mandarin Collar + Hidden Placket + Chest Pocket-Photoroom.png
+|   |   |   |   |   \-- No Pocket/
+|   |   |   |   |       \-- 05 - Mandarin Collar + Hidden Placket + No Pocket-Photoroom.png
+|   |   |   |   \-- Visible Placket/
+|   |   |   |       |-- Chest Pocket/
+|   |   |   |       |   \-- 08 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |   |   |       \-- No Pocket/
+|   |   |   |           \-- 07 - Mandarin Collar + Visible Placket + No Pocket-Photoroom.png
+|   |   |   \-- Round Collar/
+|   |   |       |-- Hidden Placket/
+|   |   |       |   |-- Chest Pocket/
+|   |   |       |   |   \-- 10 - Round Neck + Hidden Placket + Chest Pocket-Photoroom.png
+|   |   |       |   \-- No Pocket/
+|   |   |       |       \-- 09 - Round Neck + Hidden Placket + No Pocket-Photoroom.png
+|   |   |       \-- Visible Placket/
+|   |   |           |-- Chest Pocket/
+|   |   |           |   \-- 12 - Round Neck + Visible Placket + Chest Pocket-Photoroom.png
+|   |   |           \-- No Pocket/
+|   |   |               \-- 11 - Round Neck + Visible Placket + No Pocket-Photoroom.png
+|   |   \-- Short Panjabi/
+|   |       |-- Band Collar/
+|   |       |   |-- Hidden Placket/
+|   |       |   |   |-- Chest Pocket/
+|   |       |   |   |   \-- 08 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.png
+|   |       |   |   \-- No Pocket/
+|   |       |   |       \-- 07 - Band Collar + Hidden Placket + No Pocket-Photoroom.png
+|   |       |   \-- Visible Placket/
+|   |       |       |-- Chest Pocket/
+|   |       |       |   \-- 06 - Band Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |       |       \-- No Pocket/
+|   |       |           \-- 05 - Band Collar + Visible Placket + No Pocket-Photoroom.png
+|   |       |-- Mandarin Collar/
+|   |       |   |-- Hidden Placket/
+|   |       |   |   |-- Chest Pocket/
+|   |       |   |   |   \-- 03 - Mandarin Collar + Hidden Placket + Chest Pocket-Photoroom.png
+|   |       |   |   \-- No Pocket/
+|   |       |   |       \-- 04 - Mandarin Collar + Hidden Placket + No Pocket-Photoroom.png
+|   |       |   \-- Visible Placket/
+|   |       |       |-- Chest Pocket/
+|   |       |       |   \-- 01 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |       |       \-- No Pocket/
+|   |       |           \-- 02 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |       \-- Shirt Collar/
+|   |           |-- Hidden Placket/
+|   |           |   |-- Chest Pocket/
+|   |           |   |   \-- 12 - Shirt Collar + Hidden Placket + Chest Pocket-Photoroom.png
+|   |           |   \-- No Pocket/
+|   |           |       \-- 11 - Shirt Collar + Hidden Placket + No Pocket-Photoroom.png
+|   |           \-- Visible Placket/
+|   |               |-- Chest Pocket/
+|   |               |   \-- 10 - Shirt Collar + Visible Placket + Chest Pocket-Photoroom.png
+|   |               \-- No Pocket/
+|   |                   \-- 09 - Shirt Collar + Visible Placket + No Pocket-Photoroom.png
+|   |-- Pant/
+|   |   |-- Chinos/
+|   |   |   |-- Flat Front/
+|   |   |   |   |-- Cuffed Hem/
+|   |   |   |   |   \-- 06 - pants_chinos_flat_cuffed-Photoroom.png
+|   |   |   |   \-- Regular Hem/
+|   |   |   |       \-- 05 - pants_chinos_flat_regular-Photoroom.png
+|   |   |   \-- Pleated Front/
+|   |   |       |-- Cuffed Hem/
+|   |   |       |   \-- 08 - pants_chinos_pleated_cuffed-Photoroom.png
+|   |   |       \-- Regular Hem/
+|   |   |           \-- 07 - pants_chinos_pleated_regular-Photoroom.png
+|   |   \-- Formal/
+|   |       |-- Flat Front/
+|   |       |   |-- Cuffed Hem/
+|   |       |   |   \-- 02 - pants_formal_flat_cuffed-Photoroom.png
+|   |       |   \-- Regular Hem/
+|   |       |       \-- 01 - pants_formal_flat_regular-Photoroom.png
+|   |       \-- Pleated Front/
+|   |           |-- Cuffed Hem/
+|   |           |   \-- 04 - pants_formal_pleated_cuffed-Photoroom.png
+|   |           \-- Regular Hem/
+|   |               \-- 03 - pants_formal_pleated_regular-Photoroom.png
+|   \-- Shirt/
+|       |-- Full Sleeve/
+|       |   |-- ButtonDown Collar/
+|       |   |   |-- Hidden Placket/
+|       |   |   |   |-- Chest Pocket/
+|       |   |   |   |   \-- 08 - shirt_full_buttondown_hidden_pocket-Photoroom.png
+|       |   |   |   \-- No Pocket/
+|       |   |   |       \-- 07 - shirt_full_buttondown_hidden_nopocket-Photoroom.png
+|       |   |   \-- Visible Placket/
+|       |   |       |-- Chest Pocket/
+|       |   |       |   \-- 06 - shirt_full_buttondown_visible_pocket-Photoroom.png
+|       |   |       \-- No Pocket/
+|       |   |           \-- 05 - shirt_full_buttondown_visible_nopocket-Photoroom.png
+|       |   |-- Mandarin Collar/
+|       |   |   |-- Hidden Placket/
+|       |   |   |   |-- Chest Pocket/
+|       |   |   |   |   \-- 12 - shirt_full_mandarin_hidden_pocket-Photoroom.png
+|       |   |   |   \-- No Pocket/
+|       |   |   |       \-- 11 - shirt_full_mandarin_hidden_nopocket-Photoroom.png
+|       |   |   \-- Visible Placket/
+|       |   |       |-- Chest Pocket/
+|       |   |       |   \-- 10 - shirt_full_mandarin_visible_pocket-Photoroom.png
+|       |   |       \-- No Pocket/
+|       |   |           \-- 09 - shirt_full_mandarin_visible_nopocket-Photoroom.png
+|       |   \-- Spread Collar/
+|       |       |-- Hidden Placket/
+|       |       |   |-- Chest Pocket/
+|       |       |   |   \-- 04 - shirt_full_spread_hidden_pocket-Photoroom.png
+|       |       |   \-- No Pocket/
+|       |       |       \-- 03 - shirt_full_spread_hidden_nopocket-Photoroom.png
+|       |       \-- Visible Placket/
+|       |           |-- Chest Pocket/
+|       |           |   \-- 02 - shirt_full_spread_visible_pocket-Photoroom.png
+|       |           \-- No Pocket/
+|       |               \-- 01 - shirt_full_spread_visible_nopocket-Photoroom.png
+|       \-- Half Sleeve/
+|           |-- ButtonDown Collar/
+|           |   |-- Hidden Placket/
+|           |   |   |-- Chest Pocket/
+|           |   |   |   \-- 20 - shirt_half_buttondown_hidden_pocket-Photoroom.png
+|           |   |   \-- No Pocket/
+|           |   |       \-- 19 - shirt_half_buttondown_hidden_nopocket-Photoroom.png
+|           |   \-- Visible Placket/
+|           |       |-- Chest Pocket/
+|           |       |   \-- 18 - shirt_half_buttondown_visible_pocket-Photoroom.png
+|           |       \-- No Pocket/
+|           |           \-- 17 - shirt_half_buttondown_visible_nopocket-Photoroom.png
+|           |-- Mandarin Collar/
+|           |   |-- Hidden Placket/
+|           |   |   |-- Chest Pocket/
+|           |   |   |   \-- 24 - shirt_half_mandarin_hidden_pocket-Photoroom.png
+|           |   |   \-- No Pocket/
+|           |   |       \-- 23 - shirt_half_mandarin_hidden_nopocket-Photoroom.png
+|           |   \-- Visible Placket/
+|           |       |-- Chest Pocket/
+|           |       |   \-- 22 - shirt_half_mandarin_visible_pocket-Photoroom.png
+|           |       \-- No Pocket/
+|           |           \-- 21 - shirt_half_mandarin_visible_nopocket-Photoroom.png
+|           \-- Spread Collar/
+|               |-- Hidden Placket/
+|               |   |-- Chest Pocket/
+|               |   |   \-- 16 - shirt_half_spread_hidden_pocket-Photoroom.png
+|               |   \-- No Pocket/
+|               |       \-- 15 - shirt_half_spread_hidden_nopocket-Photoroom.png
+|               \-- Visible Placket/
+|                   |-- Chest Pocket/
+|                   |   \-- 14 - shirt_half_spread_visible_pocket-Photoroom.png
+|                   \-- No Pocket/
+|                       \-- 13 - shirt_half_spread_visible_nopocket-Photoroom.png
+\-- UI Vectors/
+    |-- Collars/
+    |   |-- 01 - round-Photoroom.png
+    |   |-- 02 - band-Photoroom.png
+    |   |-- 03 - mandarin-Photoroom.png
+    |   |-- 04 - spread & shirt both-Photoroom.png
+    |   \-- 05 - ButtonDown-Photoroom.png
+    |-- Pant Options/
+    |   |-- Front/
+    |   |   |-- flat-Photoroom.png
+    |   |   \-- pleat-Photoroom.png
+    |   \-- Hem/
+    |       |-- cuffed-Photoroom.png
+    |       \-- regular-Photoroom.png
+    |-- Placket/
+    |   |-- hidden-Photoroom.png
+    |   \-- visible-Photoroom.png
+    |-- Pocket/
+    |   |-- doubleflap-Photoroom.png
+    |   |-- side-Photoroom.png
+    |   \-- single-Photoroom.png
+    \-- Shirt Options/
+        |-- Back/
+        |   |-- 01 - regular-Photoroom.png
+        |   |-- 02 - boxpleat-Photoroom.png
+        |   \-- 03 - sidepleat-Photoroom.png
+        |-- Bottom/
+        |   |-- curved-Photoroom.png
+        |   \-- straight-Photoroom.png
+        \-- Sleeve/
+            |-- full-Photoroom.png
+            \-- half-Photoroom.png

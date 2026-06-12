@@ -35,7 +35,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         const ids = res.data.map((item: any) => item.product.id);
         const currentIds = useWishlistStore.getState().wishlistedIds;
 
-        if (ids.length !== currentIds.length || ids.some((id: number) => !currentIds.includes(id))) {
+        if (ids.length !== currentIds.length || ids.some((id: string) => !currentIds.includes(id))) {
           setWishlistedIds(ids);
         }
 

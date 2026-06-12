@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 
 interface WishlistState {
-  wishlistedIds: number[];
-  setWishlistedIds: (ids: number[]) => void;
-  addWishlistId: (id: number) => void;
-  removeWishlistId: (id: number) => void;
+  wishlistedIds: string[];
+  setWishlistedIds: (ids: string[]) => void;
+  addWishlistId: (id: string) => void;
+  removeWishlistId: (id: string) => void;
 }
 
 export const useWishlistStore = create<WishlistState>((set) => ({

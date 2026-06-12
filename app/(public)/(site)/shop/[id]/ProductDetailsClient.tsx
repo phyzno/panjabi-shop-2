@@ -34,18 +34,33 @@ const detailSections = [
 
 type SizeMode = 'preset' | 'number';
 
-interface ProductDetailsClientProps {
-  product: CollectionProduct & { sizes?: string[], stock?: Record<string, number> };
-  relatedProducts: CollectionProduct[];
+interface ColorVariant {
+  id: string;
+  color_name: string | null;
+  color_hex: string | null;
+  image: string | null;
 }
 
-export default function ProductDetailsClient({ product, relatedProducts }: ProductDetailsClientProps) {
+interface ProductDetailsClientProps {
+  product: CollectionProduct & { 
+    sizes?: string[], 
+    stock?: Record<string, number>,
+    group_id?: string | null,
+    color_name?: string | null,
+    color_hex?: string | null,
+    video_url?: string | null
+  };
+  relatedProducts: CollectionProduct[];
+  colorVariants?: ColorVariant[];
+}
+
+export default function ProductDetailsClient({ product, relatedProducts, colorVariants = [] }: ProductDetailsClientProps) {
   const router = useRouter();
   const { user } = useAuthStore();
 
   const { wishlistedIds, addWishlistId, removeWishlistId } = useWishlistStore();
-  const productIdNum = Number(product.id);
-  const isWishlisted = wishlistedIds.includes(productIdNum);
+  const productId = String(product?.id || '');
+  const isWishlisted = wishlistedIds.includes(productId);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [zoomBgPos, setZoomBgPos] = useState('50% 50%');
@@ -62,19 +77,25 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     ? JSON.parse(product.stock)
     : (product?.stock || {});
 
-  const handleAddToCart = () => {
-    if (isOutOfStock || !selectedSize) return;
+  // Pricing Logic
+  const rawPrice = product ? (typeof product.price === 'number'
+    ? product.price
+    : Number(String(product.price).replace(/[^0-9.]/g, ''))) : 0;
+  
+  const hasDiscount = ((product?.discount_percentage ?? 0) > 0);
+  const finalDiscountedPrice = hasDiscount 
+    ? Math.round(rawPrice - (rawPrice * (product!.discount_percentage! / 100))) 
+    : rawPrice;
 
-    const numericPrice = typeof product.price === 'number'
-      ? product.price
-      : Number(String(product.price).replace(/[^0-9.]/g, ''));
+  const handleAddToCart = () => {
+    if (isOutOfStock || !selectedSize || !product) return;
 
     addItem({
       productId: String(product.id),
       productName: product.name,
       productType: 'readymade',
       image: product.images?.[0] || '',
-      unitPrice: numericPrice,
+      unitPrice: finalDiscountedPrice, // ডিসকাউন্টেড প্রাইস কার্টে যাচ্ছে
       stitchingCharge: 0,
       sizeMode: sizeMode,
       sizeValue: selectedSize,
@@ -89,12 +110,12 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
 
     setIsWishlistLoading(true);
     try {
-      const res = await toggleWishlistItem(user.id, productIdNum);
+      const res = await toggleWishlistItem(user.id, productId);
       if (res.success) {
         if (isWishlisted) {
-          removeWishlistId(productIdNum);
+          removeWishlistId(productId);
         } else {
-          addWishlistId(productIdNum);
+          addWishlistId(productId);
         }
       }
     } catch (error) {
@@ -106,6 +127,7 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
 
   const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
   const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
+  const hasBothModes = dbPresetSizes.length > 0 && dbNumericSizes.length > 0;
 
   const [sizeMode, setSizeMode] = useState<SizeMode>('preset');
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -122,6 +144,7 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
     setZoomBgPos('50% 50%');
     setIsFullscreenOpen(false);
     setIsHoveringBtn(false);
+    
     const initialMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
     setSizeMode(initialMode);
 
@@ -130,7 +153,8 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
 
     setQuantity(1);
     setOpenTab(0);
-  }, [product]);
+  }, [product, dbPresetSizes.length, dbNumericSizes.length]);
+  
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isHoveringBtn) return;
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -151,6 +175,17 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
   };
   const maxStock = productStock[selectedSize] || 0;
   const isOutOfStock = maxStock === 0;
+
+  const hasColorInfo = !!product?.color_hex;
+  const swatches = product ? [
+    ...(hasColorInfo ? [{ id: product.id, color_name: product.color_name || 'Current', color_hex: product.color_hex!, isCurrent: true }] : []),
+    ...colorVariants.map(v => ({
+      id: v.id,
+      color_name: v.color_name || 'Variant',
+      color_hex: v.color_hex || '#ffffff',
+      isCurrent: false
+    }))
+  ] : [];
 
   if (!product) {
     return (
@@ -304,15 +339,66 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
             <h1 className="font-heading text-3xl md:text-4xl font-bold uppercase tracking-[0.05em] text-[#17210C] mb-4 leading-tight">
               {product.name}
             </h1>
-            <p className="font-sans text-2xl font-medium text-[#C25934] tracking-[0.05em] mb-6">
-              {product.price}
-            </p>
+            
+            {/* Extended Pricing Details Section */}
+            <div className="mb-6 flex items-center flex-wrap gap-4">
+              <p className="font-sans text-2xl font-medium text-[#C25934] tracking-[0.05em]">
+                ৳ {finalDiscountedPrice}
+              </p>
+              {hasDiscount && (
+                <>
+                  <p className="line-through text-[#1C221A]/40 text-lg font-sans mt-1">
+                    ৳ {rawPrice}
+                  </p>
+                  <span className="px-2.5 py-1 rounded-sm bg-[#C25934]/10 text-[#C25934] text-xs uppercase tracking-wider">
+                    Save {product.discount_percentage}%
+                  </span>
+                </>
+              )}
+            </div>
 
             <div className="w-full h-[1px] bg-[#D4D7C9]/60 mb-6" />
 
-            <p className="font-sans text-[14px] leading-relaxed text-[#1C221A]/75 mb-8">
+            <p className="font-sans text-[14px] leading-relaxed text-[#1C221A]/75 mb-8 whitespace-pre-wrap">
               {product.description}
             </p>
+
+            {swatches.length > 0 && (
+              <div className="mb-8">
+                <span className="block font-sans text-[11px] font-medium uppercase tracking-widest text-[#17210C] mb-3">
+                  Available Colors
+                </span>
+                <div className="flex flex-wrap gap-3.5">
+                  {swatches.map((swatch) => (
+                    <div key={swatch.id} className="relative group">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!swatch.isCurrent) {
+                            router.push(`/shop/${swatch.id}`);
+                          }
+                        }}
+                        className={cn(
+                          "w-8 h-8 rounded-full border shadow-sm transition-all duration-300 relative flex items-center justify-center cursor-pointer",
+                          swatch.isCurrent 
+                            ? "border-[#4A5D23] ring-2 ring-[#4A5D23]/30 scale-105" 
+                            : "border-[#D4D7C9] hover:border-[#4A5D23] hover:scale-105"
+                        )}
+                        style={{ backgroundColor: swatch.color_hex }}
+                      >
+                        {swatch.isCurrent && (
+                          <span className="w-2 h-2 rounded-full bg-white mix-blend-difference" />
+                        )}
+                      </button>
+                      
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#17210C] text-white text-[10px] font-sans rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-30 shadow-md">
+                        {swatch.color_name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -321,7 +407,7 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
                     Select Size
                   </span>
 
-                  {(dbPresetSizes.length > 0 || dbNumericSizes.length > 0) && (
+                  {hasBothModes && (
                     <div className="inline-flex rounded-full bg-[#EBECE3] p-1">
                       <button
                         type="button"
@@ -513,28 +599,47 @@ export default function ProductDetailsClient({ product, relatedProducts }: Produ
           </h2>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
-            {relatedProducts.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => router.push(`/shop/${item.id}`)}
-                className="group flex flex-col rounded-2xl bg-white border border-[#EBECE3] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md text-left cursor-pointer"
-              >
-                <div className="aspect-[4/5] w-full bg-[#EBECE3] overflow-hidden relative">
-                  <img
-                    src={item.images[0]}
-                    alt={item.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
-                  />
-                </div>
-                <div className="p-4 flex flex-col gap-1.5">
-                  <h3 className="font-heading text-[13px] font-bold uppercase tracking-wide text-[#1C221A] truncate">
-                    {item.name}
-                  </h3>
-                  <span className="font-sans text-[12px] font-medium text-[#C25934]">{item.price}</span>
-                </div>
-              </button>
-            ))}
+            {relatedProducts.map((item) => {
+              const itemRawPrice = Number(item.price.replace(/[^0-9.]/g, ''));
+              const itemHasDiscount = (item.discount_percentage ?? 0) > 0;
+              const itemDiscountedPrice = itemHasDiscount 
+                ? Math.round(itemRawPrice - (itemRawPrice * (item.discount_percentage! / 100))) 
+                : itemRawPrice;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => router.push(`/shop/${item.id}`)}
+                  className="group flex flex-col rounded-2xl bg-white border border-[#EBECE3] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md text-left cursor-pointer"
+                >
+                  <div className="aspect-[4/5] w-full bg-[#EBECE3] overflow-hidden relative">
+                    <img
+                      src={item.images[0]}
+                      alt={item.name}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-103"
+                    />
+                  </div>
+                  <div className="p-4 flex flex-col gap-1.5">
+                    <h3 className="font-heading text-[13px] font-bold uppercase tracking-wide text-[#1C221A] truncate">
+                      {item.name}
+                    </h3>
+                    
+                    {/* Related Products Pricing Integration */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-sans text-[12px] font-medium text-[#C25934]">
+                        ৳ {itemHasDiscount ? itemDiscountedPrice : itemRawPrice}
+                      </span>
+                      {itemHasDiscount && (
+                        <span className="line-through text-[#1C221A]/40 text-[10px] font-sans">
+                          ৳ {itemRawPrice}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cartStore';
 import { addMeasurementProfile } from '@/lib/actions/measurement.actions';
 import { useAuthStore } from '@/store/authStore';
 import { getUserMeasurements } from '@/lib/actions/user.actions';
+import { FabricQuickViewModal } from './FabricQuickViewModal';
 
 const presetSizes = [
   { size: "S", yard: 2.25 },
@@ -189,19 +190,21 @@ export function CustomizeClient({
   const filteredFabrics = useMemo(() => {
     return fabrics.filter((f: any) => {
       const matchSearch = f.name.toLowerCase().includes(store.searchQuery.toLowerCase());
-      const matchColor = selectedColors.length === 0 || selectedColors.includes(f.color_tag);
-      const matchPattern = selectedPatterns.length === 0 || selectedPatterns.includes(f.fabric_type);
+      const fabricColors = Array.isArray(f.colors) ? f.colors : [];
+      const fabricPatterns = Array.isArray(f.patterns) ? f.patterns : [];
+      const matchColor = selectedColors.length === 0 || selectedColors.some((color) => fabricColors.includes(color));
+      const matchPattern = selectedPatterns.length === 0 || selectedPatterns.some((pattern) => fabricPatterns.includes(pattern));
       return matchSearch && matchColor && matchPattern;
     });
   }, [fabrics, store.searchQuery, selectedColors, selectedPatterns]);
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (fabrics.length > 0 && !store.selectedFabricId) store.setSelectedFabricId(fabrics[0].id);
+    if (fabrics.length > 0 && !store.selectedFabricId) store.setSelectedFabricId(String(fabrics[0].id));
     if (!store.collarId) store.setCollarId(CORE_COLLARS[0].id);
-  }, [fabrics]); 
+  }, [fabrics]);
 
-  const selectedFabric = fabrics.find((f: any) => f.id === store.selectedFabricId) || fabrics[0];
+  const selectedFabric = fabrics.find((f: any) => String(f.id) === store.selectedFabricId) || fabrics[0];
   const selectedCollar = CORE_COLLARS.find((c: any) => c.id === store.collarId) || CORE_COLLARS[0];
   const selectedFabricImageUrl = selectedFabric?.image_url ? resolveProductImageSrc(selectedFabric.image_url) : undefined;
   const selectedFabricTextureUrl = selectedFabric?.texture_url || undefined;
@@ -246,7 +249,7 @@ export function CustomizeClient({
         sleeve: Number(store.customSleeve),
       }
     };
-    
+
     try {
       const res = await addMeasurementProfile(userId!, payload);
       if (res?.success) {
@@ -269,12 +272,12 @@ export function CustomizeClient({
     if (!isFabricStockSufficient) return;
 
     if (store.orderMode === 'tailoring' && store.measurementMode === 'saved') {
-    const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
-    if (!profile) {
-      alert("Please select or create a valid measurement profile first.");
-      return;
+      const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
+      if (!profile) {
+        alert("Please select or create a valid measurement profile first.");
+        return;
+      }
     }
-  }
 
     const isTailoring = store.orderMode === 'tailoring';
     const selectedProfile = store.measurementMode === 'saved'
@@ -304,7 +307,7 @@ export function CustomizeClient({
       fabricId: selectedFabric?.id?.toString(),
       fabricName: selectedFabric?.name,
       fabricImage: selectedFabric?.texture_url,
-      yardage: activeYardage, 
+      yardage: activeYardage,
 
       sizeMode: isTailoring
         ? (store.measurementMode === 'saved' ? 'saved_profile' : (store.sizeType === 'custom' ? 'custom_measurements' : 'preset'))
@@ -315,8 +318,8 @@ export function CustomizeClient({
 
       customMeasurements: finalCustomMeasurements,
       collarType: isTailoring ? selectedCollar?.name : undefined,
-      unitPrice: fabricPrice, 
-      stitchingCharge: isTailoring ? stitchingCharge : 0, 
+      unitPrice: fabricPrice,
+      stitchingCharge: isTailoring ? stitchingCharge : 0,
     });
 
     cartStore.openCart();
@@ -417,17 +420,24 @@ export function CustomizeClient({
         {filteredFabrics.map((fabric: any) => {
           const outOfStock = fabric.yards <= 0;
 
+          // Discount Calculation
+          const rawPrice = Number(fabric.price || 0);
+          const hasDiscount = (fabric.discount_percentage ?? 0) > 0;
+          const discountedPrice = hasDiscount
+            ? Math.round(rawPrice - (rawPrice * (fabric.discount_percentage / 100)))
+            : rawPrice;
+
           return (
             <div
               key={fabric.id}
               onClick={(e) => {
                 if (!outOfStock) {
-                  store.setSelectedFabricId(fabric.id);
+                  store.setSelectedFabricId(String(fabric.id));
                   setActiveBottomSheet(null);
                 }
               }}
               className={`group relative flex flex-col rounded-xl overflow-hidden border transition-all bg-white ${outOfStock ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#D4D7C9]'
-                } ${store.selectedFabricId === fabric.id ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23]' : 'border-[#EBECE3]'}`}
+                } ${store.selectedFabricId === String(fabric.id) ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23]' : 'border-[#EBECE3]'}`}
             >
               <div className="aspect-square bg-[#EBECE3] relative overflow-hidden">
                 <img src={fabric?.raw_image_url || fabric?.texture_url} alt={fabric.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -440,23 +450,44 @@ export function CustomizeClient({
                   </div>
                 )}
 
-                {store.selectedFabricId === fabric.id && !outOfStock && (
+                {/* New Discount Badge */}
+                {hasDiscount && !outOfStock && (
+                  <div className="absolute top-2 left-2 bg-[#C25934] text-white text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm shadow-sm z-10">
+                    -{fabric.discount_percentage}% OFF
+                  </div>
+                )}
+
+                {store.selectedFabricId === String(fabric.id) && !outOfStock && (
                   <div className="absolute top-2 right-2 bg-[#4A5D23] rounded-full p-1 shadow-sm z-10">
                     <Check className="w-3 h-3 text-white stroke-[3]" />
                   </div>
                 )}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setModalFabric(fabric); setIsInfoModalOpen(true); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setModalFabric(fabric);
+                    setIsInfoModalOpen(true);
+                  }}
                   className="absolute bottom-2 right-2 w-7 h-7 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-[#1C221A]/70 hover:text-[#4A5D23] shadow-sm transition-all z-20"
                 >
                   <Info className="w-3.5 h-3.5" />
                 </button>
               </div>
+
               <div className="p-3 flex flex-col justify-between flex-1">
                 <h4 className="font-sans text-[12px] font-medium text-[#17210C] uppercase tracking-wide truncate">{fabric.name}</h4>
-                <div className="flex justify-between items-center mt-1">
-                  <p className="font-sans text-[10px] text-[#C25934] font-medium uppercase tracking-widest">৳{fabric.price}/yd</p>
-                  <p className="font-sans text-[9px] text-[#1C221A]/50">{fabric.yards} yds</p>
+                <div className="flex justify-between items-end mt-1">
+                  <div className="flex flex-col">
+                    <p className="font-sans text-[11px] text-[#C25934] uppercase tracking-widest">
+                      ৳ {discountedPrice}/yd
+                    </p>
+                    {hasDiscount && (
+                      <p className="font-sans text-[9px] text-[#1C221A]/40 line-through tracking-wider mt-0.5">
+                        ৳ {rawPrice}
+                      </p>
+                    )}
+                  </div>
+                  <p className="font-sans text-[9px] text-[#1C221A]/50 pb-[2px]">{fabric.yards} yds</p>
                 </div>
               </div>
             </div>
@@ -500,17 +531,15 @@ export function CustomizeClient({
       <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl mb-6">
         <button
           onClick={() => store.setMeasurementMode('saved')}
-          className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${
-            store.measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'
-          }`}
+          className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'
+            }`}
         >
           My Profiles
         </button>
         <button
           onClick={() => store.setMeasurementMode('new')}
-          className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${
-            store.measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'
-          }`}
+          className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'
+            }`}
         >
           New Size
         </button>
@@ -528,8 +557,8 @@ export function CustomizeClient({
           ) : activeSavedMeasurements.length > 0 ? (
             <div className="space-y-4">
               <div className="relative">
-                <select 
-                  value={store.selectedProfileId} 
+                <select
+                  value={store.selectedProfileId}
                   onChange={(e) => store.setSelectedProfileId(e.target.value)}
                   className="w-full bg-white border border-[#D4D7C9] p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans appearance-none cursor-pointer text-[#17210C]"
                 >
@@ -572,7 +601,7 @@ export function CustomizeClient({
               )}
             </div>
           ) : (
-             <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
+            <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
               <p className="font-sans text-xs text-[#1C221A]/70 mb-2">No profiles found.</p>
               <button onClick={() => store.setMeasurementMode('new')} className="inline-flex justify-center w-fit mx-auto text-[#4A5D23] text-[12px] hover:text-accent uppercase tracking-widest hover:underline cursor-pointer">Go to New Size <ChevronRight className="w-4 h-4" /></button>
             </div>
@@ -632,8 +661,8 @@ export function CustomizeClient({
                   <span className="font-sans text-[11px] uppercase tracking-widest text-[#1C221A]/70 group-hover:text-[#17210C] transition-colors">
                     Save this size for future?
                   </span>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={saveProfileToggle}
                     onChange={handleSaveToggle}
                     className="w-4 h-4 accent-[#4A5D23] rounded cursor-pointer"
@@ -642,8 +671,8 @@ export function CustomizeClient({
 
                 {saveProfileToggle && userId && (
                   <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Profile Name (e.g., Slim Fit)"
                       value={newProfileName}
                       onChange={(e) => setNewProfileName(e.target.value)}
@@ -651,15 +680,14 @@ export function CustomizeClient({
                       className={`w-full bg-white border ${profileNameError ? 'border-red-500' : 'border-[#D4D7C9]'} p-3 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans disabled:bg-[#F8F9F5] disabled:text-[#1C221A]/50 transition-colors`}
                     />
                     {profileNameError && <p className="font-sans text-[10px] text-red-500 mt-1.5">{profileNameError}</p>}
-                    
-                    <button 
+
+                    <button
                       onClick={handleSaveProfile}
                       disabled={hasSavedCurrentProfile || isSavingProfile || !!profileNameError || !newProfileName.trim()}
-                      className={`w-full mt-3 py-3 rounded-xl font-sans text-[12px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm ${
-                        hasSavedCurrentProfile 
-                          ? 'bg-[#EBECE3] text-[#4A5D23]' 
-                          : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] active:scale-[0.98]'
-                      } disabled:opacity-70`}
+                      className={`w-full mt-3 py-3 rounded-xl font-sans text-[12px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm ${hasSavedCurrentProfile
+                        ? 'bg-[#EBECE3] text-[#4A5D23]'
+                        : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] active:scale-[0.98]'
+                        } disabled:opacity-70`}
                     >
                       {isSavingProfile ? (
                         'Saving...'
@@ -712,7 +740,7 @@ export function CustomizeClient({
             <span className="font-heading text-lg font-bold">{store.yardage}</span>
             <button
               onClick={() => store.setYardage(store.yardage + 0.5)}
-              disabled={store.yardage + 0.5 > maxFabricYards} 
+              disabled={store.yardage + 0.5 > maxFabricYards}
               className={`w-8 h-8 rounded-full border border-[#4A5D23] text-[#4A5D23] flex items-center justify-center font-medium transition-colors ${store.yardage + 0.5 > maxFabricYards ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#4A5D23] hover:text-white cursor-pointer'
                 }`}>+</button>
           </div>
@@ -748,11 +776,15 @@ export function CustomizeClient({
       <div className="hidden lg:flex w-full lg:w-1/2 items-center justify-center sticky top-20 h-fit self-start">
         <div className="w-full aspect-square">
           <PanjabiCanvas
-            color="#FFFFFF" 
-            fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'} 
-            fabricImageUrl={selectedFabricTextureUrl} 
+            color="#FFFFFF"
+            fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'}
+            fabricImageUrl={selectedFabricTextureUrl}
             collarType={getCanvasCollarType(selectedCollar)}
             onReset={() => setIsResetModalOpen(true)}
+            onInfoClick={() => {
+              setModalFabric(selectedFabric);
+              setIsInfoModalOpen(true);
+            }}
           />
         </div>
       </div>
@@ -770,7 +802,9 @@ export function CustomizeClient({
               <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">01. Choose Fabric</span>
               {expandedStep === 1 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
-            {expandedStep === 1 && <div className="p-5 border-t border-[#D4D7C9]/40 bg-transparent animate-in slide-in-from-top-2 duration-300">{renderFabricContent()}</div>}
+            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 1 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+              {renderFabricContent()}
+            </div>
           </div>
 
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
@@ -778,7 +812,9 @@ export function CustomizeClient({
               <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">02. Collar Style</span>
               {expandedStep === 2 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
-            {expandedStep === 2 && <div className="p-5 border-t border-[#D4D7C9]/40 animate-in slide-in-from-top-2 duration-300">{renderCollarContent()}</div>}
+            <div className={`p-5 border-t border-[#D4D7C9]/40 transition-all duration-300 ${expandedStep === 2 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+              {renderCollarContent()}
+            </div>
           </div>
 
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
@@ -786,7 +822,9 @@ export function CustomizeClient({
               <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">03. Measurements</span>
               {expandedStep === 3 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
-            {expandedStep === 3 && <div className="p-5 border-t border-[#D4D7C9]/40 bg-transparent animate-in slide-in-from-top-2 duration-300">{renderMeasurementContent()}</div>}
+            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 3 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+              {renderMeasurementContent()}
+            </div>
           </div>
         </div>
 
@@ -837,11 +875,15 @@ export function CustomizeClient({
       <div className={`lg:hidden fixed top-0 left-0 w-full h-[100dvh] z-0 transition-opacity duration-500 bg-[#F8F9F5] ${mobileStep === 'design' ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
         <div className="absolute inset-0 w-full h-full pb-20 flex items-center justify-center">
           <PanjabiCanvas
-            color="#FFFFFF" 
-            fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'} 
-            fabricImageUrl={selectedFabricTextureUrl} 
+            color="#FFFFFF"
+            fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'}
+            fabricImageUrl={selectedFabricTextureUrl}
             collarType={getCanvasCollarType(selectedCollar)}
             onReset={() => setIsResetModalOpen(true)}
+            onInfoClick={() => {
+              setModalFabric(selectedFabric);
+              setIsInfoModalOpen(true);
+            }}
           />
         </div>
       </div>
@@ -882,9 +924,14 @@ export function CustomizeClient({
             </span>
             <button onClick={() => setActiveBottomSheet(null)} className="p-2 -mr-2 bg-[#F8F9F5] rounded-full text-[#1C221A]/60 hover:text-[#C25934] transition-colors"><X className="w-4 h-4" /></button>
           </div>
-          <div className="p-5 overflow-y-auto custom-scrollbar flex-1">
-            {activeBottomSheet === 'fabric' && renderFabricContent()}
-            {activeBottomSheet === 'collar' && renderCollarContent()}
+          <div className="p-5 overflow-y-auto custom-scrollbar flex-1 relative">
+            {/* Conditional Rendering এর বদলে CSS Hidden ব্যবহার করা হলো */}
+            <div className={activeBottomSheet === 'fabric' ? 'block' : 'hidden'}>
+              {renderFabricContent()}
+            </div>
+            <div className={activeBottomSheet === 'collar' ? 'block' : 'hidden'}>
+              {renderCollarContent()}
+            </div>
           </div>
         </div>
       </div>
@@ -943,24 +990,16 @@ export function CustomizeClient({
         </div>
       </div>
 
-      {isInfoModalOpen && modalFabric && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setIsInfoModalOpen(false)} />
-          <div className="relative bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="h-64 bg-[#EBECE3] relative">
-              <img src={modalFabric?.raw_image_url || modalFabric?.texture_url} alt={modalFabric.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="p-6">
-              <h3 className="font-heading text-xl font-bold text-[#17210C] uppercase tracking-wide mb-2">{modalFabric.name}</h3>
-              <p className="font-sans text-xs text-[#1C221A]/70 mb-4">{modalFabric.description || "Premium handcrafted boutique textile material."}</p>
-              <div className="flex justify-between items-center border-t border-[#EBECE3] pt-4 mt-4">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-[#4A5D23]">Price base</span>
-                <span className="font-sans text-sm font-medium text-[#17210C]">৳{modalFabric.price}/yd</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Fabric Quick View Modal */}
+      <FabricQuickViewModal
+        fabric={modalFabric}
+        isOpen={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
+        onSelectFabric={(fabricId) => {
+          store.setSelectedFabricId(fabricId);
+          setIsInfoModalOpen(false); // মডাল ক্লোজ হবে
+        }}
+      />
 
       {mobileStep === 'design' && (
         <button
@@ -1002,17 +1041,17 @@ export function CustomizeClient({
               Are you sure you want to clear all your current customizations and reset the design?
             </p>
             <div className="flex gap-3">
-              <button 
-                onClick={() => setIsResetModalOpen(false)} 
+              <button
+                onClick={() => setIsResetModalOpen(false)}
                 className="flex-1 py-3.5 bg-[#F8F9F5] text-[#1C221A] hover:bg-[#D4D7C9] rounded-xl font-sans text-[12px] uppercase tracking-widest transition-colors cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={() => {
                   store.resetCustomizer();
                   setIsResetModalOpen(false);
-                }} 
+                }}
                 className="flex-1 py-3.5 bg-red-600 text-white hover:bg-red-700 rounded-xl font-sans text-[12px] uppercase tracking-widest shadow-md transition-colors cursor-pointer"
               >
                 Reset

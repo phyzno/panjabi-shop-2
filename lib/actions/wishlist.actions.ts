@@ -5,7 +5,7 @@ import { wishlists, products, categories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-export async function toggleWishlistItem(userId: string, productId: number) {
+export async function toggleWishlistItem(userId: string, productId: string) {
   try {
     const existing = await db.select()
       .from(wishlists)
@@ -36,8 +36,13 @@ export async function getUserWishlist(userId: string) {
         price: products.price,
         sizes: products.sizes,
         stock: products.stock,
+        discount_percentage: products.discount_percentage,
         is_featured: products.is_featured,
         images: products.images,
+        video_url: products.video_url,
+        group_id: products.group_id,
+        color_name: products.color_name,
+        color_hex: products.color_hex,
         category: categories.name, 
       }
     })

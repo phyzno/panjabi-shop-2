@@ -1,5 +1,6 @@
+// app/public/site/shop/[id]/page.tsx
 import type { Metadata } from 'next';
-import { getCachedProductById, getCachedAllProducts } from '@/lib/actions/product.actions';
+import { getCachedProductById, getCachedAllProducts, getProductVariants } from '@/lib/actions/product.actions';
 import ProductDetailsClient from './ProductDetailsClient';
 import { notFound } from 'next/navigation';
 
@@ -9,13 +10,7 @@ type ProductDetailsPageProps = {
 
 export async function generateMetadata({ params }: ProductDetailsPageProps): Promise<Metadata> {
   const { id } = await params;
-  const productId = Number(id);
-
-  if (Number.isNaN(productId)) {
-    return { title: 'Product Not Found' };
-  }
-
-  const { data: product } = await getCachedProductById(productId);
+  const { data: product } = await getCachedProductById(id);
 
   if (!product) {
     return { title: 'Product Not Found' };
@@ -29,9 +24,9 @@ export async function generateMetadata({ params }: ProductDetailsPageProps): Pro
 
 export default async function ProductDetailsPage({ params }: ProductDetailsPageProps) {
   const resolvedParams = await params;
-  const productId = Number(resolvedParams.id);
+  const productId = resolvedParams.id;
   
-  if (isNaN(productId)) {
+  if (!productId) {
     notFound();
   }
 
@@ -39,6 +34,15 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
 
   if (!product) {
     notFound();
+  }
+
+  // group_id থাকলে Sibling ভেরিয়েন্টগুলো ফেচ করা হচ্ছে
+  let colorVariants = [];
+  if (product.group_id) {
+    const variantsRes = await getProductVariants(product.group_id, product.id);
+    if (variantsRes.success && variantsRes.data) {
+      colorVariants = variantsRes.data;
+    }
   }
 
   const { data: allProducts } = await getCachedAllProducts();
@@ -50,6 +54,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       name: p.name,
       category: p.categoryName || 'Uncategorized',
       price: `৳ ${p.price}`,
+      discount_percentage: p.discount_percentage || 0, // যুক্ত করা হয়েছে
       images: (p.images as string[]) || [],
       description: p.description || '',
     }));
@@ -59,11 +64,22 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
     name: product.name,
     category: product.categoryName || 'Uncategorized',
     price: `৳ ${product.price}`,
+    discount_percentage: product.discount_percentage || 0, // যুক্ত করা হয়েছে
     images: (product.images as string[]) || [],
     description: product.description || '',
     sizes: (product.sizes as string[]) || [],
     stock: product.stock as Record<string, any> || {},
+    video_url: product.video_url || null,
+    group_id: product.group_id || null,
+    color_name: product.color_name || null,
+    color_hex: product.color_hex || null,
   };
 
-  return <ProductDetailsClient product={formattedProduct} relatedProducts={related} />;
+  return (
+    <ProductDetailsClient 
+      product={formattedProduct} 
+      relatedProducts={related} 
+      colorVariants={colorVariants} 
+    />
+  );
 }

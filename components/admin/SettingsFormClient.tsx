@@ -2,8 +2,8 @@
 
 import React, { useState, useTransition } from "react";
 import { updateSiteSettings } from "@/lib/actions/settings.actions";
-import { addCategory, deleteCategory } from "@/lib/actions/category.actions";
-import { Plus, Trash2, Megaphone, Shirt, Palette, Loader2, Check } from "lucide-react";
+import { addCategory, deleteCategory, updateCategory } from "@/lib/actions/category.actions";
+import { Plus, Trash2, Megaphone, Shirt, Palette, Loader2, Check, ChevronRight, ChevronDown, Folder, Edit2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function SettingsFormClient({ initialSettings, initialCategories }: { initialSettings: any, initialCategories: any[] }) {
@@ -18,6 +18,116 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
   const currentColors = initialSettings?.fabric_colors || [];
   const currentPatterns = initialSettings?.fabric_patterns || [];
   const isOfferLiveGlobally = activeOfferId !== "";
+  const [selectedParentId, setSelectedParentId] = useState<number | "">("");
+  const [expandedCats, setExpandedCats] = useState<Set<number>>(new Set());
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+
+  const toggleExpand = (id: number) => {
+    const newSet = new Set(expandedCats);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setExpandedCats(newSet);
+  };
+
+  const handleAddSubcategoryClick = (parentId: number) => {
+    setSelectedParentId(parentId);
+    setExpandedCats(prev => new Set(prev).add(parentId));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const startEditing = (cat: any) => {
+    setEditingCategoryId(cat.id);
+    setEditCategoryName(cat.name);
+  };
+
+  const saveEditCategory = (id: number) => {
+    if (!editCategoryName.trim()) return;
+    startTransition(async () => {
+      const res = await updateCategory(id, editCategoryName.trim());
+      if (res.success) {
+        setEditingCategoryId(null);
+        router.refresh();
+      }
+    });
+  };
+  const buildCategoryTree = (categories: any[]) => {
+    const map = new Map();
+    const tree: any[] = [];
+    categories.forEach(c => map.set(c.id, { ...c, children: [] }));
+    categories.forEach(c => {
+      if (c.parent_id) {
+        const parent = map.get(c.parent_id);
+        if (parent) parent.children.push(map.get(c.id));
+      } else {
+        tree.push(map.get(c.id));
+      }
+    });
+    return tree;
+  };
+  const categoryTree = buildCategoryTree(initialCategories);
+  const renderCategoryOptions = (cats: any[], prefix = "") => {
+    return cats.map((cat) => (
+      <React.Fragment key={`opt-${cat.id}`}>
+        <option value={cat.id}>{prefix} {cat.name}</option>
+        {cat.children && cat.children.length > 0 && renderCategoryOptions(cat.children, prefix + "— ")}
+      </React.Fragment>
+    ));
+  };
+  const renderVSCodeTree = (cats: any[], depth = 0) => {
+    return cats.map((cat) => {
+      const isExpanded = expandedCats.has(cat.id);
+      const isEditing = editingCategoryId === cat.id;
+      const hasChildren = cat.children && cat.children.length > 0;
+
+      return (
+        <div key={`tree-${cat.id}`} className="w-full">
+          <div 
+            className={`flex items-center justify-between py-2 px-3 border-b border-border/50 hover:bg-secondary/50 group transition-colors ${depth === 0 ? 'bg-background' : 'bg-secondary/10'}`}
+            style={{ paddingLeft: `${(depth * 1.5) + 0.5}rem` }}
+          >
+            <div className="flex items-center gap-2 flex-1">
+              <button onClick={() => toggleExpand(cat.id)} className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors cursor-pointer">
+                 {hasChildren ? (
+                   isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+                 ) : (
+                   <span className="w-3.5 h-[1px] bg-border/80 inline-block" />
+                 )}
+              </button>
+
+              {isEditing ? (
+                 <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+                   <input autoFocus value={editCategoryName} onChange={e => setEditCategoryName(e.target.value)} disabled={isPending} className="w-full bg-background border border-primary px-2 py-1 text-sm rounded outline-none" />
+                   <button onClick={() => saveEditCategory(cat.id)} disabled={isPending} className="text-green-600 hover:bg-green-50 p-1 rounded cursor-pointer"><Check size={14}/></button>
+                   <button onClick={() => setEditingCategoryId(null)} disabled={isPending} className="text-red-500 hover:bg-red-50 p-1 rounded cursor-pointer"><X size={14}/></button>
+                 </div>
+              ) : (
+                 <div className="flex items-center gap-2 cursor-pointer flex-1" onClick={() => toggleExpand(cat.id)}>
+                   <Folder size={14} className="text-accent shrink-0" fill="currentColor" fillOpacity={0.2} />
+                   <span className="text-sm font-sans font-medium text-foreground">{cat.name}</span>
+                   <span className="text-[10px] text-muted-foreground font-mono bg-secondary px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity truncate max-w-[120px]">/{cat.slug}</span>
+                 </div>
+              )}
+            </div>
+
+            {!isEditing && (
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleAddSubcategoryClick(cat.id)} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-secondary rounded cursor-pointer" title="Add Subcategory"><Plus size={14}/></button>
+                <button onClick={() => startEditing(cat)} className="p-1.5 text-muted-foreground hover:text-blue-500 hover:bg-secondary rounded cursor-pointer" title="Edit Name"><Edit2 size={14}/></button>
+                <button onClick={() => handleRemoveCategory(cat.id)} disabled={isPending} className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded cursor-pointer disabled:opacity-50" title="Delete"><Trash2 size={14}/></button>
+              </div>
+            )}
+          </div>
+
+          {isExpanded && hasChildren && (
+            <div className="w-full border-l border-border/50 ml-[1.125rem]">
+              {renderVSCodeTree(cat.children, depth + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
+  };
   const handleToggleGlobalOffer = () => {
     startTransition(async () => {
       if (isOfferLiveGlobally) {
@@ -72,10 +182,13 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
   const handleCreateCategory = () => {
     if (!newCategoryName.trim()) return;
     startTransition(async () => {
-      const slug = newCategoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const res = await addCategory({ name: newCategoryName.trim(), slug });
+      const res = await addCategory({ 
+        name: newCategoryName.trim(), 
+        parent_id: selectedParentId ? Number(selectedParentId) : null
+      });
       if (res.success) {
         setNewCategoryName("");
+        setSelectedParentId(""); 
         router.refresh();
       } else {
         console.error(res.error);
@@ -209,31 +322,41 @@ export default function SettingsFormClient({ initialSettings, initialCategories 
         <h2 className="text-lg font-heading font-bold text-primary flex items-center gap-2 border-b border-border pb-3">
           <Shirt size={20} /> Product Categories
         </h2>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            disabled={isPending}
-            placeholder="e.g. Wedding, Premium, Casual"
-            className="flex-grow border border-border bg-secondary/30 rounded-md px-4 py-2 outline-none text-sm font-sans disabled:opacity-50"
-          />
-          <button onClick={handleCreateCategory} disabled={isPending} className="w-full sm:w-auto bg-primary text-white px-5 py-3 sm:py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center font-sans text-sm font-medium whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-            {isPending ? <Loader2 size={16} className="animate-spin" /> : <><Plus size={16} /> Add</>}
-          </button>
+        
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
+            {/* Parent Category Selection Dropdown */}
+            <select
+              value={selectedParentId}
+              onChange={(e) => setSelectedParentId(e.target.value === "" ? "" : Number(e.target.value))}
+              disabled={isPending}
+              className="w-full sm:w-1/3 border border-border bg-secondary/30 rounded-md px-3 py-2 outline-none text-sm font-sans disabled:opacity-50 cursor-pointer"
+            >
+              <option value="">No Parent (Root)</option>
+              {renderCategoryOptions(categoryTree)}
+            </select>
+
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              disabled={isPending}
+              placeholder="New Category Name (e.g. Premium)"
+              className="flex-grow border border-border bg-secondary/30 rounded-md px-4 py-2 outline-none text-sm font-sans disabled:opacity-50"
+            />
+            <button onClick={handleCreateCategory} disabled={isPending} className="w-full sm:w-auto bg-primary text-white px-5 py-3 sm:py-2 rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center font-sans text-sm font-medium whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+              {isPending ? <Loader2 size={16} className="animate-spin" /> : <><Plus size={16} /> Add</>}
+            </button>
+          </div>
         </div>
-        <div className="divide-y divide-border pt-2 max-h-[250px] overflow-y-auto pr-1">
-          {initialCategories.map((cat) => (
-            <div key={cat.id} className="flex items-center justify-between py-3">
-              <div>
-                <span className="text-md font-sans text-foreground">{cat.name}</span>
-                <span className="text-xs text-muted-foreground block font-sans">Slug: {cat.slug}</span>
-              </div>
-              <button onClick={() => handleRemoveCategory(cat.id)} disabled={isPending} className="p-2 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                <Trash2 size={16} />
-              </button>
-            </div>
-          ))}
+
+        {/* Tree Structured Category List */}
+        <div className="pt-2 max-h-[350px] overflow-y-auto pr-1">
+          {categoryTree.length > 0 ? (
+            renderVSCodeTree(categoryTree)
+          ) : (
+            <p className="text-sm text-muted-foreground p-4 text-center italic">No categories found.</p>
+          )}
         </div>
       </div>
 
