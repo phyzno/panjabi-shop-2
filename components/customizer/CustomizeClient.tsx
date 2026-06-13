@@ -4,12 +4,13 @@ import React, { useState, useMemo, useEffect } from "react";
 import { PanjabiCanvas } from './PanjabiCanvas';
 import { useCustomizerStore } from '@/store/useCustomizerStore';
 import { resolveProductImageSrc } from '@/lib/productImages';
-import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calculator, ChevronLeft, ChevronRight, X, ShoppingCart, RotateCcw, Eye } from "lucide-react";
+import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calculator, ChevronLeft, ChevronRight, X, ShoppingCart, RotateCcw, Eye, XCircle } from "lucide-react";
 import { useCartStore } from '@/store/cartStore';
 import { addMeasurementProfile } from '@/lib/actions/measurement.actions';
 import { useAuthStore } from '@/store/authStore';
 import { getUserMeasurements } from '@/lib/actions/user.actions';
 import { FabricQuickViewModal } from './FabricQuickViewModal';
+import { UI_VECTORS, JUBBA_CANVAS_MAP, PANT_CANVAS_MAP, PANJABI_CANVAS_MAP, SHIRT_CANVAS_MAP, PAJAMA_CANVAS_MAP } from '@/lib/config/productConfig';
 
 const presetSizes = [
   { size: "S", yard: 2.25 },
@@ -77,6 +78,7 @@ export function CustomizeClient({
   const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -221,6 +223,65 @@ export function CustomizeClient({
     ? fabricPrice + stitchingCharge + collarPrice
     : fabricPrice;
 
+  const getDynamicOverlayImage = () => {
+    if (store.selectedProduct === 'jubba') {
+      const { collar, placket, pocket } = store.productStyles;
+      return JUBBA_CANVAS_MAP[collar || 'band']?.[placket || 'hidden']?.[pocket || 'chest']
+        || JUBBA_CANVAS_MAP['band']['hidden']['chest'];
+    }
+    else if (store.selectedProduct.startsWith('panjabi_')) {
+      const type = store.selectedProduct.split('_')[1];
+      const { collar, placket, pocket } = store.productStyles;
+
+      let safeCollar = collar || 'band';
+      let safePlacket = placket || 'hidden';
+      let safePocket = pocket || 'chest';
+
+      // সাব-ক্যাটাগরি অনুযায়ী Fallback বা Override নিশ্চিত করা
+      if (type === 'madani' && !['band', 'round'].includes(safeCollar)) safeCollar = 'band';
+      if (type === 'kabuli') {
+        if (!['band', 'shirt'].includes(safeCollar)) safeCollar = 'band';
+        safePlacket = 'visible'; // Kabuli-এর জন্য Forcefully Visible করা হলো
+        if (!['chest', 'double_flap'].includes(safePocket)) safePocket = 'chest';
+      }
+      if (type === 'short' && !['band', 'mandarin', 'shirt'].includes(safeCollar)) safeCollar = 'band';
+      if (type === 'regular' && !['band', 'mandarin', 'round'].includes(safeCollar)) safeCollar = 'band';
+
+      return PANJABI_CANVAS_MAP[type]?.[safeCollar]?.[safePlacket]?.[safePocket]
+        || PANJABI_CANVAS_MAP['regular']['band']['hidden']['chest'];
+    }
+    else if (store.selectedProduct === 'pajama') {
+      const { pajama_fit } = store.productStyles;
+      const safeFit = pajama_fit || 'aligarhi';
+
+      return PAJAMA_CANVAS_MAP[safeFit] || PAJAMA_CANVAS_MAP['aligarhi'];
+    }
+    else if (store.selectedProduct === 'shirt') {
+      const { sleeve, collar, placket, pocket } = store.productStyles;
+
+      // সেফটি ফলব্যাক এবং ডাইনামিক স্লিভ ডিটেকশন
+      let safeSleeve = sleeve || 'full';
+      let safeCollar = collar || 'spread';
+      let safePlacket = placket || 'hidden';
+      let safePocket = pocket || 'chest';
+
+      if (!['full', 'half'].includes(safeSleeve)) safeSleeve = 'full';
+      if (!['spread', 'buttondown', 'mandarin'].includes(safeCollar)) safeCollar = 'spread';
+      if (!['no_pocket', 'chest'].includes(safePocket)) safePocket = 'chest';
+
+      return SHIRT_CANVAS_MAP[safeSleeve]?.[safeCollar]?.[safePlacket]?.[safePocket]
+        || SHIRT_CANVAS_MAP['full']['spread']['hidden']['chest'];
+    }
+    else if (store.selectedProduct.startsWith('pant_')) {
+      const pantType = store.selectedProduct.split('_')[1];
+      const { front, hem } = store.productStyles;
+      return PANT_CANVAS_MAP[pantType]?.[front || 'flat']?.[hem || 'regular']
+        || PANT_CANVAS_MAP['formal']['flat']['regular'];
+    }
+
+    return `/assets/punjabi/collar-${getCanvasCollarType(selectedCollar)}.png`;
+  };
+
   const handleSaveToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
     if (isChecked && !userId) {
@@ -358,6 +419,83 @@ export function CustomizeClient({
       if (footerElement) footerElement.style.display = "";
     };
   }, [activeBottomSheet, mobileStep]);
+
+  const renderProductContent = () => {
+    const products = [
+      {
+        id: 'panjabi',
+        name: 'Panjabi',
+        type: 'group',
+        subcategories: [
+          { id: 'panjabi_regular', name: 'Regular-Classic' },
+          { id: 'panjabi_madani', name: 'Madani Panjabi' },
+          { id: 'panjabi_kabuli', name: 'Kabuli Panjabi' },
+          { id: 'panjabi_short', name: 'Short Panjabi' }
+        ]
+      },
+      { id: 'pajama', name: 'Pajama', type: 'single' },
+      { id: 'jubba', name: 'Jubba', type: 'single' },
+      { id: 'shirt', name: 'Shirt', type: 'single' },
+      {
+        id: 'pant',
+        name: 'Pant',
+        type: 'group',
+        subcategories: [
+          { id: 'pant_formal', name: 'Formal Pant' },
+          { id: 'pant_chinos', name: 'Chinos Pant' }
+        ]
+      }
+    ];
+
+    return (
+      <div className="flex flex-col gap-3 max-h-[360px] overflow-y-auto custom-scrollbar relative z-10 pb-6">
+        {products.map(product => (
+          <div key={product.id} className="flex flex-col gap-2">
+            <button
+              onClick={() => {
+                if (product.type === 'single') {
+                  store.setSelectedProduct(product.id);
+                  setExpandedCategory(null);
+                } else {
+                  setExpandedCategory(expandedCategory === product.id ? null : product.id);
+                }
+              }}
+              className={`flex items-center justify-between p-4 rounded-xl border transition-all ${store.selectedProduct === product.id || store.selectedProduct.startsWith(product.id + '_')
+                ? 'border-[#4A5D23] shadow-sm bg-[#F8F9F5]'
+                : 'border-[#D4D7C9] bg-white hover:border-[#4A5D23]/50'
+                }`}
+            >
+              <span className="font-heading text-[13px] font-bold uppercase tracking-widest text-[#17210C]">
+                {product.name}
+              </span>
+              {product.type === 'group' && (
+                <ChevronDown className={`w-4 h-4 transition-transform ${expandedCategory === product.id ? 'rotate-180' : ''}`} />
+              )}
+            </button>
+
+            {product.type === 'group' && expandedCategory === product.id && (
+              <div className="grid grid-cols-2 gap-3 pl-4 animate-in slide-in-from-top-2">
+                {product.subcategories?.map(sub => (
+                  <button
+                    key={sub.id}
+                    onClick={() => store.setSelectedProduct(sub.id)}
+                    className={`p-3 rounded-xl border transition-all text-left ${store.selectedProduct === sub.id
+                      ? 'border-[#4A5D23] bg-[#4A5D23]/10 ring-1 ring-[#4A5D23]'
+                      : 'border-[#D4D7C9] bg-white hover:border-[#4A5D23]/50'
+                      }`}
+                  >
+                    <span className="font-sans text-[11px] font-medium uppercase tracking-widest text-[#17210C]">
+                      {sub.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderFabricContent = () => (
     <>
@@ -506,34 +644,146 @@ export function CustomizeClient({
     </>
   );
 
-  const renderCollarContent = () => (
-    <div className="flex flex-col sm:grid sm:grid-cols-2 gap-4 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar relative z-10 pb-6">
-      {CORE_COLLARS.map((collar) => (
-        <div
-          key={collar.id}
-          onClick={() => {
-            store.setCollarId(collar.id);
-            setActiveBottomSheet(null);
-          }}
-          className={`group relative flex items-center sm:flex-col sm:justify-center gap-4 sm:gap-3 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all bg-white ${store.collarId === collar.id ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23] bg-[#F8F9F5]' : 'border-[#EBECE3] hover:border-[#D4D7C9]'}`}
-        >
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary rounded-full flex items-center justify-center relative overflow-hidden shrink-0">
-            <img src={collar.image} alt={collar.name} className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
-          </div>
+  const renderStyleContent = () => {
+    let styleCategories: any[] = [];
 
-          <span className="font-sans text-[12px] font-medium uppercase tracking-widest text-[#17210C] flex-1 sm:flex-none sm:text-center">
-            {collar.name}
-          </span>
+    if (store.selectedProduct === 'jubba') {
+      styleCategories = [
+        { id: 'collar', title: 'Collar Style', choices: Object.entries(UI_VECTORS.collar).filter(([k]) => ['band', 'round'].includes(k)) },
+        { id: 'placket', title: 'Placket Style', choices: Object.entries(UI_VECTORS.placket) },
+        { id: 'pocket', title: 'Pocket Style', choices: Object.entries(UI_VECTORS.pocket).filter(([k]) => ['no_pocket', 'side', 'chest'].includes(k)) }
+      ];
+    }
+    else if (store.selectedProduct.startsWith('panjabi_')) {
+      const type = store.selectedProduct.split('_')[1];
 
-          {store.collarId === collar.id && (
-            <div className="sm:absolute sm:top-2 sm:right-2 bg-[#4A5D23] rounded-full p-1 shadow-sm">
-              <Check className="w-3 h-3 text-white stroke-[3]" />
+      let collars: Record<string, string | null> = {};
+      let plackets: Record<string, string | null> = {};
+      let pockets: Record<string, string | null> = {};
+
+      if (type === 'regular') {
+        collars = { band: UI_VECTORS.collar.band, mandarin: UI_VECTORS.collar.mandarin, round: UI_VECTORS.collar.round };
+        plackets = UI_VECTORS.placket;
+        pockets = { no_pocket: UI_VECTORS.pocket.no_pocket, side: UI_VECTORS.pocket.side, chest: UI_VECTORS.pocket.chest };
+      } else if (type === 'madani') {
+        collars = { band: UI_VECTORS.collar.band, round: UI_VECTORS.collar.round };
+        plackets = UI_VECTORS.placket;
+        pockets = { no_pocket: UI_VECTORS.pocket.no_pocket, side: UI_VECTORS.pocket.side, chest: UI_VECTORS.pocket.chest };
+      } else if (type === 'kabuli') {
+        collars = { band: UI_VECTORS.collar.band, shirt: UI_VECTORS.collar.shirt };
+        // Kabuli-তে Placket অপশন রেন্ডার হবে না (Confusing না করার জন্য)
+        pockets = { chest: UI_VECTORS.pocket.chest, double_flap: UI_VECTORS.pocket.double_chest };
+      } else if (type === 'short') {
+        collars = { band: UI_VECTORS.collar.band, mandarin: UI_VECTORS.collar.mandarin, shirt: UI_VECTORS.collar.shirt };
+        plackets = UI_VECTORS.placket;
+        pockets = { no_pocket: UI_VECTORS.pocket.no_pocket, side: UI_VECTORS.pocket.side, chest: UI_VECTORS.pocket.chest };
+      }
+
+      styleCategories = [
+        { id: 'collar', title: 'Collar Style', choices: Object.entries(collars) },
+        // Kabuli ছাড়া বাকি সবগুলোতে Placket রেন্ডার হবে
+        ...(type !== 'kabuli' ? [{ id: 'placket', title: 'Placket Style', choices: Object.entries(plackets) }] : []),
+        { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) }
+      ];
+    }
+    else if (store.selectedProduct === 'pajama') {
+      styleCategories = [
+        { id: 'pajama_fit', title: 'Pajama Style', choices: Object.entries(UI_VECTORS.pajama_fit) }
+      ];
+    }
+    else if (store.selectedProduct === 'shirt') {
+      const collars = { spread: UI_VECTORS.collar.spread, buttondown: UI_VECTORS.collar.buttondown, mandarin: UI_VECTORS.collar.mandarin };
+      const plackets = UI_VECTORS.placket;
+      const pockets = { no_pocket: UI_VECTORS.pocket.no_pocket, chest: UI_VECTORS.pocket.chest };
+      const backs = UI_VECTORS.back;
+      const bottoms = UI_VECTORS.bottom;
+
+      styleCategories = [
+        // Sleeve Style সবার উপরে রেন্ডার হবে
+        { id: 'sleeve', title: 'Sleeve Style', choices: Object.entries(UI_VECTORS.sleeve) },
+        { id: 'collar', title: 'Collar Style', choices: Object.entries(collars) },
+        { id: 'placket', title: 'Placket Style', choices: Object.entries(plackets) },
+        { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) },
+        { id: 'back', title: 'Back Style (Custom Fit)', choices: Object.entries(backs) },
+        { id: 'bottom', title: 'Bottom Cut', choices: Object.entries(bottoms) }
+      ];
+    }
+    else if (store.selectedProduct.startsWith('pant_')) {
+      styleCategories = [
+        { id: 'front', title: 'Front Style', choices: Object.entries(UI_VECTORS.front) },
+        { id: 'hem', title: 'Hem Style', choices: Object.entries(UI_VECTORS.hem) }
+      ];
+    }
+
+    return (
+      <div className="flex flex-col gap-6 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar relative z-10 pb-6">
+        {styleCategories.map((category) => (
+          <div key={category.id} className="animate-in fade-in duration-300">
+            <h4 className="font-heading text-[11px] font-bold uppercase tracking-widest text-[#4A5D23] mb-3">
+              {category.title}
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {category.choices.map(([key, imagePath]: [string, string | null]) => {
+
+                const isSelected = store.productStyles[category.id] === key;
+
+                // Badge এর জন্য স্পেশাল UI
+                if (imagePath === 'badge') {
+                  return (
+                    <div
+                      key={key}
+                      onClick={() => store.setProductStyle(category.id, key)}
+                      className={`relative flex items-center justify-center py-4 px-3 rounded-xl border cursor-pointer transition-all ${isSelected
+                        ? 'border-[#4A5D23] bg-[#4A5D23]/10 ring-1 ring-[#4A5D23]'
+                        : 'border-[#EBECE3] bg-white hover:border-[#D4D7C9]'
+                        }`}
+                    >
+                      <span className={`font-sans text-[11px] font-bold uppercase tracking-widest text-center ${isSelected ? 'text-[#4A5D23]' : 'text-[#17210C]'}`}>
+                        {key.replace('_', ' ')}
+                      </span>
+                      {isSelected && (
+                        <div className="absolute top-1.5 right-1.5 bg-[#4A5D23] rounded-full p-1 shadow-sm">
+                          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // রেগুলার আইকনের জন্য আগের UI
+                return (
+                  <div
+                    key={key}
+                    onClick={() => store.setProductStyle(category.id, key)}
+                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-all bg-white ${isSelected
+                      ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23] bg-[#F8F9F5]'
+                      : 'border-[#EBECE3] hover:border-[#D4D7C9]'
+                      }`}
+                  >
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shrink-0">
+                      {imagePath ? (
+                        <img src={imagePath} alt={key} className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
+                      ) : (
+                        <XCircle className="w-5 h-5 text-[#1C221A]/30 group-hover:text-[#1C221A]/50 transition-colors" />
+                      )}
+                    </div>
+                    <span className="font-sans text-[9px] font-medium uppercase tracking-widest text-[#17210C] text-center">
+                      {key.replace('_', ' ')}
+                    </span>
+                    {isSelected && (
+                      <div className="absolute top-1.5 right-1.5 bg-[#4A5D23] rounded-full p-1 shadow-sm">
+                        <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderMeasurementContent = () => (
     <>
@@ -788,7 +1038,8 @@ export function CustomizeClient({
             color="#FFFFFF"
             fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'}
             fabricImageUrl={selectedFabricTextureUrl}
-            collarType={getCanvasCollarType(selectedCollar)}
+            collarType={getCanvasCollarType(selectedCollar)} // আপাদত পুরনো সিস্টেম ব্রেক না করার জন্য রাখা হলো
+            productOverlayUrl={getDynamicOverlayImage()} // নতুন ডাইনামিক পাথ
             onReset={() => setIsResetModalOpen(true)}
             onInfoClick={() => {
               setModalFabric(selectedFabric);
@@ -806,29 +1057,40 @@ export function CustomizeClient({
         </div>
 
         <div className="space-y-4">
+          {/* 01. Choose Product */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 1 ? 0 : 1)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">01. Choose Fabric</span>
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">01. Choose Product</span>
+              {expandedStep === 1 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
+            </button>
+            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 1 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+              {renderProductContent()}
+            </div>
+          </div>
+          {/* 02. Choose Fabric */}
+          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
+            <button onClick={() => setExpandedStep(expandedStep === 1 ? 0 : 1)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">02. Choose Fabric</span>
               {expandedStep === 1 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
             <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 1 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
               {renderFabricContent()}
             </div>
           </div>
-
+          {/* 03. Choose Style */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 2 ? 0 : 2)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">02. Collar Style</span>
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">03. Choose Style</span>
               {expandedStep === 2 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
             <div className={`p-5 border-t border-[#D4D7C9]/40 transition-all duration-300 ${expandedStep === 2 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
-              {renderCollarContent()}
+              {renderStyleContent()}
             </div>
           </div>
-
+          {/* 04. Measurements (সিরিয়াল আপডেট করা হয়েছে) */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 3 ? 0 : 3)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">03. Measurements</span>
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">04. Measurements</span>
               {expandedStep === 3 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
             <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 3 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
@@ -887,7 +1149,8 @@ export function CustomizeClient({
             color="#FFFFFF"
             fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'}
             fabricImageUrl={selectedFabricTextureUrl}
-            collarType={getCanvasCollarType(selectedCollar)}
+            collarType={getCanvasCollarType(selectedCollar)} // আপাদত পুরনো সিস্টেম ব্রেক না করার জন্য রাখা হলো
+            productOverlayUrl={getDynamicOverlayImage()} // নতুন ডাইনামিক পাথ
             onReset={() => setIsResetModalOpen(true)}
             onInfoClick={() => {
               setModalFabric(selectedFabric);
@@ -939,7 +1202,7 @@ export function CustomizeClient({
               {renderFabricContent()}
             </div>
             <div className={activeBottomSheet === 'collar' ? 'block' : 'hidden'}>
-              {renderCollarContent()}
+              {renderStyleContent()}
             </div>
           </div>
         </div>

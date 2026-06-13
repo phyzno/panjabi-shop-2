@@ -9,6 +9,7 @@ interface PanjabiCanvasProps {
   fabricType: string;
   fabricImageUrl?: string;
   collarType: 'band' | 'vneck' | 'round' | 'mandarin';
+  productOverlayUrl?: string;
   fabricOpacity?: number;
   colorIntensity?: number;
   hideControls?: boolean;
@@ -23,6 +24,7 @@ export function PanjabiCanvas({
   fabricType,
   fabricImageUrl,
   collarType,
+  productOverlayUrl,
   fabricOpacity = 0.35,
   colorIntensity = 0.92,
   hideControls = false,
@@ -77,6 +79,7 @@ export function PanjabiCanvas({
       fabricOpacity,
       colorIntensity,
       collarType,
+      productOverlayUrl,
     };
 
     try {
@@ -92,7 +95,7 @@ export function PanjabiCanvas({
         canvasRef.current.style.opacity = '1';
       }
     }
-  }, [color, fabricType, fabricImageUrl, fabricOpacity, colorIntensity, collarType, onRenderComplete]);
+  }, [color, fabricType, fabricImageUrl, fabricOpacity, colorIntensity, collarType, productOverlayUrl, onRenderComplete]); // <--- productOverlayUrl যুক্ত করা হলো
 
   useEffect(() => {
     render();

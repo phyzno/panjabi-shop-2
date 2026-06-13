@@ -2,10 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface CustomizerState {
+  // New Core Product Selection
+  selectedProduct: string; 
+  productStyles: Record<string, string>; // e.g., { collar: 'band', placket: 'hidden', pocket: 'chest' }
+
+  // Existing states
   orderMode: 'tailoring' | 'fabric';
   selectedFabricId: string | null;
   yardage: number;
-  collarId: string | null;
+  collarId: string | null; // Kept for backward compatibility with existing Panjabi flow
   sizeType: 'preset' | 'custom';
   standardSize: string;
   specialInstructions: string;
@@ -21,6 +26,10 @@ interface CustomizerState {
   customShoulder: string;
   customSleeve: string;
 
+  // Actions
+  setSelectedProduct: (product: string) => void;
+  setProductStyle: (key: string, value: string) => void;
+  
   setOrderMode: (mode: 'tailoring' | 'fabric') => void;
   setSelectedFabricId: (id: string | null) => void;
   setYardage: (yards: number) => void;
@@ -44,10 +53,18 @@ interface CustomizerState {
 export const useCustomizerStore = create<CustomizerState>()(
   persist(
     (set) => ({
+      // Defaults
+      selectedProduct: 'jubba', // Testing the new flow
+      productStyles: {
+        collar: 'band',
+        placket: 'hidden',
+        pocket: 'chest',
+      },
+
       orderMode: 'tailoring',
       selectedFabricId: null,
       yardage: 2.5,
-      collarId: null,
+      collarId: 'band', 
       sizeType: 'preset',
       standardSize: 'M',
       specialInstructions: '',
@@ -62,6 +79,12 @@ export const useCustomizerStore = create<CustomizerState>()(
       customShoulder: '',
       customSleeve: '',
 
+      // State Setters
+      setSelectedProduct: (selectedProduct) => set({ selectedProduct }),
+      setProductStyle: (key, value) => set((state) => ({
+        productStyles: { ...state.productStyles, [key]: value }
+      })),
+
       setOrderMode: (orderMode) => set({ orderMode }),
       setSelectedFabricId: (selectedFabricId) => set({ selectedFabricId }),
       setYardage: (yardage) => set({ yardage }),
@@ -70,6 +93,7 @@ export const useCustomizerStore = create<CustomizerState>()(
       setStandardSize: (standardSize) => set({ standardSize }),
       setSpecialInstructions: (specialInstructions) => set({ specialInstructions }),
       setSearchQuery: (searchQuery) => set({ searchQuery }),
+      
       toggleColorFilter: (color) => set((state) => ({
         selectedColors: state.selectedColors.includes(color) 
           ? state.selectedColors.filter(c => c !== color) 
@@ -89,9 +113,11 @@ export const useCustomizerStore = create<CustomizerState>()(
       setCustomSleeve: (customSleeve) => set({ customSleeve }),
 
       resetCustomizer: () => set({
+        selectedProduct: 'jubba',
+        productStyles: { collar: 'band', placket: 'hidden', pocket: 'chest' },
         orderMode: 'tailoring',
         selectedFabricId: null,
-        collarId: null,
+        collarId: 'band',
         yardage: 2.5,
         sizeType: 'preset',
         standardSize: 'M',

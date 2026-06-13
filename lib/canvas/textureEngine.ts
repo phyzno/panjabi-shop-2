@@ -6,6 +6,7 @@ export interface TextureConfig {
   fabricType: string;
   fabricImageUrl?: string;
   collarType: 'band' | 'vneck' | 'round' | 'mandarin';
+  productOverlayUrl?: string;
   fabricOpacity?: number;
   colorIntensity?: number;
 }
@@ -17,34 +18,36 @@ export async function renderPanjabiTexture(
 ): Promise<void> {
   const W = 600;
   const H = 600;
-  
+
   const offscreenCanvas = document.createElement('canvas');
   offscreenCanvas.width = W;
   offscreenCanvas.height = H;
   const ctx = offscreenCanvas.getContext('2d');
-  
+
   if (!ctx) return;
-  
+
   canvas.width = W;
   canvas.height = H;
-  
-  const collarImageMap = {
-    band:     '/assets/punjabi/collar-band.png',
-    vneck:    '/assets/punjabi/collar-vneck.png',
-    round:    '/assets/punjabi/collar-round.png',
+
+  const collarImageMap: Record<string, string> = {
+    band: '/assets/punjabi/collar-band.png',
+    vneck: '/assets/punjabi/collar-vneck.png',
+    round: '/assets/punjabi/collar-round.png',
     mandarin: '/assets/punjabi/collar-mandarin.png',
   };
-  const imageSrc = collarImageMap[config.collarType] ?? collarImageMap.band;
-  
+
+  // ডাইনামিক ওভারলে পাথ (Jubba বা নতুন প্রোডাক্টের জন্য) থাকলে সেটি নেবে, না থাকলে পুরনো Panjabi-এর পাথ নেবে
+  const imageSrc = config.productOverlayUrl || (collarImageMap[config.collarType] ?? collarImageMap.band);
+
   const rawUrl = config.fabricImageUrl;
   const isLocalOrData = rawUrl?.startsWith('data:') || rawUrl?.startsWith('blob:');
-  
+
   const normalizedFabricImageUrl = rawUrl && rawUrl.trim()
     ? (isLocalOrData ? rawUrl : resolveProductImageSrc(rawUrl))
     : undefined;
 
   const effectiveColor = normalizedFabricImageUrl ? '#FFFFFF' : (config.color || '#FFFFFF');
-  
+
   let baseImg = imageCache[imageSrc];
   if (!baseImg) {
     baseImg = await new Promise<HTMLImageElement>((res, rej) => {
@@ -56,19 +59,19 @@ export async function renderPanjabiTexture(
     });
     imageCache[imageSrc] = baseImg;
   }
-  
+
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
   ctx.drawImage(baseImg, 0, 0, W, H);
-  
+
   ctx.globalCompositeOperation = 'multiply';
   ctx.globalAlpha = config.colorIntensity ?? 0.92;
   ctx.fillStyle = effectiveColor;
   ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = 1;
-  
+
   let pattern: CanvasPattern | null = null;
-  
+
   if (normalizedFabricImageUrl) {
     let patternImg = imageCache[normalizedFabricImageUrl];
     if (!patternImg) {
@@ -81,7 +84,7 @@ export async function renderPanjabiTexture(
       });
       imageCache[normalizedFabricImageUrl] = patternImg;
     }
-    
+
     const pCanvas = document.createElement('canvas');
     pCanvas.width = 200;
     pCanvas.height = 200;
@@ -95,7 +98,7 @@ export async function renderPanjabiTexture(
   }
 
   if (pattern) {
-    const appliedOpacity = normalizedFabricImageUrl 
+    const appliedOpacity = normalizedFabricImageUrl
       ? 0.80
       : (config.fabricOpacity ?? 0.35);
 
@@ -105,12 +108,12 @@ export async function renderPanjabiTexture(
     ctx.fillRect(0, 0, W, H);
     ctx.globalAlpha = 1;
   }
-  
+
   ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = 0.35; 
+  ctx.globalAlpha = 0.35;
   ctx.drawImage(baseImg, 0, 0, W, H);
   ctx.globalAlpha = 1;
-  
+
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(baseImg, 0, 0, W, H);
   ctx.globalCompositeOperation = 'source-over';
