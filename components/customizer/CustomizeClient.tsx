@@ -10,7 +10,8 @@ import { addMeasurementProfile } from '@/lib/actions/measurement.actions';
 import { useAuthStore } from '@/store/authStore';
 import { getUserMeasurements } from '@/lib/actions/user.actions';
 import { FabricQuickViewModal } from './FabricQuickViewModal';
-import { UI_VECTORS, JUBBA_CANVAS_MAP, PANT_CANVAS_MAP, PANJABI_CANVAS_MAP, SHIRT_CANVAS_MAP, PAJAMA_CANVAS_MAP } from '@/lib/config/productConfig';
+import { UI_VECTORS, JUBBA_CANVAS_MAP, PANT_CANVAS_MAP, PANJABI_CANVAS_MAP, SHIRT_CANVAS_MAP, PAJAMA_CANVAS_MAP, ADVANCED_TAILORING_OPTIONS } from '@/lib/config/productConfig';
+import { TailoringDetailsModal } from './TailoringDetailsModal';
 
 const presetSizes = [
   { size: "S", yard: 2.25 },
@@ -79,6 +80,7 @@ export function CustomizeClient({
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [isTailoringModalOpen, setIsTailoringModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -695,17 +697,14 @@ export function CustomizeClient({
       const collars = { spread: UI_VECTORS.collar.spread, buttondown: UI_VECTORS.collar.buttondown, mandarin: UI_VECTORS.collar.mandarin };
       const plackets = UI_VECTORS.placket;
       const pockets = { no_pocket: UI_VECTORS.pocket.no_pocket, chest: UI_VECTORS.pocket.chest };
-      const backs = UI_VECTORS.back;
-      const bottoms = UI_VECTORS.bottom;
+
 
       styleCategories = [
         // Sleeve Style সবার উপরে রেন্ডার হবে
         { id: 'sleeve', title: 'Sleeve Style', choices: Object.entries(UI_VECTORS.sleeve) },
         { id: 'collar', title: 'Collar Style', choices: Object.entries(collars) },
         { id: 'placket', title: 'Placket Style', choices: Object.entries(plackets) },
-        { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) },
-        { id: 'back', title: 'Back Style (Custom Fit)', choices: Object.entries(backs) },
-        { id: 'bottom', title: 'Bottom Cut', choices: Object.entries(bottoms) }
+        { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) }
       ];
     }
     else if (store.selectedProduct.startsWith('pant_')) {
@@ -738,7 +737,7 @@ export function CustomizeClient({
                         : 'border-[#EBECE3] bg-white hover:border-[#D4D7C9]'
                         }`}
                     >
-                      <span className={`font-sans text-[11px] font-bold uppercase tracking-widest text-center ${isSelected ? 'text-[#4A5D23]' : 'text-[#17210C]'}`}>
+                      <span className={`font-sans text-[11px] uppercase tracking-widest text-center ${isSelected ? 'text-[#4A5D23]' : 'text-[#17210C]'}`}>
                         {key.replace('_', ' ')}
                       </span>
                       {isSelected && (
@@ -781,6 +780,73 @@ export function CustomizeClient({
             </div>
           </div>
         ))}
+      </div>
+    );
+  };
+
+  const renderTailoringContent = () => {
+    // বর্তমান প্রোডাক্টের অ্যাডভান্সড অপশনগুলো বের করা
+    const activeKey = store.selectedProduct.startsWith('panjabi_') ? 'panjabi' : store.selectedProduct.startsWith('pant_') ? 'pant' : store.selectedProduct;
+    const allOptions = ADVANCED_TAILORING_OPTIONS[activeKey] || [];
+
+    // কন্ডিশনাল লজিক প্রয়োগ
+    const visibleOptions = allOptions.filter(group => 
+      group.condition ? group.condition(store.selectedProduct, store.productStyles) : true
+    );
+
+    if (visibleOptions.length === 0) {
+      return (
+        <div className="p-8 flex flex-col items-center justify-center text-center">
+          <span className="font-heading text-[12px] uppercase tracking-widest text-[#1C221A]/40">
+            Standard Fit
+          </span>
+          <span className="font-sans text-[10px] text-[#1C221A]/40 mt-2">
+            No advanced tailoring required for this product.
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-5 p-5 relative z-10">
+        {/* Premium Trigger Banner */}
+        <div 
+          onClick={() => setIsTailoringModalOpen(true)}
+          className="w-full flex items-center justify-between p-4.5 bg-gradient-to-r from-[#4A5D23]/10 to-transparent border border-dashed border-[#4A5D23]/40 rounded-2xl cursor-pointer hover:bg-[#4A5D23]/10 transition-all shadow-sm group"
+        >
+          <div className="flex flex-col text-left">
+            <span className="font-heading text-[11px] font-bold uppercase tracking-[0.15em] text-[#4A5D23]">
+              ⚙️ Advanced Tailoring 
+            </span>
+            <span className="font-sans text-[9px] uppercase tracking-wider text-[#1C221A]/60 mt-1">
+              Configure detailed specifications
+            </span>
+          </div>
+          <div className="px-3.5 py-1.5 bg-[#4A5D23] text-white text-[9px] font-sans font-medium uppercase tracking-widest rounded-full group-hover:bg-[#3D4C1D] shadow-sm transition-all shrink-0">
+            Open Details
+          </div>
+        </div>
+
+        {/* Selected Summary List */}
+        <div className="flex flex-col gap-2 mt-1">
+          {visibleOptions.map(group => {
+            const selectedValue = store.productStyles[group.id];
+            // সিলেক্টেড ভ্যালু না থাকলে ডিফল্ট (প্রথম) ভ্যালুটি দেখাবে
+            const choice = group.choices.find(c => c[0] === selectedValue) || group.choices[0];
+            const label = choice[0].replace(/_/g, ' ');
+
+            return (
+              <div key={group.id} className="flex justify-between items-center px-4 py-3.5 border border-[#D4D7C9]/60 rounded-xl bg-[#F8F9F5]/50 hover:bg-[#F8F9F5] transition-colors">
+                <span className="font-heading text-[10px] font-bold uppercase tracking-[0.1em] text-[#1C221A]/60">
+                  {group.title}
+                </span>
+                <span className="font-sans text-[10px] uppercase tracking-widest text-[#4A5D23]">
+                  {label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
@@ -1087,10 +1153,20 @@ export function CustomizeClient({
               {renderStyleContent()}
             </div>
           </div>
-          {/* 04. Measurements (সিরিয়াল আপডেট করা হয়েছে) */}
+          {/* 04. Advanced Tailoring */}
+          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
+            <button onClick={() => setExpandedStep(expandedStep === 4 ? 0 : 4)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">04. Advanced Tailoring</span>
+              {expandedStep === 4 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
+            </button>
+            <div className={`border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 4 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+              {renderTailoringContent()}
+            </div>
+          </div>
+          {/* 05. Measurements (সিরিয়াল আপডেট করা হয়েছে) */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 3 ? 0 : 3)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">04. Measurements</span>
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">05. Measurements</span>
               {expandedStep === 3 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
             <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 3 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
@@ -1271,6 +1347,15 @@ export function CustomizeClient({
           store.setSelectedFabricId(fabricId);
           setIsInfoModalOpen(false); // মডাল ক্লোজ হবে
         }}
+      />
+
+      {/* Advanced Tailoring Details Modal */}
+      <TailoringDetailsModal
+        isOpen={isTailoringModalOpen}
+        onClose={() => setIsTailoringModalOpen(false)}
+        productType={store.selectedProduct}
+        productStyles={store.productStyles}
+        setProductStyle={store.setProductStyle}
       />
 
       {showLoginModal && (

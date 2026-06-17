@@ -290,3 +290,100 @@ export const PAJAMA_CANVAS_MAP: Record<string, string> = {
   churidar: '/Canvas/Pajama/Churidar/02 - Churidar pajama-Photoroom.png',
   kabuli_salwar: '/Canvas/Pajama/Kabuli Salwar Pajama/04 - Kabuli Salwar pajama - 2-Photoroom.png',
 };
+
+// টাইপস্ক্রিপ্টের সাহায্যে স্ট্রাকচারটিকে আরও স্ট্রিক্ট এবং ডাইনামিক করা হলো
+export type TailoringChoice = [string, string | null];
+
+export interface TailoringOptionGroup {
+  id: string;
+  title: string;
+  choices: TailoringChoice[];
+  condition?: (productType: string, productStyles: Record<string, string>) => boolean;
+}
+
+export const ADVANCED_TAILORING_OPTIONS: Record<string, TailoringOptionGroup[]> = {
+  panjabi: [
+    { 
+      id: 'bottom_cut', 
+      title: 'Bottom Cut', 
+      choices: [['straight_slit', null], ['apple_cut', null]] 
+    },
+    { 
+      id: 'sleeve_cuff', 
+      title: 'Sleeve Cuff', 
+      choices: [['regular_fold', null], ['button_cuff', null], ['french_cuff', null]],
+      // Logic: Hide IF subCategory === 'panjabi_madani'
+      condition: (productType) => productType !== 'panjabi_madani' 
+    },
+    { 
+      id: 'pocket_secret', 
+      title: 'Secret Pocket', 
+      choices: [['no_secret_pocket', null], ['inside_secret_pocket', null]] 
+    }
+  ],
+  shirt: [
+    { 
+      id: 'back_design', 
+      title: 'Back Style', 
+      choices: [['smooth', '/UI Vectors/Shirt Options/Back/01 - regular-Photoroom.png'], ['box_pleat', '/UI Vectors/Shirt Options/Back/02 - boxpleat-Photoroom.png'], ['side_pleats', '/UI Vectors/Shirt Options/Back/03 - sidepleat-Photoroom.png']] 
+    },
+    { 
+      id: 'bottom_cut', 
+      title: 'Bottom Cut', 
+      choices: [['curved_hem', '/UI Vectors/Shirt Options/Bottom/curved-Photoroom.png'], ['straight_hem', '/UI Vectors/Shirt Options/Bottom/straight-Photoroom.png']] 
+    },
+    { 
+      id: 'cuff_style', 
+      title: 'Cuff Style', 
+      choices: [['regular_cuff', null], ['double_button', null], ['french_cuff', null]],
+      // Logic: Hide IF shirt_sleeve === 'half'
+      condition: (_, productStyles) => productStyles.sleeve !== 'half'
+    }
+  ],
+  pant: [
+    { 
+      id: 'waistband', 
+      title: 'Waistband', 
+      choices: [['belt_loops', null], ['side_adjusters', null]] 
+    },
+    { 
+      id: 'fastening', 
+      title: 'Fastening', 
+      choices: [['hook_and_bar', null], ['button_closure', null]] 
+    },
+    { 
+      id: 'pant_back_pocket', 
+      title: 'Back Pocket', 
+      choices: [['no_pocket', null], ['single_welt', null], ['double_welt', null]] 
+    },
+    { 
+      id: 'suspender_buttons', 
+      title: 'Suspender Buttons', 
+      choices: [['no', null], ['yes', null]] 
+    }
+  ],
+  pajama: [
+    { 
+      id: 'waistband_type', 
+      title: 'Waistband System', 
+      choices: [['full_elastic', null], ['drawstring', null], ['hybrid', null]] 
+    },
+    { 
+      id: 'side_pockets', 
+      title: 'Side Pockets', 
+      choices: [['no_pockets', null], ['single_pocket', null], ['both_sides', null]] 
+    }
+  ],
+  jubba: [
+    { 
+      id: 'sleeve_style', 
+      title: 'Sleeve Opening', 
+      choices: [['loose_straight', null], ['shirt_cuff', null], ['french_cuff', null]] 
+    },
+    { 
+      id: 'side_access', 
+      title: 'Side Access Slit', 
+      choices: [['pocket_only', null], ['pocket_with_inner_slit', null]] 
+    }
+  ]
+};
