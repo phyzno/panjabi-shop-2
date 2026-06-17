@@ -74,7 +74,7 @@ export function CustomizeClient({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [modalFabric, setModalFabric] = useState<any>(null);
   const [mobileStep, setMobileStep] = useState<'design' | 'checkout'>('design');
-  const [activeBottomSheet, setActiveBottomSheet] = useState<'fabric' | 'collar' | null>(null);
+  const [activeBottomSheet, setActiveBottomSheet] = useState<'product' | 'fabric' | 'style' | 'advanced' | null>(null);
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -225,6 +225,31 @@ export function CustomizeClient({
     ? fabricPrice + stitchingCharge + collarPrice
     : fabricPrice;
 
+  // --- NEW CONDITIONAL LOGIC ---
+  const isFabricOnly = store.orderMode === 'fabric';
+  const isPajama = store.selectedProduct.startsWith('pajama');
+  
+  const showStyleSection = !isFabricOnly && !isPajama;
+  const showAdvancedSection = !isFabricOnly;
+
+  // Dynamic Mother Category Name for Toggle
+  const getMotherCategoryName = (productId: string) => {
+    if (productId.startsWith('panjabi')) return 'Panjabi';
+    if (productId.startsWith('pajama')) return 'Pajama';
+    if (productId.startsWith('pant')) return 'Pant';
+    if (productId === 'jubba') return 'Jubba';
+    if (productId === 'shirt') return 'Shirt';
+    return 'Product';
+  };
+  const tailoredLabel = `Tailored ${getMotherCategoryName(store.selectedProduct)}`;
+
+  // Dynamic Step Numbering
+  const stepProduct = "01. ";
+  const stepFabric = "02. ";
+  const stepStyle = showStyleSection ? "03. " : "";
+  const stepAdvanced = showAdvancedSection ? (showStyleSection ? "04. " : "03. ") : "";
+  const stepMeasure = isFabricOnly ? "03. " : (isPajama ? "04. " : "05. ");
+
   const getDynamicOverlayImage = () => {
     if (store.selectedProduct === 'jubba') {
       const { collar, placket, pocket } = store.productStyles;
@@ -252,10 +277,8 @@ export function CustomizeClient({
       return PANJABI_CANVAS_MAP[type]?.[safeCollar]?.[safePlacket]?.[safePocket]
         || PANJABI_CANVAS_MAP['regular']['band']['hidden']['chest'];
     }
-    else if (store.selectedProduct === 'pajama') {
-      const { pajama_fit } = store.productStyles;
-      const safeFit = pajama_fit || 'aligarhi';
-
+    else if (store.selectedProduct.startsWith('pajama_')) {
+      const safeFit = store.selectedProduct.split('_')[1] || 'aligarhi';
       return PAJAMA_CANVAS_MAP[safeFit] || PAJAMA_CANVAS_MAP['aligarhi'];
     }
     else if (store.selectedProduct === 'shirt') {
@@ -435,7 +458,16 @@ export function CustomizeClient({
           { id: 'panjabi_short', name: 'Short Panjabi' }
         ]
       },
-      { id: 'pajama', name: 'Pajama', type: 'single' },
+      {
+        id: 'pajama',
+        name: 'Pajama',
+        type: 'group',
+        subcategories: [
+          { id: 'pajama_aligarhi', name: 'Aligarhi Pajama' },
+          { id: 'pajama_churidar', name: 'Churidar Pajama' },
+          { id: 'pajama_kabuli_salwar', name: 'Kabuli Salwar' }
+        ]
+      },
       { id: 'jubba', name: 'Jubba', type: 'single' },
       { id: 'shirt', name: 'Shirt', type: 'single' },
       {
@@ -458,6 +490,7 @@ export function CustomizeClient({
                 if (product.type === 'single') {
                   store.setSelectedProduct(product.id);
                   setExpandedCategory(null);
+                  setActiveBottomSheet(null); // মোবাইলে অটো-ক্লোজ
                 } else {
                   setExpandedCategory(expandedCategory === product.id ? null : product.id);
                 }
@@ -480,7 +513,10 @@ export function CustomizeClient({
                 {product.subcategories?.map(sub => (
                   <button
                     key={sub.id}
-                    onClick={() => store.setSelectedProduct(sub.id)}
+                    onClick={() => {
+                      store.setSelectedProduct(sub.id);
+                      setActiveBottomSheet(null); // মোবাইলে অটো-ক্লোজ
+                    }}
                     className={`p-3 rounded-xl border transition-all text-left ${store.selectedProduct === sub.id
                       ? 'border-[#4A5D23] bg-[#4A5D23]/10 ring-1 ring-[#4A5D23]'
                       : 'border-[#D4D7C9] bg-white hover:border-[#4A5D23]/50'
@@ -686,11 +722,6 @@ export function CustomizeClient({
         // Kabuli ছাড়া বাকি সবগুলোতে Placket রেন্ডার হবে
         ...(type !== 'kabuli' ? [{ id: 'placket', title: 'Placket Style', choices: Object.entries(plackets) }] : []),
         { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) }
-      ];
-    }
-    else if (store.selectedProduct === 'pajama') {
-      styleCategories = [
-        { id: 'pajama_fit', title: 'Pajama Style', choices: Object.entries(UI_VECTORS.pajama_fit) }
       ];
     }
     else if (store.selectedProduct === 'shirt') {
@@ -1038,25 +1069,7 @@ export function CustomizeClient({
   );
 
   const renderOrderPreferences = () => (
-    <>
-      <div className="flex items-center justify-between gap-4 mb-6 bg-white/40 p-4 rounded-2xl border border-[#D4D7C9]/40">
-        <span className="font-heading text-[12px] font-bold uppercase tracking-[0.15em] text-[#17210C]">Order Selection:</span>
-        <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl">
-          <button
-            onClick={() => store.setOrderMode('tailoring')}
-            className={`px-4 py-2 rounded-lg text-[10px] font-medium uppercase tracking-widest transition-all cursor-pointer ${store.orderMode === 'tailoring' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A]'}`}
-          >
-            Tailored
-          </button>
-          <button
-            onClick={() => store.setOrderMode('fabric')}
-            className={`px-4 py-2 rounded-lg text-[10px] font-medium uppercase tracking-widest transition-all cursor-pointer ${store.orderMode === 'fabric' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A]'}`}
-          >
-            Fabric
-          </button>
-        </div>
-      </div>
-
+    <div className="mt-4">
       {store.orderMode === 'fabric' ? (
         <div className="bg-white/60 p-5 rounded-2xl border border-[#D4D7C9] flex items-center justify-between animate-in fade-in duration-300 shadow-sm">
           <span className="text-[12px] font-medium uppercase tracking-widest text-[#17210C]">Adjust Required Yards</span>
@@ -1080,7 +1093,7 @@ export function CustomizeClient({
           />
         </div>
       )}
-    </>
+    </div>
   );
 
   useEffect(() => {
@@ -1116,66 +1129,90 @@ export function CustomizeClient({
       </div>
 
       <div className="hidden lg:flex w-full lg:w-1/2 min-h-screen px-4 md:px-8 lg:px-8 py-6 flex-col justify-start">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-6 flex justify-between items-center">
           <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.05em] text-[#17210C]">
             Bespoke Atelier
           </h1>
+        </div>
+
+        {/* 🎯 NEW TOP TOGGLE (Segmented Control) */}
+        <div className="mb-8 p-1.5 bg-[#EBECE3]/60 rounded-xl flex items-center shadow-inner border border-[#D4D7C9]/40">
+           <button
+             onClick={() => store.setOrderMode('tailoring')}
+             className={`flex-1 py-3.5 rounded-lg text-[12px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${store.orderMode === 'tailoring' ? 'bg-[#4A5D23] text-white shadow-md' : 'text-[#1C221A]/50 hover:text-[#17210C]'}`}
+           >
+             <span className="text-sm">✂️</span> {tailoredLabel}
+           </button>
+           <button
+             onClick={() => store.setOrderMode('fabric')}
+             className={`flex-1 py-3.5 rounded-lg text-[12px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${store.orderMode === 'fabric' ? 'bg-[#4A5D23] text-white shadow-md' : 'text-[#1C221A]/50 hover:text-[#17210C]'}`}
+           >
+             <span className="text-sm">🧵</span> Fabric Only
+           </button>
         </div>
 
         <div className="space-y-4">
           {/* 01. Choose Product */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
             <button onClick={() => setExpandedStep(expandedStep === 1 ? 0 : 1)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">01. Choose Product</span>
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">{stepProduct}Choose Product</span>
               {expandedStep === 1 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
             <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 1 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
               {renderProductContent()}
             </div>
           </div>
+
           {/* 02. Choose Fabric */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
-            <button onClick={() => setExpandedStep(expandedStep === 1 ? 0 : 1)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">02. Choose Fabric</span>
-              {expandedStep === 1 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
+            <button onClick={() => setExpandedStep(expandedStep === 2 ? 0 : 2)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">{stepFabric}Choose Fabric</span>
+              {expandedStep === 2 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
-            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 1 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 2 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
               {renderFabricContent()}
             </div>
           </div>
-          {/* 03. Choose Style */}
-          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
-            <button onClick={() => setExpandedStep(expandedStep === 2 ? 0 : 2)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">03. Choose Style</span>
-              {expandedStep === 2 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
-            </button>
-            <div className={`p-5 border-t border-[#D4D7C9]/40 transition-all duration-300 ${expandedStep === 2 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
-              {renderStyleContent()}
+
+          {/* 03. Choose Style (Conditionally Hidden) */}
+          {showStyleSection && (
+            <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300">
+              <button onClick={() => setExpandedStep(expandedStep === 3 ? 0 : 3)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
+                <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">{stepStyle}Choose Style</span>
+                {expandedStep === 3 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
+              </button>
+              <div className={`p-5 border-t border-[#D4D7C9]/40 transition-all duration-300 ${expandedStep === 3 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+                {renderStyleContent()}
+              </div>
             </div>
-          </div>
-          {/* 04. Advanced Tailoring */}
-          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
-            <button onClick={() => setExpandedStep(expandedStep === 4 ? 0 : 4)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">04. Advanced Tailoring</span>
-              {expandedStep === 4 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
-            </button>
-            <div className={`border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 4 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
-              {renderTailoringContent()}
+          )}
+
+          {/* 04. Advanced Tailoring (Conditionally Hidden) */}
+          {showAdvancedSection && (
+            <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300">
+              <button onClick={() => setExpandedStep(expandedStep === 4 ? 0 : 4)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
+                <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">{stepAdvanced}Advanced Tailoring</span>
+                {expandedStep === 4 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
+              </button>
+              <div className={`border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 4 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+                {renderTailoringContent()}
+              </div>
             </div>
-          </div>
-          {/* 05. Measurements (সিরিয়াল আপডেট করা হয়েছে) */}
+          )}
+
+          {/* 05. Measurements / Fabric Estimator */}
           <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
-            <button onClick={() => setExpandedStep(expandedStep === 3 ? 0 : 3)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
-              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">05. Measurements</span>
-              {expandedStep === 3 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
+            <button onClick={() => setExpandedStep(expandedStep === 5 ? 0 : 5)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
+              <span className="font-heading text-[13px] font-bold uppercase tracking-[0.15em] text-[#17210C]">{stepMeasure}{isFabricOnly ? 'Fabric Estimator' : 'Measurements'}</span>
+              {expandedStep === 5 ? <ChevronUp className="w-4 h-4 text-[#4A5D23]" /> : <ChevronDown className="w-4 h-4 text-[#1C221A]/50" />}
             </button>
-            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 3 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
+            <div className={`p-5 border-t border-[#D4D7C9]/40 bg-transparent transition-all duration-300 ${expandedStep === 5 ? 'block animate-in slide-in-from-top-2' : 'hidden'}`}>
               {renderMeasurementContent()}
             </div>
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-[#D4D7C9]/50">
+        <div className="mt-8 pt-6 border-t border-[#D4D7C9]/50">
           {renderOrderPreferences()}
         </div>
       </div>
@@ -1236,54 +1273,127 @@ export function CustomizeClient({
         </div>
       </div>
 
+      {/* 📱 MOBILE VIEW: Premium Segmented Toggle & Horizontal Carousel */}
       {mobileStep === 'design' && (
-        <div className="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-[#D4D7C9]/60 pb-safe pt-3 px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.06)] z-20">
-          <div className="flex items-center justify-between pb-3">
-            <div className="flex gap-6">
-              <button onClick={() => setActiveBottomSheet('fabric')} className="flex flex-col items-center gap-1.5 group">
-                <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${activeBottomSheet === 'fabric' ? 'border-[#4A5D23] scale-105' : 'border-[#D4D7C9] group-hover:border-[#4A5D23]'}`}>
-                  <img src={selectedFabricCoverUrl} alt="Fabric" className="w-full h-full object-cover bg-[#EBECE3]" />
-                </div>
-                <span className={`text-[12px] font-medium uppercase tracking-widest ${activeBottomSheet === 'fabric' ? 'text-[#4A5D23]' : 'text-[#1C221A]'}`}>Fabric</span>
+        <div className="lg:hidden fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-[#D4D7C9]/60 pb-safe pt-4 px-4 shadow-[0_-20px_40px_rgba(0,0,0,0.06)] z-20 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300">
+          
+          {/* 🎯 Mobile Segmented Order Mode Toggle */}
+          <div className="p-1 bg-[#EBECE3]/60 rounded-xl flex items-center shadow-inner border border-[#D4D7C9]/40 w-full">
+             <button
+               onClick={() => store.setOrderMode('tailoring')}
+               className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer ${store.orderMode === 'tailoring' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50'}`}
+             >
+               <span>✂️</span> Tailored {getMotherCategoryName(store.selectedProduct)}
+             </button>
+             <button
+               onClick={() => store.setOrderMode('fabric')}
+               className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer ${store.orderMode === 'fabric' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50'}`}
+             >
+               <span>🧵</span> Fabric Only
+             </button>
+          </div>
+
+          {/* 👑 Horizontal Scrollable Quick-Access Pills */}
+          <div className="flex items-center gap-2.5 overflow-x-auto hide-scrollbar pb-1 w-full snap-x">
+            {/* Product Card Pill */}
+            <button 
+              onClick={() => setActiveBottomSheet('product')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'product' ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9] text-[#1C221A]'}`}
+            >
+              <span>👕</span> {getMotherCategoryName(store.selectedProduct)}
+            </button>
+
+            {/* Fabric Card Pill */}
+            <button 
+              onClick={() => setActiveBottomSheet('fabric')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'fabric' ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9] text-[#1C221A]'}`}
+            >
+              <div className="w-5 h-5 rounded-full overflow-hidden border border-[#D4D7C9] shrink-0">
+                <img src={selectedFabricCoverUrl} alt="Fabric" className="w-full h-full object-cover bg-gray-100" />
+              </div>
+              Fabric: {selectedFabric?.name || 'Select'}
+            </button>
+
+            {/* Style Card Pill (Conditionally Rendered) */}
+            {showStyleSection && (
+              <button 
+                onClick={() => setActiveBottomSheet('style')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'style' ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9] text-[#1C221A]'}`}
+              >
+                <span>✂️</span> Choose Style
               </button>
-              <button onClick={() => setActiveBottomSheet('collar')} className="flex flex-col items-center gap-1.5 group">
-                <div className={`w-12 h-12 rounded-full border-2 bg-primary transition-all ${activeBottomSheet === 'collar' ? 'border-[#4A5D23] scale-105' : 'border-[#D4D7C9] group-hover:border-[#4A5D23]'}`}>
-                  <img src={selectedCollar.image} alt="Collar" className="w-full h-full object-contain opacity-100" />
-                </div>
-                <span className={`text-[12px] font-medium uppercase tracking-widest ${activeBottomSheet === 'collar' ? 'text-[#4A5D23]' : 'text-[#1C221A]'}`}>Collar</span>
+            )}
+
+            {/* Advanced Card Pill (Conditionally Rendered) */}
+            {showAdvancedSection && (
+              <button 
+                onClick={() => setActiveBottomSheet('advanced')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'advanced' ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9] text-[#1C221A]'}`}
+              >
+                <span>⚙️</span> Advanced Fit
               </button>
+            )}
+          </div>
+
+          {/* 🛍️ Fixed Floating Bottom Action Bar */}
+          <div className="flex items-center justify-between pt-2 border-t border-[#D4D7C9]/40 w-full">
+            <div>
+              <p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-0.5">Total Amount</p>
+              <p className="font-heading text-lg font-bold text-[#C25934]">৳{totalCost.toLocaleString()}</p>
             </div>
+            
             <button
               onClick={() => { setActiveBottomSheet(null); setMobileStep('checkout'); }}
-              className="bg-[#17210C] text-white h-12 px-8 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg hover:bg-[#4A5D23] transition-all active:scale-[0.98]"
+              disabled={!isFabricStockSufficient}
+              className="bg-[#17210C] text-white h-11 px-6 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg hover:bg-[#4A5D23] active:scale-[0.98] transition-all"
             >
-              Next <ChevronRight className="w-4 h-4" />
+              <span>{isFabricStockSufficient ? (isFabricOnly ? 'Yards & Checkout' : 'Measurements') : 'Out of Stock'}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
+
         </div>
       )}
 
+      {/* 🎯 UNIFIED BOTTOM SHEET ENGINE FOR MOBILE */}
       <div className={`lg:hidden fixed inset-0 z-[1001] transition-opacity duration-300 ${activeBottomSheet ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setActiveBottomSheet(null)} />
-        <div className={`absolute bottom-0 left-0 w-full bg-[#F8F9F5] rounded-t-3xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col h-[85dvh] ${activeBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className={`absolute bottom-0 left-0 w-full bg-[#F8F9F5] rounded-t-3xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col h-[75dvh] ${activeBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
+          
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#D4D7C9]/50 shrink-0 bg-white rounded-t-3xl">
-            <span className="font-heading text-[14px] font-bold uppercase tracking-[0.1em] text-[#17210C]">
-              {activeBottomSheet === 'fabric' ? 'Select Fabric' : 'Select Collar'}
+            <span className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#17210C]">
+              {activeBottomSheet === 'product' && 'Select Product'}
+              {activeBottomSheet === 'fabric' && 'Select Premium Fabric'}
+              {activeBottomSheet === 'style' && 'Configure Style'}
+              {activeBottomSheet === 'advanced' && 'Advanced Tailoring'}
             </span>
-            <button onClick={() => setActiveBottomSheet(null)} className="p-2 -mr-2 bg-[#F8F9F5] rounded-full text-[#1C221A]/60 hover:text-[#C25934] transition-colors"><X className="w-4 h-4" /></button>
+            <button onClick={() => setActiveBottomSheet(null)} className="p-2 -mr-2 bg-[#F8F9F5] rounded-full text-[#1C221A]/60 hover:text-[#C25934] transition-colors">
+              <X className="w-4 h-4" />
+            </button>
           </div>
+
           <div className="p-5 overflow-y-auto custom-scrollbar flex-1 relative">
-            {/* Conditional Rendering এর বদলে CSS Hidden ব্যবহার করা হলো */}
-            <div className={activeBottomSheet === 'fabric' ? 'block' : 'hidden'}>
-              {renderFabricContent()}
-            </div>
-            <div className={activeBottomSheet === 'collar' ? 'block' : 'hidden'}>
-              {renderStyleContent()}
-            </div>
+            {activeBottomSheet === 'product' && renderProductContent()}
+            {activeBottomSheet === 'fabric' && renderFabricContent()}
+            {activeBottomSheet === 'style' && renderStyleContent()}
+            {activeBottomSheet === 'advanced' && renderTailoringContent()}
           </div>
+
+          {/* Manual Control Close bar for Style/Advanced multi-picks */}
+          {(activeBottomSheet === 'style' || activeBottomSheet === 'advanced') && (
+            <div className="p-4 bg-white border-t border-[#D4D7C9]/40 flex justify-end shrink-0">
+              <button 
+                onClick={() => setActiveBottomSheet(null)} 
+                className="px-6 py-2.5 bg-[#4A5D23] text-white text-[11px] font-medium uppercase tracking-wider rounded-full shadow-md active:scale-95 transition-all cursor-pointer"
+              >
+                Apply & View Change
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* 📏 MOBILE VIEW: Finalize Details (Measurements / Fabric Only Calculator) */}
       <div className={`lg:hidden fixed bottom-0 left-0 w-full h-[90dvh] bg-[#F8F9F5] rounded-t-3xl z-50 flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${mobileStep === 'checkout' ? 'translate-y-0' : 'translate-y-full'}`}>
         <div className="flex items-center px-4 py-4 border-b border-[#D4D7C9]/50 shrink-0 bg-white rounded-t-3xl relative">
           <button
@@ -1292,18 +1402,25 @@ export function CustomizeClient({
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="w-full text-center font-heading text-[15px] font-bold uppercase tracking-[0.1em] text-[#17210C]">
-            Finalize Details
+          <span className="w-full text-center font-heading text-[14px] font-bold uppercase tracking-[0.1em] text-[#17210C]">
+            {isFabricOnly ? 'Fabric Specifications' : 'Finalize Fit Details'}
           </span>
         </div>
 
         <div className="p-5 overflow-y-auto pb-32 flex-1">
-          <h3 className="font-heading text-[12px] font-bold uppercase tracking-[0.2em] text-[#4A5D23] mb-4">Measurements</h3>
-          <div className="bg-white p-5 rounded-2xl border border-[#D4D7C9]/40 shadow-sm mb-8">
-            {renderMeasurementContent()}
-          </div>
+          {/* Conditionally hide measurements block entirely if Fabric Only */}
+          {!isFabricOnly && (
+            <>
+              <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23] mb-3">Measurements</h3>
+              <div className="bg-white p-4 rounded-2xl border border-[#D4D7C9]/40 shadow-sm mb-6">
+                {renderMeasurementContent()}
+              </div>
+            </>
+          )}
 
-          <h3 className="font-heading text-[12px] font-bold uppercase tracking-[0.2em] text-[#4A5D23] mb-4">Preferences</h3>
+          <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23] mb-3">
+            {isFabricOnly ? 'Required Yardage' : 'Preferences & Tailor Notes'}
+          </h3>
           <div className="mb-6">
             {renderOrderPreferences()}
           </div>
@@ -1321,19 +1438,21 @@ export function CustomizeClient({
               <p className="font-heading text-2xl font-bold text-[#C25934]">৳{totalCost.toLocaleString()}</p>
             </div>
             <div className="text-right">
-              <p className="font-sans text-[10px] font-medium text-[#17210C] uppercase tracking-widest">{store.orderMode === 'tailoring' ? 'Tailored Panjabi' : `Fabric (${store.yardage} yds)`}</p>
+              <p className="font-sans text-[10px] font-medium text-[#17210C] uppercase tracking-widest">
+                {isFabricOnly ? `Premium Fabric Bolt` : `Tailored ${getMotherCategoryName(store.selectedProduct)}`}
+              </p>
             </div>
           </div>
           <button
             onClick={handleAddToCart}
             disabled={!isFabricStockSufficient}
-            className={`w-full py-3.5 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-colors flex items-center justify-center gap-2 ${!isFabricStockSufficient
+            className={`w-full py-3.5 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${!isFabricStockSufficient
               ? 'bg-[#D4D7C9] text-white cursor-not-allowed'
               : 'bg-[#4A5D23] text-white active:bg-[#3D4C1D] cursor-pointer'
               }`}
           >
             <ShoppingCart className="w-4 h-4" />
-            {!isFabricStockSufficient ? 'Out of Stock' : 'Add to Cart'}
+            {!isFabricStockSufficient ? 'Out of Stock' : (isFabricOnly ? 'Add Fabric to Cart' : 'Add Customized Dress to Cart')}
           </button>
         </div>
       </div>

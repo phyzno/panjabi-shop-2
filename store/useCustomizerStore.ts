@@ -2,23 +2,25 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface CustomizerState {
-  // New Core Product Selection
+  // Core Product Selection
   selectedProduct: string; 
-  productStyles: Record<string, string>; // e.g., { collar: 'band', placket: 'hidden', pocket: 'chest' }
+  productStyles: Record<string, string>;
 
-  // Existing states
+  // Order & Fabric Preferences
   orderMode: 'tailoring' | 'fabric';
   selectedFabricId: string | null;
   yardage: number;
-  collarId: string | null; // Kept for backward compatibility with existing Panjabi flow
+  collarId: string | null; 
   sizeType: 'preset' | 'custom';
   standardSize: string;
   specialInstructions: string;
   
+  // Filtering & Search
   searchQuery: string;
   selectedColors: string[];
   selectedTypes: string[];
 
+  // Measurements
   measurementMode: 'saved' | 'new';
   selectedProfileId: string;
   customLength: string;
@@ -29,7 +31,6 @@ interface CustomizerState {
   // Actions
   setSelectedProduct: (product: string) => void;
   setProductStyle: (key: string, value: string) => void;
-  
   setOrderMode: (mode: 'tailoring' | 'fabric') => void;
   setSelectedFabricId: (id: string | null) => void;
   setYardage: (yards: number) => void;
@@ -40,7 +41,6 @@ interface CustomizerState {
   setSearchQuery: (query: string) => void;
   toggleColorFilter: (color: string) => void;
   toggleTypeFilter: (type: string) => void;
-
   setMeasurementMode: (mode: 'saved' | 'new') => void;
   setSelectedProfileId: (id: string) => void;
   setCustomLength: (val: string) => void;
@@ -54,13 +54,12 @@ export const useCustomizerStore = create<CustomizerState>()(
   persist(
     (set) => ({
       // Defaults
-      selectedProduct: 'jubba', // Testing the new flow
+      selectedProduct: 'panjabi_regular', // ডিফল্ট প্রোডাক্ট হিসেবে রেগুলার পাঞ্জাবি
       productStyles: {
         collar: 'band',
         placket: 'hidden',
         pocket: 'chest',
       },
-
       orderMode: 'tailoring',
       selectedFabricId: null,
       yardage: 2.5,
@@ -71,7 +70,6 @@ export const useCustomizerStore = create<CustomizerState>()(
       searchQuery: '',
       selectedColors: [],
       selectedTypes: [],
-
       measurementMode: 'new',
       selectedProfileId: '',
       customLength: '',
@@ -84,7 +82,6 @@ export const useCustomizerStore = create<CustomizerState>()(
       setProductStyle: (key, value) => set((state) => ({
         productStyles: { ...state.productStyles, [key]: value }
       })),
-
       setOrderMode: (orderMode) => set({ orderMode }),
       setSelectedFabricId: (selectedFabricId) => set({ selectedFabricId }),
       setYardage: (yardage) => set({ yardage }),
@@ -113,7 +110,7 @@ export const useCustomizerStore = create<CustomizerState>()(
       setCustomSleeve: (customSleeve) => set({ customSleeve }),
 
       resetCustomizer: () => set({
-        selectedProduct: 'jubba',
+        selectedProduct: 'panjabi_regular',
         productStyles: { collar: 'band', placket: 'hidden', pocket: 'chest' },
         orderMode: 'tailoring',
         selectedFabricId: null,
@@ -134,7 +131,7 @@ export const useCustomizerStore = create<CustomizerState>()(
       }),
     }),
     {
-      name: 'panjabi-customizer-storage',
+      name: 'bespoke-atelier-storage', // স্টোরেজ কি (Key) আপডেট করা হলো
     }
   )
 );

@@ -39,11 +39,6 @@ export const UI_VECTORS = {
   sleeve: {
     full: '/UI Vectors/Shirt Options/Sleeve/full-Photoroom.png',
     half: '/UI Vectors/Shirt Options/Sleeve/half-Photoroom.png',
-  },
-  pajama_fit: {
-    aligarhi: 'badge',
-    churidar: 'badge',
-    kabuli_salwar: 'badge',
   }
 };
 
