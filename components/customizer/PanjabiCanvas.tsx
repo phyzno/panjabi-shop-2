@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { renderPanjabiTexture, TextureConfig } from '@/lib/canvas/textureEngine';
-import { Loader2, AlertTriangle, RotateCcw, Info } from 'lucide-react';
+import { Loader2, AlertTriangle, RotateCcw, Info, Download, Share2 } from 'lucide-react';
 
 interface PanjabiCanvasProps {
   color: string;

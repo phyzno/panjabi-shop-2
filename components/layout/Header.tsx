@@ -33,6 +33,7 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isHomePage = variant === "home";
+  const isCustomizerPage = pathname?.startsWith("/customize");
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Shop", href: "/shop" },
@@ -47,15 +48,15 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
   const [showMobileAccount, setShowMobileAccount] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const handleLogout = async () => {
-  setIsUserDropdownOpen(false);
-  setShowMobileAccount(false);
-  setIsMobileMenuOpen(false);
-  
-  setUser(null); 
-  
-  await supabase.auth.signOut();
-  notifyAuthChange();
-};
+    setIsUserDropdownOpen(false);
+    setShowMobileAccount(false);
+    setIsMobileMenuOpen(false);
+
+    setUser(null);
+
+    await supabase.auth.signOut();
+    notifyAuthChange();
+  };
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (isUserDropdownOpen && !(e.target as Element).closest('.user-dropdown-container')) {
@@ -100,7 +101,7 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
     <>
       <div className={isHomePage ? "absolute top-0 left-0 w-full z-50" : "relative w-full z-50"}>
 
-        {activeOfferText && (
+        {activeOfferText && !isCustomizerPage && (
           <div className="bg-[#1A1A1A] text-[#C9A84C] text-xs py-2 px-4 text-center font-medium tracking-wide">
             {activeOfferText}
           </div>
