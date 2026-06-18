@@ -1307,7 +1307,7 @@ export function CustomizeClient({
               {!isFabricStockSufficient
                 ? 'Out of Stock'
                 : store.orderMode === 'tailoring'
-                  ? 'Add Customized Panjabi to Cart'
+                  ? `Add Customized ${getMotherCategoryName(store.selectedProduct)} to Cart`
                   : 'Purchase Fabric Bolt'}
             </button>
           </div>
@@ -1558,7 +1558,7 @@ export function CustomizeClient({
               }`}
           >
             <ShoppingCart className="w-4 h-4" />
-            {!isFabricStockSufficient ? 'Out of Stock' : (isFabricOnly ? 'Add Fabric to Cart' : 'Add Customized Dress to Cart')}
+            {!isFabricStockSufficient ? 'Out of Stock' : (isFabricOnly ? 'Add Fabric to Cart' : `Add Customized ${getMotherCategoryName(store.selectedProduct)} to Cart`)}
           </button>
         </div>
       </div>
@@ -1584,7 +1584,7 @@ export function CustomizeClient({
       />
 
       {showLoginModal && (
-        <div className="fixed inset-0 z-[250] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[1005] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm" onClick={() => setShowLoginModal(false)} />
           <div className="relative bg-white w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200">
             <button onClick={() => setShowLoginModal(false)} className="absolute top-4 right-4 p-2 bg-[#F8F9F5] rounded-full text-[#1C221A]/60 hover:text-red-500 cursor-pointer">

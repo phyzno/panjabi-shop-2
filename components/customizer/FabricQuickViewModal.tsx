@@ -166,7 +166,7 @@ export function FabricQuickViewModal({ fabric: incomingFabric, isOpen, onClose, 
           >
             {showVideo ? (
               <>
-                <ImageIcon className="w-3.5 h-3.5" />
+                <ImageIcon className="w-3.5 h-3.5 text-[#C25934]" />
                 <span>View Images</span>
               </>
             ) : (
