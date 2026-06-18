@@ -6,7 +6,10 @@ import { useCustomizerStore } from '@/store/useCustomizerStore';
 import { resolveProductImageSrc } from '@/lib/productImages';
 import { Search, Info, Check, ChevronDown, ChevronUp, ShoppingBag, Ruler, Calculator, ChevronLeft, ChevronRight, X, ShoppingCart, RotateCcw, Eye, XCircle } from "lucide-react";
 import { useCartStore } from '@/store/cartStore';
-import { addMeasurementProfile } from '@/lib/actions/measurement.actions';
+import { MEASUREMENT_FIELDS } from '@/lib/config/measurementConfig';
+import { STANDARD_SIZES } from '@/lib/config/standardSizes';
+import { calculateFabricYardage } from '@/lib/utils/fabricEstimator';
+import { addFitMeasurement } from '@/lib/actions/measurement.actions'; // প্রোফাইল সেভ করার জন্য
 import { useAuthStore } from '@/store/authStore';
 import { getUserMeasurements } from '@/lib/actions/user.actions';
 import { FabricQuickViewModal } from './FabricQuickViewModal';
@@ -56,7 +59,6 @@ export function CustomizeClient({
   const store = useCustomizerStore();
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveProfileToggle, setSaveProfileToggle] = useState(false);
-  const [newProfileName, setNewProfileName] = useState('');
   const [profileNameError, setProfileNameError] = useState('');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -86,6 +88,133 @@ export function CustomizeClient({
   const pillContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
+
+  // কম্পোনেন্টের শুরুর দিকের স্টেটগুলোর মধ্যে এই স্টেটগুলো যোগ/আপডেট করুন
+  const motherCat = store.selectedProduct.split('_')[0]; // যেমন: 'panjabi', 'shirt'
+  const uniquePersons = useMemo(() => Array.from(new Set(activeSavedMeasurements.map(m => m.person_name))), [activeSavedMeasurements]);
+  const availableFits = useMemo(() => activeSavedMeasurements.filter(m => m.person_name === store.selectedPerson && m.product_type === motherCat), [activeSavedMeasurements, store.selectedPerson, motherCat]);
+
+  // On-the-fly Save States
+  const [saveTargetPerson, setSaveTargetPerson] = useState<string>('');
+  const [newProfileName, setNewProfileName] = useState('');
+  const [newFitName, setNewFitName] = useState('');
+  const [isSaveDisabled, setIsSaveDisabled] = useState(false);
+
+  // 1. Auto-Select Logic (Person and Fit Dropdowns)
+  useEffect(() => {
+    if (!isHydrated || activeSavedMeasurements.length === 0) return;
+
+    // Set Featured Person if none selected
+    if (!store.selectedPerson || !uniquePersons.includes(store.selectedPerson)) {
+      const featuredPerson = activeSavedMeasurements.find(m => m.is_person_default)?.person_name || uniquePersons[0];
+      store.setSelectedPerson(featuredPerson);
+      return; // Will re-trigger due to dependency change
+    }
+
+    // Set Featured Fit for the selected Person and Product
+    if (availableFits.length > 0) {
+      const featuredFit = availableFits.find(m => m.is_default) || availableFits[0];
+      if (store.selectedFitId !== featuredFit.id && !availableFits.some(m => m.id === store.selectedFitId)) {
+        store.setSelectedFitId(featuredFit.id);
+      }
+    } else {
+      store.setSelectedFitId(null);
+    }
+  }, [isHydrated, activeSavedMeasurements, store.selectedPerson, motherCat, uniquePersons, availableFits]);
+
+  // 2. Dynamic Fabric Yardage Calculator
+  const calculatedYardage = useMemo(() => {
+    let meas: Record<string, number> = {};
+
+    if (store.measurementMode === 'saved') {
+      const fit = activeSavedMeasurements.find(m => m.id === store.selectedFitId);
+      if (fit && fit.measurements) meas = fit.measurements;
+    } else if (store.sizeType === 'preset') {
+      meas = STANDARD_SIZES[motherCat]?.[store.standardSize] || {};
+    } else {
+      // Custom Inputs
+      Object.keys(store.customMeasurements).forEach(k => {
+        meas[k] = Number(store.customMeasurements[k]) || 0;
+      });
+    }
+
+    return calculateFabricYardage({ productKey: store.selectedProduct, measurements: meas });
+  }, [store.selectedProduct, store.measurementMode, store.selectedFitId, store.sizeType, store.standardSize, store.customMeasurements, activeSavedMeasurements, motherCat]);
+
+  // Update yardage automatically for Fabric Mode
+  useEffect(() => {
+    if (store.orderMode === 'fabric') {
+      store.setYardage(calculatedYardage);
+    }
+  }, [calculatedYardage, store.orderMode, store.setYardage]);
+
+  // 3. On-The-Fly Save Logic
+  const handleSaveProfileOnTheFly = async () => {
+    // যদি লাইভ ভ্যালিডেশন বাটন লক করে রাখে, তবে সাবমিট হবে না
+    if (isSaveDisabled) return;
+
+    if (saveTargetPerson === 'NEW_PROFILE' && !newProfileName.trim()) {
+      setProfileNameError('Please enter a new profile name.');
+      return;
+    }
+    if (!newFitName.trim()) {
+      setProfileNameError('Please enter a fit name (e.g. Slim Fit).');
+      return;
+    }
+
+    // Blank Data Validation: সাবমিটের সময় চেক করবে কোনো ফিল্ড খালি আছে কি না
+    const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
+    const hasEmptyMeasurements = dynamicFields.some(field => {
+      const val = store.customMeasurements[field.id];
+      return !val || Number(val) <= 0;
+    });
+
+    if (hasEmptyMeasurements) {
+      setProfileNameError('Please enter valid measurements for all fields before saving.');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setProfileNameError('');
+
+    const finalPersonName = saveTargetPerson === 'NEW_PROFILE' ? newProfileName.trim() : saveTargetPerson;
+
+    const numericMeasurements: Record<string, number> = {};
+    Object.keys(store.customMeasurements).forEach(k => {
+      numericMeasurements[k] = Number(store.customMeasurements[k]) || 0;
+    });
+
+    const payload = {
+      person_name: finalPersonName,
+      fit_name: newFitName.trim(),
+      product_type: motherCat,
+      measurements: numericMeasurements,
+      is_default: !activeSavedMeasurements.some(m => m.person_name === finalPersonName && m.product_type === motherCat && m.is_default),
+      is_person_default: activeSavedMeasurements.length === 0
+    };
+
+    try {
+      const res = await addFitMeasurement(userId!, payload);
+      if (res?.success) {
+        setHasSavedCurrentProfile(true);
+        const latest = await getUserMeasurements(userId!);
+        if (latest.success && latest.data) {
+          setActiveSavedMeasurements(latest.data);
+          store.setMeasurementMode('saved');
+          store.setSelectedPerson(finalPersonName);
+          setSaveProfileToggle(false);
+          setNewProfileName('');
+          setNewFitName('');
+        }
+      } else {
+        alert(res?.error || "Failed to save profile");
+      }
+    } catch (error) {
+      console.error("Failed to save profile:", error);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // স্ক্রল পজিশন চেক করার ফাংশন
   const handlePillScroll = () => {
@@ -131,7 +260,7 @@ export function CustomizeClient({
       setActiveSavedMeasurements([]);
       setSaveProfileToggle(false);
       setShowLoginModal(false);
-      store.setSelectedProfileId('');
+      store.setSelectedFitId(null);
       return;
     }
 
@@ -149,97 +278,123 @@ export function CustomizeClient({
     return () => {
       isActive = false;
     };
-  }, [isLoaded, user?.id, savedMeasurements, store.setSelectedProfileId]);
+  }, [isLoaded, user?.id, savedMeasurements, store.setSelectedFitId]);
 
+  // 🎯 Smart Live Validation: Deep Duplicate, Name Duplicate & Auto-Unlock Engine
   useEffect(() => {
-    if (!isHydrated) return;
-    const selectedProfileExists = activeSavedMeasurements.some(
-      (profile) => profile.id.toString() === store.selectedProfileId
-    );
-
-    if (activeSavedMeasurements.length > 0 && (!store.selectedProfileId || !selectedProfileExists)) {
-      const defaultProfile = activeSavedMeasurements.find(p => p.is_default) || activeSavedMeasurements[0];
-      store.setSelectedProfileId(defaultProfile.id.toString());
-    } else if (activeSavedMeasurements.length === 0 && store.selectedProfileId) {
-      store.setSelectedProfileId('');
-    }
-  }, [activeSavedMeasurements, isHydrated, store.selectedProfileId, store.setSelectedProfileId]);
-
-  useEffect(() => {
-    if (newProfileName) {
-      const isDuplicate = activeSavedMeasurements.some(
-        (p) => p.profile_name.toLowerCase() === newProfileName.trim().toLowerCase()
-      );
-      if (isDuplicate) {
-        setProfileNameError('A profile with this name already exists.');
-      } else {
-        setProfileNameError('');
-      }
-    } else {
+    // সেভ প্যানেল বা টিকমার্ক বন্ধ করা হলে সমস্ত স্টেট এবং লক রিসেট করে দাও
+    if (!saveProfileToggle) {
       setProfileNameError('');
+      setIsSaveDisabled(false);
+      setHasSavedCurrentProfile(false);
+      return;
     }
-  }, [newProfileName, activeSavedMeasurements]);
 
-  useEffect(() => {
-    setHasSavedCurrentProfile(false);
-  }, [store.customLength, store.customChest, store.customShoulder, store.customSleeve]);
+    let currentError = '';
+    let isDisabled = false;
+    let exactDuplicateFit = undefined;
 
-  const calculatedPanjabiYardage = useMemo(() => {
-    if (store.measurementMode === 'saved') {
-      const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
-      if (profile && profile.measurements) {
-        const len = parseFloat(profile.measurements.length) || 0;
-        const chest = parseFloat(profile.measurements.chest) || 0;
-        let baseYard = 2.5;
-        if (len > 0 && chest > 0) {
-          baseYard = 2.25;
-          if (len > 42) baseYard += 0.25;
-          if (len > 46) baseYard += 0.25;
-          if (chest > 44) baseYard += 0.25;
+    const finalPersonName = saveTargetPerson === 'NEW_PROFILE' ? newProfileName.trim() : saveTargetPerson;
+
+    // ১. New Profile Name Duplicate Check
+    if (saveTargetPerson === 'NEW_PROFILE' && finalPersonName !== '') {
+      const isDuplicatePerson = activeSavedMeasurements.some(
+        (p) => p.person_name?.toLowerCase() === finalPersonName.toLowerCase()
+      );
+      if (isDuplicatePerson) {
+        currentError = `Profile '${finalPersonName}' already exists. Please select it from the dropdown.`;
+        isDisabled = true;
+      }
+    }
+
+    // ২. Fit Name & Deep Measurement Duplicate Check
+    if (!isDisabled && finalPersonName) {
+      const currentFitName = newFitName.trim().toLowerCase();
+      
+      // শুধুমাত্র এই নির্দিষ্ট Person এবং Product-এর ফিটগুলো ফিল্টার করা হচ্ছে
+      const personFits = activeSavedMeasurements.filter(
+        m => m.person_name === finalPersonName && m.product_type === motherCat
+      );
+
+      const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
+      
+      // Deep Duplicate Check (হুবহু মাপের মিল খোঁজা)
+      exactDuplicateFit = personFits.find(fit => {
+        if (!fit.measurements) return false;
+        let isMatch = true;
+        for (const field of dynamicFields) {
+          const currentVal = Number(store.customMeasurements[field.id]) || 0;
+          const savedVal = Number(fit.measurements[field.id]) || 0;
+          if (currentVal !== savedVal) {
+            isMatch = false;
+            break;
+          }
         }
-        return baseYard;
+        return isMatch;
+      });
+
+      if (exactDuplicateFit) {
+        // 🌟 ক্লিয়ার এবং স্মার্ট এরর মেসেজ (কনফিউশন দূর করার জন্য)
+        currentError = `These measurements are identical to the '${exactDuplicateFit.fit_name}' fit under '${finalPersonName}''s ${motherCat.toUpperCase()} profile.`;
+        isDisabled = true;
+      } else if (currentFitName) {
+        // Name Duplicate Check (মাপ ইউনিক, কিন্তু ফিটের নাম আগে থেকেই আছে)
+        const isDuplicateFitName = personFits.some(m => m.fit_name.toLowerCase() === currentFitName);
+        if (isDuplicateFitName) {
+          currentError = `A fit named '${newFitName.trim()}' already exists for this product.`;
+          isDisabled = true;
+        }
       }
-      return 2.5;
     }
 
-    if (store.sizeType === 'preset') {
-      const found = presetSizes.find(p => p.size === store.standardSize);
-      return found ? found.yard : 2.5;
-    }
-
-    if (store.sizeType === 'custom') {
-      const len = parseFloat(store.customLength) || 0;
-      const chest = parseFloat(store.customChest) || 0;
-      let baseYard = 2.5;
-
-      if (len > 0 && chest > 0) {
-        baseYard = 2.25;
-        if (len > 42) baseYard += 0.25;
-        if (len > 46) baseYard += 0.25;
-        if (chest > 44) baseYard += 0.25;
+    // 🎯 SMART UNLOCK: ইউজার যদি কোনো ইনপুট, প্রোফাইল ড্রপডাউন বা মেজারমেন্ট চেঞ্জ করে, 
+    // যা সদ্য সেভ হওয়া ডাটার সাথে আর মিলছে না, তবে 'Saved' লক স্টেটটি স্বয়ংক্রিয়ভাবে খুলে যাবে।
+    if (hasSavedCurrentProfile) {
+      if (!newFitName.trim() || !exactDuplicateFit || exactDuplicateFit.fit_name !== newFitName.trim()) {
+        setHasSavedCurrentProfile(false);
       }
-      return baseYard;
     }
 
-    return 2.5;
-  }, [store.measurementMode, store.selectedProfileId, activeSavedMeasurements, store.sizeType, store.standardSize, store.customLength, store.customChest]);
+    setProfileNameError(currentError);
+    setIsSaveDisabled(isDisabled);
+
+  }, [
+    saveProfileToggle, 
+    saveTargetPerson, 
+    newProfileName, 
+    newFitName, 
+    store.customMeasurements, 
+    activeSavedMeasurements, 
+    motherCat,
+    hasSavedCurrentProfile // ডিপেন্ডেন্সিতে যুক্ত করা হলো সেফ ট্র্যাকিংয়ের জন্য
+  ]);
 
   useEffect(() => {
     if (store.orderMode === 'fabric') {
-      store.setYardage(calculatedPanjabiYardage);
+      store.setYardage(calculatedYardage);
     }
-  }, [calculatedPanjabiYardage, store.orderMode, store.setYardage]);
+  }, [calculatedYardage, store.orderMode, store.setYardage]);
 
   const filteredFabrics = useMemo(() => {
     return fabrics.filter((f: any) => {
       const matchSearch = f.name.toLowerCase().includes(store.searchQuery.toLowerCase());
       const fabricColors = Array.isArray(f.colors) ? f.colors : [];
       const fabricPatterns = Array.isArray(f.patterns) ? f.patterns : [];
+      
+      // 🎯 Product Category Filter Logic (New)
+      // ডাটাবেসে সেভ থাকা ট্যাগ (যেমন: 'Panjabi') এবং কারেন্ট মাদার ক্যাটাগরির (যেমন: 'panjabi') মধ্যে Case-Insensitive মিল খোঁজা হচ্ছে
+      const hasAllowedProducts = Array.isArray(f.allowed_products) && f.allowed_products.length > 0;
+      const matchProduct = !hasAllowedProducts || f.allowed_products.some(
+        (product: string) => product.toLowerCase() === motherCat.toLowerCase()
+      );
+
       const matchColor = selectedColors.length === 0 || selectedColors.some((color) => fabricColors.includes(color));
       const matchPattern = selectedPatterns.length === 0 || selectedPatterns.some((pattern) => fabricPatterns.includes(pattern));
-      return matchSearch && matchColor && matchPattern;
+      
+      // matchProduct-কে রিটার্ন কন্ডিশনে যুক্ত করা হলো
+      return matchSearch && matchColor && matchPattern && matchProduct;
     });
-  }, [fabrics, store.searchQuery, selectedColors, selectedPatterns]);
+  }, [fabrics, store.searchQuery, selectedColors, selectedPatterns, motherCat]); // ডিপেন্ডেন্সিতে motherCat যুক্ত করা হয়েছে
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -255,7 +410,7 @@ export function CustomizeClient({
     ? selectedFabric.preview_images[0]
     : (selectedFabric?.raw_image_url || selectedFabric?.texture_url || undefined);
   const stitchingCharge = 450;
-  const activeYardage = store.orderMode === 'tailoring' ? calculatedPanjabiYardage : store.yardage;
+  const activeYardage = store.orderMode === 'tailoring' ? calculatedYardage : store.yardage;
   const maxFabricYards = selectedFabric?.yards || 0;
   const isFabricStockSufficient = maxFabricYards >= activeYardage;
   const fabricPrice = (selectedFabric?.price || 0) * activeYardage;
@@ -358,48 +513,12 @@ export function CustomizeClient({
   const goToLogin = () => {
     window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
   };
-  const handleSaveProfile = async () => {
-    if (!newProfileName) {
-      setProfileNameError('Please enter a profile name.');
-      return;
-    }
-    if (profileNameError) return;
-
-    setIsSavingProfile(true);
-    const payload = {
-      profile_name: newProfileName.trim(),
-      is_default: activeSavedMeasurements.length === 0,
-      measurements: {
-        length: Number(store.customLength),
-        chest: Number(store.customChest),
-        shoulder: Number(store.customShoulder),
-        sleeve: Number(store.customSleeve),
-      }
-    };
-
-    try {
-      const res = await addMeasurementProfile(userId!, payload);
-      if (res?.success) {
-        setHasSavedCurrentProfile(true);
-        const latest = await getUserMeasurements(userId!);
-        if (latest.success && latest.data) {
-          setActiveSavedMeasurements(latest.data);
-        }
-      } else {
-        alert(res?.error || "Failed to save profile");
-      }
-    } catch (error) {
-      console.error("Failed to save profile:", error);
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
 
   const handleAddToCart = async () => {
     if (!isFabricStockSufficient) return;
 
     if (store.orderMode === 'tailoring' && store.measurementMode === 'saved') {
-      const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
+      const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedFitId);
       if (!profile) {
         alert("Please select or create a valid measurement profile first.");
         return;
@@ -408,7 +527,7 @@ export function CustomizeClient({
 
     const isTailoring = store.orderMode === 'tailoring';
     const selectedProfile = store.measurementMode === 'saved'
-      ? activeSavedMeasurements.find((p: any) => p.id.toString() === store.selectedProfileId)
+      ? activeSavedMeasurements.find((p: any) => p.id.toString() === store.selectedFitId)
       : null;
     const finalCustomMeasurements = isTailoring ? (
       store.measurementMode === 'saved' && selectedProfile ? {
@@ -417,10 +536,10 @@ export function CustomizeClient({
         shoulder: selectedProfile.measurements.shoulder.toString(),
         sleeve: selectedProfile.measurements.sleeve.toString(),
       } : (store.sizeType === 'custom' ? {
-        length: store.customLength,
-        chest: store.customChest,
-        shoulder: store.customShoulder,
-        sleeve: store.customSleeve,
+        length: store.customMeasurements.length,
+        chest: store.customMeasurements.chest,
+        shoulder: store.customMeasurements.shoulder,
+        sleeve: store.customMeasurements.sleeve,
       } : undefined)
     ) : undefined;
 
@@ -930,191 +1049,196 @@ export function CustomizeClient({
     );
   };
 
-  const renderMeasurementContent = () => (
-    <>
-      <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl mb-6">
-        <button
-          onClick={() => store.setMeasurementMode('saved')}
-          className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'
-            }`}
-        >
-          My Profiles
-        </button>
-        <button
-          onClick={() => store.setMeasurementMode('new')}
-          className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'
-            }`}
-        >
-          New Size
-        </button>
-      </div>
+  const renderMeasurementContent = () => {
+    const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
+    const availablePresets = Object.keys(STANDARD_SIZES[motherCat] || {});
 
-      {store.measurementMode === 'saved' && (
-        <div className="animate-in fade-in duration-300">
-          {!userId ? (
-            <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
-              <p className="font-sans text-xs text-[#1C221A]/70 mb-3">Please log in to access your saved custom fits.</p>
-              <button onClick={() => setShowLoginModal(true)} className="px-5 py-2.5 bg-[#4A5D23] text-white text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:bg-[#3D4C1D] transition-colors cursor-pointer">
-                Log In
-              </button>
-            </div>
-          ) : activeSavedMeasurements.length > 0 ? (
-            <div className="space-y-4">
-              <div className="relative">
-                <select
-                  value={store.selectedProfileId}
-                  onChange={(e) => store.setSelectedProfileId(e.target.value)}
-                  className="w-full bg-white border border-[#D4D7C9] p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans appearance-none cursor-pointer text-[#17210C]"
-                >
-                  <option value="" disabled>Select a profile...</option>
-                  {activeSavedMeasurements.map((profile) => (
-                    <option key={profile.id} value={profile.id}>
-                      {profile.profile_name} {profile.is_default ? '(Primary)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C221A]/50 pointer-events-none" />
-              </div>
-
-              {store.selectedProfileId && (
-                <div className="grid grid-cols-2 gap-3 p-4 bg-[#F8F9F5]/80 rounded-xl border border-[#D4D7C9]/40">
-                  {(() => {
-                    const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedProfileId);
-                    return (
-                      <>
-                        <div className="flex flex-col">
-                          <span className="font-sans text-[10px] uppercase tracking-widest text-[#1C221A]/50 mb-1">Length</span>
-                          <span className="font-sans text-sm text-[#17210C] font-medium bg-white/50 px-3 py-2 rounded-lg border border-[#D4D7C9]/30">{profile?.measurements?.length}"</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-sans text-[10px] uppercase tracking-widest text-[#1C221A]/50 mb-1">Chest</span>
-                          <span className="font-sans text-sm text-[#17210C] font-medium bg-white/50 px-3 py-2 rounded-lg border border-[#D4D7C9]/30">{profile?.measurements?.chest}"</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-sans text-[10px] uppercase tracking-widest text-[#1C221A]/50 mb-1">Shoulder</span>
-                          <span className="font-sans text-sm text-[#17210C] font-medium bg-white/50 px-3 py-2 rounded-lg border border-[#D4D7C9]/30">{profile?.measurements?.shoulder}"</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-sans text-[10px] uppercase tracking-widest text-[#1C221A]/50 mb-1">Sleeve</span>
-                          <span className="font-sans text-sm text-[#17210C] font-medium bg-white/50 px-3 py-2 rounded-lg border border-[#D4D7C9]/30">{profile?.measurements?.sleeve}"</span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
-              <p className="font-sans text-xs text-[#1C221A]/70 mb-2">No profiles found.</p>
-              <button onClick={() => store.setMeasurementMode('new')} className="inline-flex justify-center w-fit mx-auto text-[#4A5D23] text-[12px] hover:text-accent uppercase tracking-widest hover:underline cursor-pointer">Go to New Size <ChevronRight className="w-4 h-4" /></button>
-            </div>
-          )}
+    return (
+      <>
+        <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl mb-6">
+          <button onClick={() => store.setMeasurementMode('saved')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>My Profiles</button>
+          <button onClick={() => store.setMeasurementMode('new')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>New Size</button>
         </div>
-      )}
 
-      {store.measurementMode === 'new' && (
-        <div className="animate-in fade-in duration-300">
-          <div className="flex gap-4 mb-6">
-            {sizeOptions.map((t) => (
-              <button
-                key={t}
-                onClick={() => store.setSizeType(t)}
-                className={`flex-1 py-2 text-[10px] font-medium uppercase tracking-[0.15em] border-b-2 transition-all cursor-pointer ${store.sizeType === t ? 'border-[#4A5D23] text-[#4A5D23]' : 'border-transparent text-[#1C221A]/40 hover:text-[#1C221A]/70'}`}
-              >
-                {t} Size
-              </button>
-            ))}
-          </div>
-
-          {store.sizeType === 'preset' ? (
-            <div className="flex flex-wrap gap-3 justify-center">
-              {presetSizes.map(p => (
-                <button
-                  key={p.size}
-                  onClick={() => store.setStandardSize(p.size)}
-                  className={`w-9 h-9 md:w-12 lg:w-12 md:h-12 lg:h-12 rounded-xl text-[10px] md:text-[13px] lg:text-[13px] font-heading font-bold transition-all cursor-pointer ${store.standardSize === p.size ? 'bg-[#4A5D23] text-white shadow-sm' : 'bg-white border border-[#D4D7C9] text-[#1C221A]/60 hover:border-[#4A5D23]'}`}
-                >
-                  {p.size}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[11px] font-medium uppercase text-[#4A5D23] mb-1">Length (in)</label>
-                  <input type="number" value={store.customLength} onChange={(e) => store.setCustomLength(e.target.value)} className="w-full bg-white border border-[#D4D7C9] p-3 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans" placeholder="0.0" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium uppercase text-[#4A5D23] mb-1">Chest (in)</label>
-                  <input type="number" value={store.customChest} onChange={(e) => store.setCustomChest(e.target.value)} className="w-full bg-white border border-[#D4D7C9] p-3 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans" placeholder="0.0" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium uppercase text-[#4A5D23] mb-1">Shoulder (in)</label>
-                  <input type="number" value={store.customShoulder} onChange={(e) => store.setCustomShoulder(e.target.value)} className="w-full bg-white border border-[#D4D7C9] p-3 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans" placeholder="0.0" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium uppercase text-[#4A5D23] mb-1">Sleeve (in)</label>
-                  <input type="number" value={store.customSleeve} onChange={(e) => store.setCustomSleeve(e.target.value)} className="w-full bg-white border border-[#D4D7C9] p-3 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans" placeholder="0.0" />
-                </div>
+        {store.measurementMode === 'saved' && (
+          <div className="animate-in fade-in duration-300">
+            {!userId ? (
+              <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
+                <p className="font-sans text-xs text-[#1C221A]/70 mb-3">Please log in to access your saved custom fits.</p>
+                <button onClick={() => setShowLoginModal(true)} className="px-5 py-2.5 bg-[#4A5D23] text-white text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:bg-[#3D4C1D] transition-colors cursor-pointer">Log In</button>
               </div>
+            ) : uniquePersons.length > 0 ? (
+              <div className="space-y-4">
 
-              <div className="pt-2 border-t border-[#D4D7C9]/40">
-                <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="font-sans text-[11px] uppercase tracking-widest text-[#1C221A]/70 group-hover:text-[#17210C] transition-colors">
-                    Save this size for future?
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={saveProfileToggle}
-                    onChange={handleSaveToggle}
-                    className="w-4 h-4 accent-[#4A5D23] rounded cursor-pointer"
-                  />
-                </label>
-
-                {saveProfileToggle && userId && (
-                  <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
-                    <input
-                      type="text"
-                      placeholder="Profile Name (e.g., Slim Fit)"
-                      value={newProfileName}
-                      onChange={(e) => setNewProfileName(e.target.value)}
-                      disabled={hasSavedCurrentProfile}
-                      className={`w-full bg-white border ${profileNameError ? 'border-red-500' : 'border-[#D4D7C9]'} p-3 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans disabled:bg-[#F8F9F5] disabled:text-[#1C221A]/50 transition-colors`}
-                    />
-                    {profileNameError && <p className="font-sans text-[10px] text-red-500 mt-1.5">{profileNameError}</p>}
-
-                    <button
-                      onClick={handleSaveProfile}
-                      disabled={hasSavedCurrentProfile || isSavingProfile || !!profileNameError || !newProfileName.trim()}
-                      className={`w-full mt-3 py-3 rounded-xl font-sans text-[12px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm ${hasSavedCurrentProfile
-                        ? 'bg-[#EBECE3] text-[#4A5D23]'
-                        : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] active:scale-[0.98]'
-                        } disabled:opacity-70`}
+                {/* Dropdown 1: Select Person */}
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Select Profile</label>
+                  <div className="relative">
+                    <select
+                      value={store.selectedPerson}
+                      onChange={(e) => store.setSelectedPerson(e.target.value)}
+                      className="w-full bg-white border border-[#D4D7C9] p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans appearance-none cursor-pointer text-[#17210C]"
                     >
-                      {isSavingProfile ? (
-                        'Saving...'
-                      ) : hasSavedCurrentProfile ? (
-                        <><Check className="w-4 h-4" /> Profile Saved</>
-                      ) : (
-                        'Save Measurement'
-                      )}
+                      {uniquePersons.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C221A]/50 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Dropdown 2: Select Fit for current product */}
+                {availableFits.length > 0 ? (
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Select {motherCat} Fit</label>
+                    <div className="relative">
+                      <select
+                        value={store.selectedFitId || ''}
+                        onChange={(e) => store.setSelectedFitId(Number(e.target.value))}
+                        className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/60 p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl font-sans appearance-none cursor-pointer text-[#17210C]"
+                      >
+                        {availableFits.map((fit) => (
+                          <option key={fit.id} value={fit.id}>
+                            {fit.fit_name} {fit.is_default ? '(Featured)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C221A]/50 pointer-events-none" />
+                    </div>
+
+                    {/* Display Measurements for Selected Fit */}
+                    {store.selectedFitId && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 mt-3 bg-white rounded-xl border border-[#D4D7C9]/40 shadow-sm">
+                        {(() => {
+                          const fit = availableFits.find(p => p.id === store.selectedFitId);
+                          if (!fit || !fit.measurements) return null;
+                          return Object.entries(fit.measurements).map(([key, val]) => {
+                            const labelDef = dynamicFields.find(f => f.id === key);
+                            return (
+                              <div key={key} className="flex flex-col">
+                                <span className="font-sans text-[9px] uppercase tracking-widest text-[#1C221A]/50 mb-0.5">{labelDef?.label || key}</span>
+                                <span className="font-sans text-sm text-[#17210C] font-medium bg-[#F8F9F5] px-2.5 py-1.5 rounded-lg border border-[#D4D7C9]/30">{String(val)}"</span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-center">
+                    <p className="font-sans text-xs mb-2">No {motherCat} size found for '{store.selectedPerson}'.</p>
+                    <button onClick={() => store.setMeasurementMode('new')} className="px-4 py-2 bg-[#4A5D23] text-white text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:bg-[#3D4C1D] transition-colors cursor-pointer">
+                      + Create New {motherCat} Size
                     </button>
                   </div>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-      )}
+            ) : (
+              <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
+                <p className="font-sans text-xs text-[#1C221A]/70 mb-2">No profiles found.</p>
+                <button onClick={() => store.setMeasurementMode('new')} className="inline-flex justify-center w-fit mx-auto text-[#4A5D23] text-[12px] hover:text-accent uppercase tracking-widest hover:underline cursor-pointer">Create Profile <ChevronRight className="w-4 h-4" /></button>
+              </div>
+            )}
+          </div>
+        )}
 
-      <div className="mt-6 bg-[#EBECE3]/30 p-3.5 rounded-xl border border-[#D4D7C9]/60 flex justify-between items-center">
-        <span className="text-[11px] font-medium uppercase tracking-widest text-[#1C221A]/60">Est. Fabric Sync:</span>
-        <span className="text-[11px] font-medium uppercase tracking-widest text-[#4A5D23]">{calculatedPanjabiYardage} Yards</span>
-      </div>
-    </>
-  );
+        {store.measurementMode === 'new' && (
+          <div className="animate-in fade-in duration-300">
+            <div className="flex gap-4 mb-6">
+              {['preset', 'custom'].map((t) => (
+                <button key={t} onClick={() => store.setSizeType(t as any)} className={`flex-1 py-2 text-[10px] font-medium uppercase tracking-[0.15em] border-b-2 transition-all cursor-pointer ${store.sizeType === t ? 'border-[#4A5D23] text-[#4A5D23]' : 'border-transparent text-[#1C221A]/40 hover:text-[#1C221A]/70'}`}>
+                  {t} Size
+                </button>
+              ))}
+            </div>
+
+            {store.sizeType === 'preset' ? (
+              <div className="flex flex-wrap gap-3 justify-center">
+                {availablePresets.length > 0 ? availablePresets.map(sizeKey => (
+                  <button key={sizeKey} onClick={() => store.setStandardSize(sizeKey)} className={`w-10 h-10 md:w-12 md:h-12 rounded-xl text-[11px] md:text-[13px] font-heading font-bold transition-all cursor-pointer ${store.standardSize === sizeKey ? 'bg-[#4A5D23] text-white shadow-sm' : 'bg-white border border-[#D4D7C9] text-[#1C221A]/60 hover:border-[#4A5D23]'}`}>
+                    {sizeKey}
+                  </button>
+                )) : <span className="text-xs text-[#1C221A]/50">Presets unavailable for this product.</span>}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {dynamicFields.map(field => (
+                    <div key={field.id}>
+                      <label className="block text-[10px] font-medium uppercase text-[#4A5D23] mb-1">{field.label}</label>
+                      <input
+                        type="number" step="0.25"
+                        value={store.customMeasurements[field.id] || ''}
+                        onChange={(e) => store.setCustomMeasurement(field.id, e.target.value)}
+                        className="w-full bg-white border border-[#D4D7C9] p-2.5 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans" placeholder="0.0"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* On-the-fly Save UI */}
+                <div className="pt-4 border-t border-[#D4D7C9]/40">
+                  <label className="flex items-center justify-between cursor-pointer group">
+                    <span className="font-sans text-[11px] uppercase tracking-widest text-[#1C221A]/70 group-hover:text-[#17210C] transition-colors">Save this size for future?</span>
+                    <input type="checkbox" checked={saveProfileToggle} onChange={(e) => {
+                      const checked = e.target.checked;
+                      if (checked && !userId) { setShowLoginModal(true); return; }
+                      setSaveProfileToggle(checked);
+                      if (checked && !saveTargetPerson) setSaveTargetPerson(uniquePersons.length > 0 ? uniquePersons[0] : 'NEW_PROFILE');
+                    }} className="w-4 h-4 accent-[#4A5D23] rounded cursor-pointer" />
+                  </label>
+
+                  {saveProfileToggle && userId && (
+                    <div className="mt-4 p-4 bg-[#F8F9F5] border border-[#D4D7C9]/60 rounded-xl animate-in slide-in-from-top-2">
+
+                      <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Save under Profile</label>
+                      <select
+                        value={saveTargetPerson} onChange={e => setSaveTargetPerson(e.target.value)}
+                        className="w-full bg-white border border-[#D4D7C9] p-2.5 rounded-lg text-sm focus:outline-none focus:border-[#4A5D23] mb-3 cursor-pointer"
+                      >
+                        {uniquePersons.map(p => <option key={p} value={p}>{p}</option>)}
+                        <option value="NEW_PROFILE" className="text-[#4A5D23]">+ Create New Profile</option>
+                      </select>
+
+                      {saveTargetPerson === 'NEW_PROFILE' && (
+                        <div className="mb-3 animate-in fade-in">
+                          <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">New Profile Name</label>
+                          <input type="text" placeholder="e.g. Me, Brother" value={newProfileName} onChange={e => setNewProfileName(e.target.value)} className="w-full bg-white border border-[#D4D7C9] p-2.5 rounded-lg text-sm focus:outline-none focus:border-[#4A5D23]" />
+                        </div>
+                      )}
+
+                      <div className="mb-2">
+                        <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">{motherCat} Fit Name</label>
+                        <input type="text" placeholder="e.g. Slim Fit, Loose Fit" value={newFitName} onChange={e => setNewFitName(e.target.value)} className="w-full bg-white border border-[#D4D7C9] p-2.5 rounded-lg text-sm focus:outline-none focus:border-[#4A5D23]" />
+                      </div>
+
+                      {profileNameError && <p className="font-sans text-[12px] text-red-500 mt-1 mb-2">{profileNameError}</p>}
+
+                      <button
+                        onClick={handleSaveProfileOnTheFly}
+                        disabled={hasSavedCurrentProfile || isSavingProfile || isSaveDisabled}
+                        className={`w-full mt-2 py-2.5 rounded-lg font-sans text-[11px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm ${(hasSavedCurrentProfile || isSaveDisabled)
+                            ? 'bg-[#EBECE3] text-[#1C221A]/40 cursor-not-allowed'
+                            : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] cursor-pointer'
+                          }`}
+                      >
+                        {isSavingProfile ? 'Saving...' : hasSavedCurrentProfile ? 'Fit Saved Successfully' : 'Save Fit'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Estimator Box */}
+        <div className="mt-6 bg-[#EBECE3]/30 p-3.5 rounded-xl border border-[#D4D7C9]/60 flex justify-between items-center">
+          <span className="text-[11px] font-medium uppercase tracking-widest text-[#1C221A]/60">Est. Fabric Yardage:</span>
+          <span className="text-[11px] uppercase tracking-widest text-[#4A5D23]">{calculatedYardage} Yards</span>
+        </div>
+      </>
+    );
+  };
 
   const renderOrderPreferences = () => (
     <div className="mt-4">
@@ -1376,8 +1500,8 @@ export function CustomizeClient({
               <button
                 onClick={() => setActiveBottomSheet('product')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'product'
-                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                    : 'border-[#D4D7C9] text-[#1C221A]'
+                  ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                  : 'border-[#D4D7C9] text-[#1C221A]'
                   }`}
               >
                 <span>👕</span> {getMotherCategoryName(store.selectedProduct)}
@@ -1387,8 +1511,8 @@ export function CustomizeClient({
               <button
                 onClick={() => setActiveBottomSheet('fabric')}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'fabric'
-                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                    : 'border-[#D4D7C9] text-[#1C221A]'
+                  ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                  : 'border-[#D4D7C9] text-[#1C221A]'
                   }`}
               >
                 <div className="w-5 h-5 rounded-full overflow-hidden border border-[#D4D7C9] shrink-0">
@@ -1402,8 +1526,8 @@ export function CustomizeClient({
                 <button
                   onClick={() => setActiveBottomSheet('style')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'style'
-                      ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                      : 'border-[#D4D7C9] text-[#1C221A]'
+                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                    : 'border-[#D4D7C9] text-[#1C221A]'
                     }`}
                 >
                   <span>✂️</span> Choose Style
@@ -1415,8 +1539,8 @@ export function CustomizeClient({
                 <button
                   onClick={() => setActiveBottomSheet('advanced')}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'advanced'
-                      ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                      : 'border-[#D4D7C9] text-[#1C221A]'
+                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                    : 'border-[#D4D7C9] text-[#1C221A]'
                     }`}
                 >
                   <span>⚙️</span> Advanced Fit

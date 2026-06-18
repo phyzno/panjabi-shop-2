@@ -22,11 +22,9 @@ interface CustomizerState {
 
   // Measurements
   measurementMode: 'saved' | 'new';
-  selectedProfileId: string;
-  customLength: string;
-  customChest: string;
-  customShoulder: string;
-  customSleeve: string;
+  selectedPerson: string; // First Dropdown
+  selectedFitId: number | null; // Second Dropdown
+  customMeasurements: Record<string, string>; // Dynamic Inputs
 
   // Actions
   setSelectedProduct: (product: string) => void;
@@ -42,11 +40,9 @@ interface CustomizerState {
   toggleColorFilter: (color: string) => void;
   toggleTypeFilter: (type: string) => void;
   setMeasurementMode: (mode: 'saved' | 'new') => void;
-  setSelectedProfileId: (id: string) => void;
-  setCustomLength: (val: string) => void;
-  setCustomChest: (val: string) => void;
-  setCustomShoulder: (val: string) => void;
-  setCustomSleeve: (val: string) => void;
+  setSelectedPerson: (name: string) => void;
+  setSelectedFitId: (id: number | null) => void;
+  setCustomMeasurement: (key: string, value: string) => void;
   resetCustomizer: () => void;
 }
 
@@ -54,7 +50,7 @@ export const useCustomizerStore = create<CustomizerState>()(
   persist(
     (set) => ({
       // Defaults
-      selectedProduct: 'panjabi_regular', // ডিফল্ট প্রোডাক্ট হিসেবে রেগুলার পাঞ্জাবি
+      selectedProduct: 'panjabi_regular',
       productStyles: {
         collar: 'band',
         placket: 'hidden',
@@ -71,11 +67,9 @@ export const useCustomizerStore = create<CustomizerState>()(
       selectedColors: [],
       selectedTypes: [],
       measurementMode: 'new',
-      selectedProfileId: '',
-      customLength: '',
-      customChest: '',
-      customShoulder: '',
-      customSleeve: '',
+      selectedPerson: '',
+      selectedFitId: null,
+      customMeasurements: {},
 
       // State Setters
       setSelectedProduct: (selectedProduct) => set({ selectedProduct }),
@@ -103,11 +97,11 @@ export const useCustomizerStore = create<CustomizerState>()(
       })),
 
       setMeasurementMode: (measurementMode) => set({ measurementMode }),
-      setSelectedProfileId: (selectedProfileId) => set({ selectedProfileId }),
-      setCustomLength: (customLength) => set({ customLength }),
-      setCustomChest: (customChest) => set({ customChest }),
-      setCustomShoulder: (customShoulder) => set({ customShoulder }),
-      setCustomSleeve: (customSleeve) => set({ customSleeve }),
+      setSelectedPerson: (selectedPerson) => set({ selectedPerson }),
+      setSelectedFitId: (selectedFitId) => set({ selectedFitId }),
+      setCustomMeasurement: (key, value) => set((state) => ({
+        customMeasurements: { ...state.customMeasurements, [key]: value }
+      })),
 
       resetCustomizer: () => set({
         selectedProduct: 'panjabi_regular',
@@ -120,18 +114,16 @@ export const useCustomizerStore = create<CustomizerState>()(
         standardSize: 'M',
         specialInstructions: '',
         measurementMode: 'new',
-        selectedProfileId: '',
-        customLength: '',
-        customChest: '',
-        customShoulder: '',
-        customSleeve: '',
+        selectedPerson: '',
+        selectedFitId: null,
+        customMeasurements: {},
         searchQuery: '',
         selectedColors: [],
         selectedTypes: [],
       }),
     }),
     {
-      name: 'bespoke-atelier-storage', // স্টোরেজ কি (Key) আপডেট করা হলো
+      name: 'bespoke-atelier-storage',
     }
   )
 );

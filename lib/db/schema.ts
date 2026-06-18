@@ -78,11 +78,12 @@ export const users = pgTable("users", {
 export const savedMeasurements = pgTable("saved_measurements", {
   id: serial("id").primaryKey(),
   user_id: text("user_id").references(() => users.id, { onDelete: "cascade" }),
-  person_name: text("person_name").notNull(), // যেমন: "Me", "Abbu", "Brother"
-  fit_name: text("fit_name").notNull(), // যেমন: "Regular Fit", "Slim Fit"
-  product_type: text("product_type").notNull(), // যেমন: "panjabi", "shirt", "pant"
-  measurements: jsonb("measurements").notNull(), // ডাইনামিক JSON অবজেক্ট
-  is_default: boolean("is_default").default(false), // এই পার্সন এবং প্রোডাক্টের জন্য এটি ডিফল্ট কি না
+  person_name: text("person_name").notNull(), 
+  fit_name: text("fit_name").notNull(), 
+  product_type: text("product_type").notNull(), 
+  measurements: jsonb("measurements").notNull(), 
+  is_default: boolean("is_default").default(false), // এটি ট্র্যাক করবে নির্দিষ্ট প্রোডাক্টের জন্য Featured Fit
+  is_person_default: boolean("is_person_default").default(false), // এটি ট্র্যাক করবে Featured Person
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
