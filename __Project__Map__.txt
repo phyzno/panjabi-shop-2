@@ -19,95 +19,99 @@ Punjabi-Shop/
 |   |-- (auth)/
 |   |   |-- AuthRedirect.tsx
 |   |   |-- layout.tsx
-|   |   |-- (protected)/
-|   |   |   |-- layout.tsx
-|   |   |   |-- dashboard/
-|   |   |   |   |-- page.tsx
-|   |   |   |   |-- measurements/
-|   |   |   |   |   |-- MeasurementsClient.tsx
-|   |   |   |   |   \-- page.tsx
-|   |   |   |   |-- orders/
-|   |   |   |   |   |-- OrdersClient.tsx
-|   |   |   |   |   \-- page.tsx
-|   |   |   |   \-- wishlist/
-|   |   |   |       |-- page.tsx
-|   |   |   |       \-- WishlistClient.tsx
 |   |   |-- forgot-password/
 |   |   |   |-- ForgotPasswordForm.tsx
 |   |   |   \-- page.tsx
 |   |   |-- login/
 |   |   |   |-- LoginForm.tsx
 |   |   |   \-- page.tsx
-|   |   \-- signup/
-|   |       |-- page.tsx
-|   |       \-- SignupForm.tsx
+|   |   |-- signup/
+|   |   |   |-- SignupForm.tsx
+|   |   |   \-- page.tsx
+|   |   \-- (protected)/
+|   |       |-- layout.tsx
+|   |       \-- dashboard/
+|   |           |-- page.tsx
+|   |           |-- measurements/
+|   |           |   |-- MeasurementsClient.tsx
+|   |           |   \-- page.tsx
+|   |           |-- orders/
+|   |           |   |-- OrdersClient.tsx
+|   |           |   \-- page.tsx
+|   |           \-- wishlist/
+|   |               |-- WishlistClient.tsx
+|   |               \-- page.tsx
 |   |-- (public)/
 |   |   |-- layout.tsx
-|   |   |-- page.tsx
-|   |   |-- checkout/
-|   |   |   |-- page.tsx
-|   |   |   \-- success/
-|   |   |       \-- page.tsx
-|   |   |-- contact/
+|   |   |-- (home)/
+|   |   |   |-- layout.tsx
 |   |   |   \-- page.tsx
-|   |   |-- customize/
-|   |   |   \-- [id]/
-|   |   |       \-- page.tsx
-|   |   |-- faq/
-|   |   |   \-- page.tsx
-|   |   |-- order-confirmation/
-|   |   |   \-- [id]/
-|   |   |       \-- page.tsx
-|   |   |-- privacy/
-|   |   |   \-- page.tsx
-|   |   |-- returns/
-|   |   |   \-- page.tsx
-|   |   |-- shipping/
-|   |   |   \-- page.tsx
-|   |   |-- shop/
-|   |   |   |-- page.tsx
-|   |   |   |-- ShopClient.tsx
-|   |   |   \-- [id]/
-|   |   |       |-- page.tsx
-|   |   |       \-- ProductDetailsClient.tsx
-|   |   |-- terms/
-|   |   |   \-- page.tsx
-|   |   \-- track-order/
-|   |       \-- page.tsx
+|   |   \-- (site)/
+|   |       |-- layout.tsx
+|   |       |-- checkout/
+|   |       |   |-- page.tsx
+|   |       |   \-- success/
+|   |       |       \-- page.tsx
+|   |       |-- contact/
+|   |       |   \-- page.tsx
+|   |       |-- customize/
+|   |       |   \-- [id]/
+|   |       |       \-- page.tsx
+|   |       |-- faq/
+|   |       |   \-- page.tsx
+|   |       |-- order-confirmation/
+|   |       |   \-- [id]/
+|   |       |       \-- page.tsx
+|   |       |-- privacy/
+|   |       |   \-- page.tsx
+|   |       |-- returns/
+|   |       |   \-- page.tsx
+|   |       |-- shipping/
+|   |       |   \-- page.tsx
+|   |       |-- shop/
+|   |       |   |-- page.tsx
+|   |       |   |-- ShopClient.tsx
+|   |       |   \-- [id]/
+|   |       |       |-- page.tsx
+|   |       |       \-- ProductDetailsClient.tsx
+|   |       |-- terms/
+|   |       |   \-- page.tsx
+|   |       \-- track-order/
+|   |           \-- page.tsx
 |   |-- admin/
 |   |   |-- layout.tsx
-|   |   |-- (protected)/
-|   |   |   |-- layout.tsx
-|   |   |   |-- page.tsx
-|   |   |   |-- collars/
-|   |   |   |   |-- page.tsx
-|   |   |   |   \-- edit/
-|   |   |   |       \-- [id]/
-|   |   |   |           \-- page.tsx
-|   |   |   |-- fabrics/
-|   |   |   |   |-- page.tsx
-|   |   |   |   |-- edit/
-|   |   |   |   |   \-- [id]/
-|   |   |   |   |       \-- page.tsx
-|   |   |   |   \-- new/
-|   |   |   |       \-- page.tsx
-|   |   |   |-- featured/
-|   |   |   |   \-- page.tsx
-|   |   |   |-- orders/
-|   |   |   |   \-- page.tsx
-|   |   |   |-- products/
-|   |   |   |   |-- page.tsx
-|   |   |   |   |-- edit/
-|   |   |   |   |   \-- [id]/
-|   |   |   |   |       \-- page.tsx
-|   |   |   |   \-- new/
-|   |   |   |       \-- page.tsx
-|   |   |   |-- settings/
-|   |   |   |   \-- page.tsx
-|   |   |   \-- stock/
-|   |   |       \-- page.tsx
-|   |   \-- login/
-|   |       \-- page.tsx
+|   |   |-- login/
+|   |   |   \-- page.tsx
+|   |   \-- (protected)/
+|   |       |-- layout.tsx
+|   |       |-- page.tsx
+|   |       |-- collars/
+|   |       |   |-- page.tsx
+|   |       |   \-- edit/
+|   |       |       \-- [id]/
+|   |       |           \-- page.tsx
+|   |       |-- fabrics/
+|   |       |   |-- page.tsx
+|   |       |   |-- new/
+|   |       |   |   \-- page.tsx
+|   |       |   \-- edit/
+|   |       |       \-- [id]/
+|   |       |           \-- page.tsx
+|   |       |-- featured/
+|   |       |   \-- page.tsx
+|   |       |-- orders/
+|   |       |   \-- page.tsx
+|   |       |-- products/
+|   |       |   |-- page.tsx
+|   |       |   |-- new/
+|   |       |   |   \-- page.tsx
+|   |       |   \-- edit/
+|   |       |       \-- [id]/
+|   |       |           \-- page.tsx
+|   |       |-- settings/
+|   |       |   \-- page.tsx
+|   |       \-- stock/
+|   |           \-- page.tsx
 |   |-- api/
 |   |   |-- admin/
 |   |   |   |-- login/
@@ -153,7 +157,9 @@ Punjabi-Shop/
 |   |   \-- CartDrawer.tsx
 |   |-- customizer/
 |   |   |-- CustomizeClient.tsx
-|   |   \-- PanjabiCanvas.tsx
+|   |   |-- FabricQuickViewModal.tsx
+|   |   |-- PanjabiCanvas.tsx
+|   |   \-- TailoringDetailsModal.tsx
 |   |-- dashboard/
 |   |   \-- OrderDetailsModal.tsx
 |   |-- layout/
@@ -165,6 +171,7 @@ Punjabi-Shop/
 |   |   |-- Header.tsx
 |   |   |-- Hero.tsx
 |   |   |-- ProcessModal.tsx
+|   |   |-- PublicHeader.tsx
 |   |   |-- ReviewSection.tsx
 |   |   \-- ReviewTwo.tsx
 |   |-- providers/
@@ -199,48 +206,41 @@ Punjabi-Shop/
 |   |-- canvas/
 |   |   |-- fabricPatterns.ts
 |   |   \-- textureEngine.ts
-|   \-- db/
-|       |-- index.ts
-|       \-- schema.ts
-|-- public/
-|   \-- assets/
-|       |-- customizable-punjabi.png
-|       |-- collars/
-|       |   |-- band-collar.png
-|       |   |-- mandarin-collar.png
-|       |   |-- round-collar.png
-|       |   \-- vneck-collar.png
-|       \-- punjabi/
-|           |-- 1-1.webp
-|           |-- 1-2.webp
-|           |-- 1-29.webp
-|           |-- 1-31.webp
-|           |-- 1-34.webp
-|           |-- 3-8.webp
-|           |-- 4-11.webp
-|           |-- 6-1.webp
-|           |-- Blue-1-1.webp
-|           |-- collar-band.png
-|           |-- collar-mandarin.png
-|           |-- collar-round.png
-|           |-- collar-vneck.png
-|           |-- Merun-KC-2.webp
-|           \-- Off-White-1.webp
-|-- scripts/
-|   \-- seed-catalog.cjs
+|   |-- config/
+|   |   |-- measurementConfig.ts
+|   |   |-- productConfig.ts
+|   |   \-- standardSizes.ts
+|   |-- db/
+|   |   |-- index.ts
+|   |   \-- schema.ts
+|   \-- utils/
+|       \-- fabricEstimator.ts
 |-- store/
 |   |-- authStore.ts
 |   |-- cartStore.ts
 |   |-- useCustomizerStore.ts
 |   |-- useSizeGuideStore.ts
 |   \-- wishlistStore.ts
+|-- utils/
+|   \-- supabase/
+|       |-- client.ts
+|       |-- middleware.ts
+|       |-- server.ts
+|       \-- service.ts
+|-- drizzle/
+|   |-- 0000_foamy_jean_grey.sql
+|   |-- 0001_update_fabrics_table.sql
+|   \-- meta/
+|       |-- _journal.json
+|       \-- 0000_snapshot.json
 |-- supabase/
 |   \-- migrations/
 |       |-- 0000_initial_schema.sql
 |       \-- 0001_add_missing_product_columns.sql
-\-- utils/
-    \-- supabase/
-        |-- client.ts
-        |-- middleware.ts
-        |-- server.ts
-        \-- service.ts
+|-- scripts/
+|   \-- seed-catalog.cjs
+\-- public/
+    |-- New Asset Map.txt  [assigned asset map]
+    |-- assets/            [see public/New Asset Map.txt]
+    |-- Canvas/            [see public/New Asset Map.txt]
+    \-- UI Vectors/        [see public/New Asset Map.txt]

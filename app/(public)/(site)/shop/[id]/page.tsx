@@ -37,7 +37,7 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
   }
 
   // group_id থাকলে Sibling ভেরিয়েন্টগুলো ফেচ করা হচ্ছে
-  let colorVariants = [];
+  let colorVariants: any[] = [];
   if (product.group_id) {
     const variantsRes = await getProductVariants(product.group_id, product.id);
     if (variantsRes.success && variantsRes.data) {
@@ -73,6 +73,10 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
     group_id: product.group_id || null,
     color_name: product.color_name || null,
     color_hex: product.color_hex || null,
+    additional_details: (product.additional_details as { title: string; content: string }[]) || [],
+    rating: product.rating || 4.8,
+    review_count: product.review_count || 24,
+    has_size_guide: product.has_size_guide ?? true,
   };
 
   return (

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { uploadImages, deleteUploadedImages } from "@/lib/actions/upload.actions";
 import { addProduct, updateProduct, checkProductIdExists } from "@/lib/actions/product.actions";
-import { Loader2, UploadCloud, X, Star, CheckCircle2, AlertCircle, Pipette } from "lucide-react";
+import { Loader2, UploadCloud, X, Star, CheckCircle2, AlertCircle, Pipette, Plus, RotateCcw } from "lucide-react";
 import Image from "next/image";
 
 const compressImageNative = (file: File, maxWidth = 1200, quality = 0.75): Promise<File> => {
@@ -86,6 +86,29 @@ export default function ProductForm({
   const [magnifier, setMagnifier] = useState<{ x: number, y: number, color: string, show: boolean, rectWidth: number }>({ x: 0, y: 0, color: '#ffffff', show: false, rectWidth: 0 });
   const [isInteracting, setIsInteracting] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // --- Additional Details Default Template ---
+  const defaultDetails = [
+    { title: 'Fabric & Material', content: 'Premium woven fabric with refined tailoring. Each piece is selected to complement the silhouette while keeping comfort in focus.' },
+    { title: 'Sizing & Fit', content: 'Fits true to size with a balanced drape. Use the size selector below or visit our measurement guide for a custom fit.' },
+    { title: 'Care Instructions', content: 'Dry clean only. Keep it in a breathable garment bag and avoid direct ironing on detailing.' }
+  ];
+
+  const [rating, setRating] = useState<number>(initialData?.rating ?? 4.8);
+  const [reviewCount, setReviewCount] = useState<number>(initialData?.review_count ?? 24);
+  const [hasSizeGuide, setHasSizeGuide] = useState<boolean>(initialData?.has_size_guide ?? true);
+  const [additionalDetails, setAdditionalDetails] = useState<{title: string, content: string}[]>(
+    initialData?.additional_details?.length ? initialData.additional_details : defaultDetails
+  );
+
+  const addDetail = () => setAdditionalDetails([...additionalDetails, { title: "", content: "" }]);
+  const updateDetail = (index: number, key: 'title' | 'content', value: string) => {
+    const newDetails = [...additionalDetails];
+    newDetails[index][key] = value;
+    setAdditionalDetails(newDetails);
+  };
+  const removeDetail = (index: number) => setAdditionalDetails(additionalDetails.filter((_, i) => i !== index));
+  const resetDetails = () => setAdditionalDetails(defaultDetails);
 
   useEffect(() => {
     if (pickerImageSrc) setIsInteracting(false);
@@ -316,6 +339,10 @@ export default function ProductForm({
         description: formData.get("description") as string,
         price: Number(formData.get("price")),
         discount_percentage: Number(formData.get("discount_percentage")) || 0,
+        rating: rating,
+        review_count: reviewCount,
+        has_size_guide: hasSizeGuide,
+        additional_details: additionalDetails,
         images: allUrls,
         video_url: formData.get("video_url") as string,
         sizes: selectedSizes,
@@ -429,9 +456,68 @@ export default function ProductForm({
           </div>
         </div>
 
+        {/* --- Rating, Reviews & Size Guide Settings --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-secondary/10 border border-border p-5 rounded-lg">
+          <div>
+            <label className="block text-sm font-heading font-bold text-primary mb-2">Fake Rating</label>
+            <input type="number" step="0.1" min="1" max="5" value={rating} onChange={(e) => setRating(Number(e.target.value))} className="w-full border border-border bg-background rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary text-sm font-sans" />
+          </div>
+          <div>
+            <label className="block text-sm font-heading font-bold text-primary mb-2">Fake Review Count</label>
+            <input type="number" min="0" value={reviewCount} onChange={(e) => setReviewCount(Number(e.target.value))} className="w-full border border-border bg-background rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary text-sm font-sans" />
+          </div>
+          <div className="flex items-center">
+            <label className="flex items-center gap-3 cursor-pointer mt-4">
+              <input type="checkbox" checked={hasSizeGuide} onChange={(e) => setHasSizeGuide(e.target.checked)} className="w-5 h-5 accent-primary cursor-pointer" />
+              <span className="text-sm font-heading font-bold text-primary">Enable Size Guide Modal?</span>
+            </label>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-heading font-bold text-primary mb-2">Description</label>
           <textarea name="description" defaultValue={initialData?.description} rows={4} placeholder="Premium quality fabric details..." className="w-full border border-border bg-secondary/50 rounded-md px-4 py-3 focus:ring-2 focus:ring-primary outline-none font-sans text-sm resize-none" />
+        </div>
+
+        {/* --- Additional Details Builder --- */}
+        <div className="bg-secondary/10 border border-border p-5 rounded-lg space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border/50 pb-3 gap-3">
+            <div>
+              <h3 className="text-sm font-heading font-bold text-primary">Additional Details (Accordion Blocks)</h3>
+              <p className="text-xs text-muted-foreground mt-1">Add fabric info, care instructions, fragrance notes, etc.</p>
+            </div>
+            <button type="button" onClick={resetDetails} className="px-3 py-1.5 bg-background border border-border rounded text-xs font-sans font-medium text-primary hover:bg-secondary flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0">
+              <RotateCcw size={14} /> Reset to Default
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {additionalDetails.map((detail, index) => (
+              <div key={index} className="flex flex-col gap-3 p-4 bg-background border border-border rounded-lg relative group">
+                <button type="button" onClick={() => removeDetail(index)} className="absolute top-2 right-2 text-muted-foreground hover:text-red-500 bg-secondary/50 hover:bg-red-50 rounded-full p-1.5 cursor-pointer transition-colors">
+                  <X size={14} />
+                </button>
+                <input 
+                  type="text" 
+                  placeholder="Title (e.g. Care Instructions)" 
+                  value={detail.title} 
+                  onChange={(e) => updateDetail(index, 'title', e.target.value)} 
+                  className="w-full sm:w-1/2 border border-border bg-secondary/30 rounded-md px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary text-sm font-heading font-semibold" 
+                />
+                <textarea 
+                  placeholder="Description content..." 
+                  value={detail.content} 
+                  onChange={(e) => updateDetail(index, 'content', e.target.value)} 
+                  rows={2} 
+                  className="w-full border border-border bg-secondary/30 rounded-md px-3 py-2.5 outline-none focus:ring-2 focus:ring-primary text-sm font-sans resize-none" 
+                />
+              </div>
+            ))}
+          </div>
+
+          <button type="button" onClick={addDetail} className="w-full py-3 bg-background border border-dashed border-primary/40 text-primary rounded-lg text-sm font-sans font-medium hover:bg-primary/5 hover:border-primary transition-colors cursor-pointer flex items-center justify-center gap-2">
+            <Plus size={16} /> Add New Detail Block
+          </button>
         </div>
 
         <div className="md:col-span-2 mt-6">

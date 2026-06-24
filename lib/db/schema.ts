@@ -21,6 +21,11 @@ export const products = pgTable("products", {
   is_featured: boolean("is_featured").default(false),
   images: jsonb("images").notNull(),
   video_url: text("video_url"),
+
+  rating: real("rating").default(4.8), 
+  review_count: integer("review_count").default(24), 
+  additional_details: jsonb("additional_details").default([]), 
+  has_size_guide: boolean("has_size_guide").default(true),
   
   // Multi-color Product Variants এর জন্য নতুন ৩টি কলাম
   group_id: text("group_id"), 

@@ -45,6 +45,10 @@ export const getCachedFeaturedProducts = unstable_cache(
           group_id: products.group_id,
           color_name: products.color_name,
           color_hex: products.color_hex,
+          rating: products.rating,
+          review_count: products.review_count,
+          additional_details: products.additional_details,
+          has_size_guide: products.has_size_guide,
         })
         .from(products)
         .leftJoin(categories, eq(products.category_id, categories.id))
@@ -56,8 +60,8 @@ export const getCachedFeaturedProducts = unstable_cache(
       return { success: false, data: [] };
     }
   },
-  ['featured-products-cache'], 
-  { tags: ['products', 'categories'] } 
+  ['featured-products-cache'],
+  { tags: ['products', 'categories'] }
 );
 
 export async function addProduct(data: {
@@ -72,9 +76,13 @@ export async function addProduct(data: {
   images: string[];
   video_url?: string | null;
   is_featured?: boolean;
-  group_id?: string;
-  color_name?: string;
-  color_hex?: string;
+  group_id?: string | null;
+  color_name?: string | null;
+  color_hex?: string | null;
+  rating?: number;
+  review_count?: number;
+  additional_details?: { title: string; content: string }[];
+  has_size_guide?: boolean;
 }) {
   const cleanVideoUrl = extractVideoUrl(data.video_url ?? null);
   try {
@@ -93,6 +101,10 @@ export async function addProduct(data: {
       group_id: data.group_id || null,
       color_name: data.color_name || null,
       color_hex: data.color_hex || null,
+      rating: data.rating ?? 4.8,
+      review_count: data.review_count ?? 24,
+      additional_details: data.additional_details || [],
+      has_size_guide: data.has_size_guide ?? true,
     });
 
     revalidateTag('products');
@@ -117,9 +129,13 @@ export async function updateProduct(
     images: string[];
     video_url?: string | null;
     is_featured?: boolean;
-    group_id?: string;
-    color_name?: string;
-    color_hex?: string;
+    group_id?: string | null;
+    color_name?: string | null;
+    color_hex?: string | null;
+    rating?: number;
+    review_count?: number;
+    additional_details?: { title: string; content: string }[];
+    has_size_guide?: boolean;
   }
 ) {
   const cleanVideoUrl = extractVideoUrl(data.video_url ?? null);
@@ -138,6 +154,10 @@ export async function updateProduct(
       group_id: data.group_id !== undefined ? data.group_id : null,
       color_name: data.color_name !== undefined ? data.color_name : null,
       color_hex: data.color_hex !== undefined ? data.color_hex : null,
+      rating: data.rating ?? 4.8,
+      review_count: data.review_count ?? 24,
+      additional_details: data.additional_details || [],
+      has_size_guide: data.has_size_guide ?? true,
       updated_at: new Date(),
     }).where(eq(products.id, id));
 
@@ -186,7 +206,7 @@ export async function deleteProduct(id: string, imageUrls: string[] = []) {
     if (currentGroupId) {
       revalidateTag(`variants-${currentGroupId}`);
     }
-    
+
     return { success: true, message: "Product and related images deleted!" };
   } catch (error) {
     console.error("Delete Product Error:", error);
@@ -210,7 +230,7 @@ export async function getProducts(categoryId?: number) {
 export async function getProductById(id: string) {
   try {
     const data = await db.select().from(products).where(eq(products.id, id));
-    return { success: true, data: data[0] }; 
+    return { success: true, data: data[0] };
   } catch (error) {
     console.error("Fetch Product By ID Error:", error);
     return { success: false, error: "Failed to fetch product details." };
@@ -220,12 +240,12 @@ export async function getProductById(id: string) {
 export async function updateProductStock(id: string, stockObj: ProductStock) {
   try {
     await db.update(products).set({ stock: stockObj, updated_at: new Date() }).where(eq(products.id, id));
-    
+
     revalidateTag('products');
     revalidateTag(`product-${id}`);
     revalidatePath(`/shop/${id}`);
     revalidatePath('/shop');
-    
+
     return { success: true, message: "Product stock updated!" };
   } catch (error) {
     console.error("Update Product Stock Error:", error);
@@ -281,6 +301,10 @@ export async function getCachedAllProducts() {
             group_id: products.group_id,
             color_name: products.color_name,
             color_hex: products.color_hex,
+            rating: products.rating,
+            review_count: products.review_count,
+            additional_details: products.additional_details,
+            has_size_guide: products.has_size_guide,
           })
           .from(products)
           .leftJoin(categories, eq(products.category_id, categories.id));
@@ -291,7 +315,7 @@ export async function getCachedAllProducts() {
         return { success: false, data: [] };
       }
     },
-    ['all-products-cache'], 
+    ['all-products-cache'],
     { tags: ['products', 'categories'] }
   )();
 }
@@ -315,6 +339,10 @@ export async function getCachedProductById(id: string) {
             group_id: products.group_id,
             color_name: products.color_name,
             color_hex: products.color_hex,
+            rating: products.rating,
+            review_count: products.review_count,
+            additional_details: products.additional_details,
+            has_size_guide: products.has_size_guide,
           })
           .from(products)
           .leftJoin(categories, eq(products.category_id, categories.id))
@@ -326,7 +354,7 @@ export async function getCachedProductById(id: string) {
         return { success: false, data: null };
       }
     },
-    [`product-${id}-cache`], 
+    [`product-${id}-cache`],
     { tags: [`product-${id}`, 'products', 'categories'] }
   )();
 }
@@ -344,17 +372,17 @@ export async function checkProductIdExists(id: string) {
 export async function updateProductDiscount(id: string, discountPercentage: number) {
   try {
     await db.update(products)
-      .set({ 
-        discount_percentage: discountPercentage, 
-        updated_at: new Date() 
+      .set({
+        discount_percentage: discountPercentage,
+        updated_at: new Date()
       })
       .where(eq(products.id, id));
-    
+
     revalidateTag('products');
     revalidateTag(`product-${id}`);
     revalidatePath(`/shop/${id}`);
     revalidatePath('/shop');
-    
+
     return { success: true, message: "Product discount updated successfully!" };
   } catch (error) {
     console.error("Update Product Discount Error:", error);
@@ -392,7 +420,7 @@ export async function getProductVariants(groupId: string, currentProductId: stri
           color_name: product.color_name,
           color_hex: product.color_hex,
           video_url: product.video_url,
-          image: imagesArray[0] || null, 
+          image: imagesArray[0] || null,
         };
       });
 

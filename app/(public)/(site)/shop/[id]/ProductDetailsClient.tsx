@@ -14,24 +14,6 @@ import { toggleWishlistItem } from '@/lib/actions/wishlist.actions';
 import { cn } from '@/lib/utils';
 import { useWishlistStore } from '@/store/wishlistStore';
 
-const detailSections = [
-  {
-    title: 'Fabric & Material',
-    content:
-      'Premium woven fabric with refined tailoring. Each piece is selected to complement the silhouette while keeping comfort in focus.',
-  },
-  {
-    title: 'Sizing & Fit',
-    content:
-      'Fits true to size with a balanced drape. Use the size selector below or visit our measurement guide for a custom fit.',
-  },
-  {
-    title: 'Care Instructions',
-    content:
-      'Dry clean only. Keep it in a breathable garment bag and avoid direct ironing on detailing.',
-  },
-] as const;
-
 type SizeMode = 'preset' | 'number';
 
 interface ColorVariant {
@@ -48,7 +30,11 @@ interface ProductDetailsClientProps {
     group_id?: string | null,
     color_name?: string | null,
     color_hex?: string | null,
-    video_url?: string | null
+    video_url?: string | null,
+    rating?: number,
+    review_count?: number,
+    has_size_guide?: boolean,
+    additional_details?: { title: string; content: string }[]
   };
   relatedProducts: CollectionProduct[];
   colorVariants?: ColorVariant[];
@@ -137,6 +123,14 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
 
   const activeSizes = sizeMode === 'preset' ? dbPresetSizes : dbNumericSizes;
+
+  const dynamicSections = product?.additional_details?.length 
+    ? product.additional_details 
+    : [
+        { title: 'Fabric & Material', content: 'Premium woven fabric with refined tailoring. Each piece is selected to complement the silhouette while keeping comfort in focus.' },
+        { title: 'Sizing & Fit', content: 'Fits true to size with a balanced drape. Use the size selector below or visit our measurement guide for a custom fit.' },
+        { title: 'Care Instructions', content: 'Dry clean only. Keep it in a breathable garment bag and avoid direct ironing on detailing.' }
+      ];
 
   useEffect(() => {
     if (!product) return;
@@ -324,15 +318,40 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
               <span className="font-sans text-[11px] font-medium uppercase tracking-[0.25em] text-[#4A5D23]">
                 {product.category}
               </span>
-              <div className="flex items-center gap-1.5">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 fill-[#C25934] text-[#C25934]" />
-                  ))}
+              <div className="flex items-center gap-1">
+                
+                {/* --- 5 Stars Smart Fill System --- */}
+                <div className="flex items-center gap-0.5">
+                  {[...Array(5)].map((_, i) => {
+                    const currentRating = product.rating ?? 4.8;
+                    // কত পার্সেন্ট ফিল হবে তা ক্যালকুলেট করা (0 থেকে 100 এর মধ্যে)
+                    const fillPercentage = Math.max(0, Math.min(100, (currentRating - i) * 100));
+                    
+                    return (
+                      <div key={i} className="relative w-3.5 h-3.5">
+                        {/* Background (Empty/Muted) Star */}
+                        <Star className="absolute top-0 left-0 w-3.5 h-3.5 text-[#C25934]/30" />
+                        
+                        {/* Foreground (Filled) Star with CSS Clip-Path */}
+                        <Star 
+                          className="absolute top-0 left-0 w-3.5 h-3.5 fill-[#C25934] text-[#C25934]" 
+                          style={{ clipPath: `inset(0 ${100 - fillPercentage}% 0 0)` }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-                <span className="font-sans text-xs text-[#1C221A]/50 font-medium">
-                  (24 reviews)
-                </span>
+
+                {/* --- Numeric Text --- */}
+                <div className="flex items-center gap-1.5 ml-1">
+                  <span className="font-sans text-[13px] text-[#1C221A]">
+                    {product.rating ?? 4.8}
+                  </span>
+                  <span className="font-sans text-xs text-[#1C221A]/50 font-medium">
+                    ({product.review_count ?? 24} reviews)
+                  </span>
+                </div>
+
               </div>
             </div>
 
@@ -445,13 +464,15 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsSizeGuideOpen(true)}
-                  className="flex items-center gap-1.5 font-sans text-[11px] font-medium uppercase tracking-widest text-[#4A5D23] hover:underline underline-offset-4 cursor-pointer transition-colors"
-                >
-                  <Ruler className="w-3.5 h-3.5" /> Size Guide
-                </button>
+                {product.has_size_guide !== false && (
+                  <button
+                    type="button"
+                    onClick={() => setIsSizeGuideOpen(true)}
+                    className="flex items-center gap-1.5 font-sans text-[11px] font-medium uppercase tracking-widest text-[#4A5D23] hover:underline underline-offset-4 cursor-pointer transition-colors"
+                  >
+                    <Ruler className="w-3.5 h-3.5" /> Size Guide
+                  </button>
+                )}
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -561,10 +582,10 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
             </div>
 
             <div className="space-y-3">
-              {detailSections.map((item, index) => {
+              {dynamicSections.map((item, index) => {
                 const isOpen = openTab === index;
                 return (
-                  <div key={item.title} className="border-b border-[#D4D7C9]/50 pb-3">
+                  <div key={index} className="border-b border-[#D4D7C9]/50 pb-3">
                     <button
                       onClick={() => toggleTab(index)}
                       className="w-full flex justify-between items-center py-2 text-left font-heading text-[13px] font-bold uppercase tracking-wider text-[#17210C] hover:text-[#4A5D23] transition-colors cursor-pointer"
