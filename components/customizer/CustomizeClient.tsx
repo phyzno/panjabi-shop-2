@@ -15,6 +15,7 @@ import { getUserMeasurements } from '@/lib/actions/user.actions';
 import { FabricQuickViewModal } from './FabricQuickViewModal';
 import { UI_VECTORS, JUBBA_CANVAS_MAP, PANT_CANVAS_MAP, PANJABI_CANVAS_MAP, SHIRT_CANVAS_MAP, PAJAMA_CANVAS_MAP, ADVANCED_TAILORING_OPTIONS } from '@/lib/config/productConfig';
 import { TailoringDetailsModal } from './TailoringDetailsModal';
+import { useSizeGuideStore } from '@/store/useSizeGuideStore';
 
 const presetSizes = [
   { size: "S", yard: 2.25 },
@@ -57,6 +58,7 @@ export function CustomizeClient({
   const [activeSavedMeasurements, setActiveSavedMeasurements] = useState<any[]>(savedMeasurements || []);
   const cartStore = useCartStore();
   const store = useCustomizerStore();
+  const openSizeGuide = useSizeGuideStore((state) => state.openModal);
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveProfileToggle, setSaveProfileToggle] = useState(false);
   const [profileNameError, setProfileNameError] = useState('');
@@ -1055,6 +1057,16 @@ export function CustomizeClient({
 
     return (
       <>
+      <div className="flex justify-between items-center mb-4 mt-2">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-[#1C221A]/70">Enter Your Measurements</span>
+          <button 
+            type="button"
+            onClick={() => openSizeGuide({ isGlobal: false, tab: 'guide', category: motherCat })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4A5D23]/10 text-[#4A5D23] text-[10px] font-medium uppercase tracking-widest hover:bg-[#4A5D23]/20 transition-all cursor-pointer"
+          >
+            <Info className="w-3.5 h-3.5" /> How to Measure?
+          </button>
+        </div>
         <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl mb-6">
           <button onClick={() => store.setMeasurementMode('saved')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>My Profiles</button>
           <button onClick={() => store.setMeasurementMode('new')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>New Size</button>
@@ -1641,7 +1653,15 @@ export function CustomizeClient({
           {/* Conditionally hide measurements block entirely if Fabric Only */}
           {!isFabricOnly && (
             <>
-              <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23] mb-3">Measurements</h3>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23]">Measurements</h3>
+                <button 
+                  onClick={() => openSizeGuide({ isGlobal: false, tab: 'guide', category: motherCat })}
+                  className="text-[#C25934] flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <Ruler className="w-3.5 h-3.5" /> <span className="text-[9px] uppercase tracking-wider font-medium">Guide</span>
+                </button>
+              </div>
               <div className="bg-white p-4 rounded-2xl border border-[#D4D7C9]/40 shadow-sm mb-6">
                 {renderMeasurementContent()}
               </div>

@@ -140,3 +140,20 @@ export async function deleteFitMeasurement(id: number) {
     return { success: false, error: "Failed to delete measurement." };
   }
 }
+
+export async function updateFitMeasurement(id: number, data: any) {
+  try {
+    await db.update(savedMeasurements)
+      .set({
+        fit_name: data.fit_name,
+        measurements: data.measurements,
+        is_default: data.is_default,
+      })
+      .where(eq(savedMeasurements.id, id));
+
+    revalidatePath('/dashboard/measurements');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Failed to update measurement." };
+  }
+}

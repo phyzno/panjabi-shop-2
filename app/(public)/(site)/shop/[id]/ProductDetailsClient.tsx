@@ -13,6 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import { toggleWishlistItem } from '@/lib/actions/wishlist.actions';
 import { cn } from '@/lib/utils';
 import { useWishlistStore } from '@/store/wishlistStore';
+import { useSizeGuideStore } from '@/store/useSizeGuideStore';
 
 type SizeMode = 'preset' | 'number';
 
@@ -34,6 +35,7 @@ interface ProductDetailsClientProps {
     rating?: number,
     review_count?: number,
     has_size_guide?: boolean,
+    size_guide_template?: string,
     additional_details?: { title: string; content: string }[]
   };
   relatedProducts: CollectionProduct[];
@@ -45,6 +47,7 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
   const { user } = useAuthStore();
 
   const { wishlistedIds, addWishlistId, removeWishlistId } = useWishlistStore();
+  const openSizeGuide = useSizeGuideStore((state) => state.openModal);
   const productId = String(product?.id || '');
   const isWishlisted = wishlistedIds.includes(productId);
 
@@ -467,7 +470,11 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
                 {product.has_size_guide !== false && (
                   <button
                     type="button"
-                    onClick={() => setIsSizeGuideOpen(true)}
+                    onClick={() => openSizeGuide({
+                      isGlobal: false,
+                      tab: 'chart',
+                      category: product.size_guide_template || 'panjabi'
+                    })}
                     className="flex items-center gap-1.5 font-sans text-[11px] font-medium uppercase tracking-widest text-[#4A5D23] hover:underline underline-offset-4 cursor-pointer transition-colors"
                   >
                     <Ruler className="w-3.5 h-3.5" /> Size Guide

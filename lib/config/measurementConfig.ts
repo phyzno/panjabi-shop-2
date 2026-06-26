@@ -24,14 +24,16 @@ export const MEASUREMENT_FIELDS: Record<string, { id: string; label: string; def
     { id: 'waist', label: 'Waist (in)', default: '' },
     { id: 'hip', label: 'Hip (in)', default: '' },
     { id: 'thigh', label: 'Thigh (in)', default: '' },
-    { id: 'inseam', label: 'Length/Inseam (in)', default: '' },
+    { id: 'outseam', label: 'Outseam / Length (in)', default: '' },
+    { id: 'inseam', label: 'Inseam (in)', default: '' },
     { id: 'bottom_hem', label: 'Bottom Hem (in)', default: '' },
   ],
   pajama: [
     { id: 'waist', label: 'Waist (in)', default: '' },
     { id: 'hip', label: 'Hip (in)', default: '' },
     { id: 'thigh', label: 'Thigh (in)', default: '' },
-    { id: 'length', label: 'Length (in)', default: '' },
+    { id: 'outseam', label: 'Outseam / Length (in)', default: '' },
+    { id: 'inseam', label: 'Inseam (in)', default: '' },
     { id: 'bottom_hem', label: 'Bottom Hem (in)', default: '' },
   ]
 };

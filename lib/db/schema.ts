@@ -26,6 +26,7 @@ export const products = pgTable("products", {
   review_count: integer("review_count").default(24), 
   additional_details: jsonb("additional_details").default([]), 
   has_size_guide: boolean("has_size_guide").default(true),
+  size_guide_template: text("size_guide_template").default("panjabi"),
   
   // Multi-color Product Variants এর জন্য নতুন ৩টি কলাম
   group_id: text("group_id"), 

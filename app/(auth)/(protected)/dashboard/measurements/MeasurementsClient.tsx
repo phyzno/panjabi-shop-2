@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Plus, Ruler, Trash2, Scissors, X, Star, ChevronLeft, Edit2, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { Plus, Ruler, Trash2, Scissors, X, Star, ChevronLeft, ChevronRight, Edit2, AlertTriangle } from 'lucide-react';
 import { MEASUREMENT_FIELDS } from '@/lib/config/measurementConfig';
-import { 
-  createPersonProfile, 
-  updatePersonName, 
-  deletePersonProfile, 
+import { useSizeGuideStore } from '@/store/useSizeGuideStore';
+import { SizeGuideModal } from '@/components/ui/SizeGuideModal';
+import {
+  createPersonProfile,
+  updatePersonName,
+  deletePersonProfile,
   setFeaturedPerson,
   addFitMeasurement,
   deleteFitMeasurement,
-  setFeaturedFit
+  setFeaturedFit,
+  updateFitMeasurement
 } from '@/lib/actions/measurement.actions';
 
 const TABS = [
@@ -29,12 +32,49 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
   // Modals State
   const [personModal, setPersonModal] = useState({ isOpen: false, editName: '' });
   const [personNameInput, setPersonNameInput] = useState('');
-  
+
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+
   const [fitModal, setFitModal] = useState(false);
   const [fitData, setFitData] = useState<any>({ fit_name: '', is_default: false });
   const [dynamicValues, setDynamicValues] = useState<Record<string, string>>({});
-  
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, type: 'person'|'fit', id?: number, name?: string }>({ isOpen: false, type: 'person' });
+  const [fitError, setFitError] = useState('');
+
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean, type: 'person' | 'fit', id?: number, name?: string }>({ isOpen: false, type: 'person' });
+  const openSizeGuide = useSizeGuideStore((state) => state.openModal);
+
+  // Tab Scroll Tracking States
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const handleTabScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    handleTabScroll();
+    window.addEventListener('resize', handleTabScroll);
+    return () => window.removeEventListener('resize', handleTabScroll);
+  }, [activeTab, activePerson]); // activePerson চেঞ্জ হলেও যেন একবার চেক করে
+
+  const handleTabClick = (tabId: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    setActiveTab(tabId);
+    const button = e.currentTarget;
+    const scrollContainer = scrollContainerRef.current;
+
+    if (scrollContainer) {
+      const scrollPosition = button.offsetLeft - (scrollContainer.clientWidth / 2) + (button.clientWidth / 2);
+      scrollContainer.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Data Formatting
   const personsMap = useMemo(() => {
@@ -91,40 +131,102 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
   // --- Handlers for Fit ---
   const handleSaveFit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fitData.fit_name.trim() || !activePerson) return;
+    setFitError(''); // সাবমিটের শুরুতে আগের এরর ক্লিয়ার করা
 
-    const isDuplicate = activeProductFits.some((f: any) => f.fit_name.toLowerCase() === fitData.fit_name.trim().toLowerCase());
-    if (isDuplicate) {
-      alert(`A fit named '${fitData.fit_name}' already exists for ${activeTab}.`);
+    if (!fitData.fit_name.trim() || !activePerson) {
+      setFitError('Please enter a fit name.');
       return;
     }
 
+    const currentFitName = fitData.fit_name.trim().toLowerCase();
+    const dynamicFields = (MEASUREMENT_FIELDS as any)[activeTab] || [];
+
+    // ১. Blank Data Validation: কোনো ফিল্ড খালি বা ০ আছে কি না চেক
+    const hasEmptyMeasurements = dynamicFields.some((field: any) => {
+      const val = dynamicValues[field.id];
+      return !val || Number(val) <= 0;
+    });
+
+    if (hasEmptyMeasurements) {
+      setFitError('Please enter valid measurements for all fields before saving.');
+      return;
+    }
+
+    // ২. Deep Duplicate Check (হুবহু একই মাপের কোনো ফিট আগে থেকেই আছে কি না)
+    const exactDuplicateFit = activeProductFits.find((fit: any) => {
+      // এডিট মুডে নিজের ID-র সাথে ম্যাচিং স্কিপ করবে
+      if (fitData.id && fit.id === fitData.id) return false;
+      if (!fit.measurements) return false;
+
+      let isMatch = true;
+      for (const field of dynamicFields) {
+        const currentVal = Number(dynamicValues[field.id]) || 0;
+        const savedVal = Number(fit.measurements[field.id]) || 0;
+        if (currentVal !== savedVal) {
+          isMatch = false;
+          break;
+        }
+      }
+      return isMatch;
+    });
+
+    if (exactDuplicateFit) {
+      setFitError(`These measurements are identical to the '${exactDuplicateFit.fit_name}' fit under this profile.`);
+      return;
+    }
+
+    // ৩. Name Duplicate Check (নাম আগে থেকেই অন্য কোনো ফিটে আছে কি না)
+    const isDuplicateName = activeProductFits.some((f: any) =>
+      f.fit_name.toLowerCase() === currentFitName && f.id !== fitData.id
+    );
+
+    if (isDuplicateName) {
+      setFitError(`A fit named '${fitData.fit_name.trim()}' already exists for ${activeTab}.`);
+      return;
+    }
+
+    // সব ভ্যালিডেশন পাস করলে সেভ বা আপডেট হবে
     setIsSubmitting(true);
     const numericMeasurements: Record<string, number> = {};
     Object.keys(dynamicValues).forEach(key => {
       numericMeasurements[key] = Number(dynamicValues[key]) || 0;
     });
 
-    await addFitMeasurement(userId, {
-      person_name: activePerson,
-      fit_name: fitData.fit_name.trim(),
-      product_type: activeTab,
-      measurements: numericMeasurements,
-      is_default: fitData.is_default || activeProductFits.length === 0,
-      is_person_default: activePersonData?.isFeatured || false,
-    });
+    try {
+      if (fitData.id) {
+        // --- EDIT MODE ---
+        await updateFitMeasurement(fitData.id, {
+          fit_name: fitData.fit_name.trim(),
+          measurements: numericMeasurements,
+          is_default: fitData.is_default
+        });
+      } else {
+        // --- CREATE MODE ---
+        await addFitMeasurement(userId, {
+          person_name: activePerson,
+          fit_name: fitData.fit_name.trim(),
+          product_type: activeTab,
+          measurements: numericMeasurements,
+          is_default: fitData.is_default || activeProductFits.length === 0,
+          is_person_default: activePersonData?.isFeatured || false,
+        });
+      }
 
-    setIsSubmitting(false);
-    setFitModal(false);
-    setFitData({ fit_name: '', is_default: false });
-    setDynamicValues({});
+      setFitModal(false);
+      setFitData({ fit_name: '', is_default: false });
+      setDynamicValues({});
+    } catch (error) {
+      setFitError('Something went wrong while saving. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // --- RENDER: Person List View ---
   if (!activePerson) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
-        <button 
+        <button
           onClick={() => { setPersonModal({ isOpen: true, editName: '' }); setPersonNameInput(''); }}
           className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4A5D23] text-white rounded-xl font-sans text-xs uppercase tracking-widest shadow-md hover:bg-[#3D4C1D] transition-colors cursor-pointer"
         >
@@ -134,14 +236,13 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
         {personsMap.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {personsMap.map((person) => (
-              <div 
-                key={person.name} 
-                className={`group bg-white rounded-2xl p-6 border transition-all duration-300 shadow-sm cursor-pointer hover:shadow-md ${
-                  person.isFeatured ? 'border-[#4A5D23] ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9]/60 hover:border-[#4A5D23]/50'
-                }`}
+              <div
+                key={person.name}
+                className={`group bg-white rounded-2xl p-6 border transition-all duration-300 shadow-sm cursor-pointer hover:shadow-md ${person.isFeatured ? 'border-[#4A5D23] ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9]/60 hover:border-[#4A5D23]/50'
+                  }`}
                 onClick={() => setActivePerson(person.name)}
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-center mb-4">
                   <div className="flex flex-col gap-1.5">
                     <h3 className="font-heading text-lg font-bold uppercase tracking-wider text-[#17210C]">
                       {person.name}
@@ -152,6 +253,7 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
                       </span>
                     )}
                   </div>
+                  <ChevronRight className="w-5 h-5 text-[#1C221A]/30 group-hover:text-[#4A5D23] group-hover:translate-x-1 transition-all duration-300" />
                 </div>
 
                 <div className="flex items-center justify-between border-t border-[#D4D7C9]/40 pt-4 mt-2">
@@ -192,17 +294,36 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
                 {personModal.editName ? 'Rename Profile' : 'New Profile'}
               </h3>
               <form onSubmit={handleSavePerson}>
-                <input 
+                <input
                   type="text" required autoFocus
-                  placeholder="e.g. Me, Abbu, Brother" 
+                  placeholder="e.g. Me, Abbu, Brother"
                   value={personNameInput}
                   onChange={e => setPersonNameInput(e.target.value)}
                   className="w-full border border-[#D4D7C9] px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-[#4A5D23]"
                 />
-                <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-[#4A5D23] text-white py-3 rounded-xl font-sans text-xs uppercase tracking-widest hover:bg-[#3D4C1D] disabled:opacity-50">
+                <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-[#4A5D23] text-white py-3 rounded-xl font-sans text-xs uppercase tracking-widest hover:bg-[#3D4C1D] disabled:opacity-50 cursor-pointer">
                   {isSubmitting ? 'Saving...' : 'Save Profile'}
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Delete Confirmation Modal (For Person View) */}
+        {deleteModal.isOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDeleteModal({ isOpen: false, type: 'person' })} />
+            <div className="relative w-full max-w-sm bg-white rounded-3xl p-6 text-center animate-in zoom-in-95">
+              <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h3 className="font-heading text-lg font-bold text-[#17210C] mb-2">Delete {deleteModal.type === 'person' ? 'Profile' : 'Fit'}?</h3>
+              <p className="text-xs text-[#1C221A]/60 mb-6 px-2">
+                Are you sure? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteModal({ isOpen: false, type: 'person' })} disabled={isSubmitting} className="flex-1 py-3 bg-[#F8F9F5] rounded-xl text-xs uppercase tracking-widest font-medium">Cancel</button>
+                <button onClick={handleConfirmDelete} disabled={isSubmitting} className="flex-1 py-3 bg-red-600 text-white rounded-xl text-xs uppercase tracking-widest font-medium shadow-md">{isSubmitting ? 'Deleting...' : 'Delete'}</button>
+              </div>
             </div>
           </div>
         )}
@@ -213,7 +334,7 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
   // --- RENDER: Detailed Product Fits View ---
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-[#D4D7C9]/50 shadow-sm">
         <div className="flex items-center gap-3">
@@ -227,54 +348,97 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
             </h2>
           </div>
         </div>
-        <button 
-          onClick={() => { setFitData({ fit_name: '', is_default: false }); setDynamicValues({}); setFitModal(true); }}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#4A5D23] text-white rounded-xl font-sans text-[11px] uppercase tracking-widest shadow-sm hover:bg-[#3D4C1D] transition-colors"
+        <button
+          onClick={() => {
+            setFitData({ fit_name: '', is_default: false });
+            setDynamicValues({});
+            setFitError('');
+            setFitModal(true);
+          }}
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#4A5D23] text-white rounded-xl font-sans text-[11px] uppercase tracking-widest shadow-sm hover:bg-[#3D4C1D] transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" /> Add {activeTab} Fit
         </button>
       </div>
 
-      {/* Tab Switcher */}
-      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-2">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-widest whitespace-nowrap transition-all ${
-              activeTab === tab.id ? 'bg-[#4A5D23] text-white shadow-md' : 'bg-white border border-[#D4D7C9]/60 text-[#1C221A]/60 hover:border-[#4A5D23]'
+      {/* Tab Switcher with Fade & Auto-center */}
+      <div className="relative py-1">
+        {/* Left Edge Gradient Fade */}
+        <div
+          className={`absolute left-0 top-0 bottom-0 w-10 sm:w-12 bg-gradient-to-r from-[#F8F9F5] via-[#F8F9F5]/90 to-transparent pointer-events-none z-10 transition-opacity duration-300 ${canScrollLeft ? "opacity-100" : "opacity-0"
             }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        />
+
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleTabScroll}
+          className="overflow-x-auto hide-scrollbar relative w-full"
+        >
+          <div className="flex items-center gap-2 min-w-max px-1">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={(e) => handleTabClick(tab.id, e)}
+                className={`px-5 py-2.5 rounded-full text-[11px] 
+                  uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer ${activeTab === tab.id
+                    ? 'bg-[#4A5D23] text-white shadow-md'
+                    : 'bg-white border border-[#D4D7C9] text-[#1C221A]/60 hover:border-[#4A5D23]'
+                  }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Edge Gradient Fade */}
+        <div
+          className={`absolute right-0 top-0 bottom-0 w-10 sm:w-12 bg-gradient-to-l from-[#F8F9F5] via-[#F8F9F5]/90 to-transparent pointer-events-none z-10 transition-opacity duration-300 ${canScrollRight ? "opacity-100" : "opacity-0"
+            }`}
+        />
       </div>
 
       {/* Fit Cards Grid */}
       {activeProductFits.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-5">
           {activeProductFits.map((fit: any) => (
-            <div key={fit.id} className={`bg-white rounded-2xl p-5 border transition-all duration-300 shadow-sm ${
-              fit.is_default ? 'border-[#4A5D23] ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9]/60 hover:border-[#4A5D23]/50'
-            }`}>
+            <div key={fit.id} className={`bg-white rounded-2xl p-5 border transition-all duration-300 shadow-sm ${fit.is_default ? 'border-[#4A5D23] ring-1 ring-[#4A5D23]' : 'border-[#D4D7C9]/60 hover:border-[#4A5D23]/50'
+              }`}>
               <div className="flex justify-between items-start mb-4 border-b border-[#D4D7C9]/30 pb-3">
                 <div>
                   <h3 className="font-heading text-sm font-bold uppercase tracking-wider text-[#17210C]">
                     {fit.fit_name}
                   </h3>
                   {fit.is_default && (
-                    <span className="inline-block text-[9px] uppercase tracking-widest text-[#4A5D23] font-medium mt-1">
-                      Featured Fit
+                    <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-widest text-[#4A5D23] bg-[#4A5D23]/10 px-2 py-0.5 rounded-full font-medium mt-1">
+                      Primary {activeTab} Fit - for {activePerson}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Edit Fit Button */}
+                  <button
+                    onClick={() => {
+                      setFitData({
+                        id: fit.id, // এখানে id পাস করা হচ্ছে যাতে handleSaveFit বুঝতে পারে এটা Edit Mode
+                        fit_name: fit.fit_name,
+                        is_default: fit.is_default
+                      });
+                      setDynamicValues(fit.measurements); // কারেন্ট মেজারমেন্ট ভ্যালুগুলো ইনপুটে সেট হবে
+                      setFitError('');
+                      setFitModal(true);
+                    }}
+                    className="p-1.5 text-[#1C221A]/40 hover:text-blue-600 bg-[#F8F9F5] rounded-lg transition-colors cursor-pointer"
+                    title="Edit Fit"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
                   {!fit.is_default && (
-                    <button onClick={() => setFeaturedFit(userId, activePerson, activeTab, fit.id)} className="p-1.5 text-[#1C221A]/40 hover:text-[#4A5D23] bg-[#F8F9F5] rounded-lg transition-colors" title="Set Featured">
+                    <button onClick={() => setFeaturedFit(userId, activePerson, activeTab, fit.id)} className="p-1.5 text-[#1C221A]/40 hover:text-[#4A5D23] bg-[#F8F9F5] rounded-lg transition-colors cursor-pointer" title="Set Featured">
                       <Star className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <button onClick={() => setDeleteModal({ isOpen: true, type: 'fit', id: fit.id })} className="p-1.5 text-[#1C221A]/40 hover:text-red-500 bg-[#F8F9F5] rounded-lg transition-colors">
+                  <button onClick={() => setDeleteModal({ isOpen: true, type: 'fit', id: fit.id })} className="p-1.5 text-[#1C221A]/40 hover:text-red-500 bg-[#F8F9F5] rounded-lg transition-colors cursor-pointer">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -311,17 +475,32 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
               <h3 className="font-heading text-lg font-bold uppercase tracking-widest text-[#17210C]">
                 New {activeTab} Fit
               </h3>
-              <button onClick={() => setFitModal(false)} className="p-2 bg-[#F8F9F5] rounded-full hover:text-red-500">
+              <button onClick={() => setFitModal(false)} className="p-2 bg-red-50 hover:bg-red-100 rounded-full text-accent hover:text-red-600 transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
+            {/* --- Size Guide Trigger Banner --- */}
+            <div className="flex justify-between items-center bg-[#4A5D23]/5 p-3.5 rounded-xl mb-6 border border-[#4A5D23]/10">
+              <span className="text-[10px] uppercase tracking-widest text-[#4A5D23] font-medium leading-snug w-1/2">
+                Need help with measurements?
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsSizeGuideOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4A5D23] text-white text-[9px] font-medium uppercase tracking-wider hover:bg-[#3D4C1D] shadow-sm transition-all cursor-pointer shrink-0"
+              >
+                <Ruler className="w-3 h-3" /> View Guide
+              </button>
+            </div>
+            {/* ---------------------------------- */}
+
             <form onSubmit={handleSaveFit} className="space-y-5">
               <div>
                 <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Fit Name *</label>
-                <input 
-                  type="text" required placeholder="e.g. Slim Fit, Loose Eid Fit" 
-                  value={fitData.fit_name} onChange={e => setFitData({...fitData, fit_name: e.target.value})}
+                <input
+                  type="text" required placeholder="e.g. Slim Fit, Loose Eid Fit"
+                  value={fitData.fit_name} onChange={e => setFitData({ ...fitData, fit_name: e.target.value })}
                   className="w-full border border-[#D4D7C9] px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#4A5D23]"
                 />
               </div>
@@ -330,11 +509,11 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
                 {((MEASUREMENT_FIELDS as any)[activeTab] || []).map((field: any) => (
                   <div key={field.id}>
                     <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">{field.label} *</label>
-                    <input 
-                      type="number" step="0.25" required 
-                      value={dynamicValues[field.id] || ''} 
-                      onChange={e => setDynamicValues({...dynamicValues, [field.id]: e.target.value})}
-                      className="w-full border border-[#D4D7C9] px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#4A5D23]" 
+                    <input
+                      type="number" step="0.25" required
+                      value={dynamicValues[field.id] || ''}
+                      onChange={e => setDynamicValues({ ...dynamicValues, [field.id]: e.target.value })}
+                      className="w-full border border-[#D4D7C9] px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-[#4A5D23]"
                     />
                   </div>
                 ))}
@@ -342,12 +521,15 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
 
               <div className="pt-2">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={fitData.is_default} onChange={e => setFitData({...fitData, is_default: e.target.checked})} className="w-4 h-4 accent-[#4A5D23] rounded" />
+                  <input type="checkbox" checked={fitData.is_default} onChange={e => setFitData({ ...fitData, is_default: e.target.checked })} className="w-4 h-4 accent-[#4A5D23] rounded" />
                   <span className="font-sans text-[11px] uppercase tracking-widest text-[#1C221A]/70">Set as Featured Fit</span>
                 </label>
               </div>
 
-              <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-[#4A5D23] text-white py-3 rounded-xl font-sans text-xs uppercase tracking-[0.15em] hover:bg-[#3D4C1D] disabled:opacity-50">
+              {/* নতুন যোগ করা Error UI */}
+              {fitError && <p className="font-sans text-[12px] text-red-500 mt-1 mb-2">{fitError}</p>}
+
+              <button type="submit" disabled={isSubmitting} className="w-full mt-4 bg-[#4A5D23] text-white py-3 rounded-xl font-sans text-xs uppercase tracking-[0.15em] hover:bg-[#3D4C1D] disabled:opacity-50 cursor-pointer">
                 {isSubmitting ? 'Saving...' : 'Save Fit'}
               </button>
             </form>
@@ -374,6 +556,24 @@ export default function MeasurementsClient({ userId, initialMeasurements }: { us
           </div>
         </div>
       )}
+      {/* Size Guide Modal */}
+      <SizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
+        isGlobal={false}
+        defaultTab="guide"
+        defaultCategory={activeTab}
+      />
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        /* For IE, Edge and Firefox */
+        .hide-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+      `}</style>
     </div>
   );
 }

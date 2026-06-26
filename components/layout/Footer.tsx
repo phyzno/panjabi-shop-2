@@ -85,7 +85,7 @@ export default function Footer() {
                 href="#" 
                 onClick={(e) => {
                   e.preventDefault();
-                  openSizeGuide();
+                  openSizeGuide({ isGlobal: true, tab: 'guide', category: 'panjabi' });
                 }}
               >
                 Measurement Guide

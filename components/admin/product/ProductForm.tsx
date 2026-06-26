@@ -97,6 +97,7 @@ export default function ProductForm({
   const [rating, setRating] = useState<number>(initialData?.rating ?? 4.8);
   const [reviewCount, setReviewCount] = useState<number>(initialData?.review_count ?? 24);
   const [hasSizeGuide, setHasSizeGuide] = useState<boolean>(initialData?.has_size_guide ?? true);
+  const [sizeGuideTemplate, setSizeGuideTemplate] = useState<string>(initialData?.size_guide_template || "panjabi");
   const [additionalDetails, setAdditionalDetails] = useState<{title: string, content: string}[]>(
     initialData?.additional_details?.length ? initialData.additional_details : defaultDetails
   );
@@ -120,13 +121,26 @@ export default function ProductForm({
       label: "Apparel (Panjabi, Shirts)",
       groups: [
         { title: "Standard Sizes", presets: ["S", "M", "L", "XL", "XXL"] },
-        { title: "Numbered Sizes", presets: ["38", "40", "42", "44", "46", "48"] }
+        { title: "Numbered Sizes (Chest/Length)", presets: ["36", "38", "40", "42", "44", "46", "48"] }
+      ]
+    },
+    jubba: {
+      label: "Jubba / Thobe",
+      groups: [
+        { title: "Standard Sizes", presets: ["S", "M", "L", "XL", "XXL"] },
+        { title: "Length Sizes", presets: ["52", "54", "56", "58", "60", "62"] }
+      ]
+    },
+    pants: {
+      label: "Trousers & Pants",
+      groups: [
+        { title: "Waist Sizes", presets: ["28", "30", "32", "34", "36", "38", "40", "42"] }
       ]
     },
     shoes: {
       label: "Footwear (Shoes, Sandals)",
       groups: [
-        { title: "EU Sizes", presets: ["39", "40", "41", "42", "43", "44", "45"] }
+        { title: "EU Sizes", presets: ["39", "40", "41", "42", "43", "44", "45", "46"] }
       ]
     },
     volume: {
@@ -138,7 +152,7 @@ export default function ProductForm({
     free_size: {
       label: "Accessories (Watch, Sunglass)",
       groups: [
-        { title: "Single Size", presets: ["Standard", "Free Size"] }
+        { title: "Single Size", presets: ["Standard", "Regular", "Free Size"] }
       ]
     },
     custom_only: {
@@ -342,6 +356,7 @@ export default function ProductForm({
         rating: rating,
         review_count: reviewCount,
         has_size_guide: hasSizeGuide,
+        size_guide_template: sizeGuideTemplate,
         additional_details: additionalDetails,
         images: allUrls,
         video_url: formData.get("video_url") as string,
@@ -466,11 +481,29 @@ export default function ProductForm({
             <label className="block text-sm font-heading font-bold text-primary mb-2">Fake Review Count</label>
             <input type="number" min="0" value={reviewCount} onChange={(e) => setReviewCount(Number(e.target.value))} className="w-full border border-border bg-background rounded-md px-4 py-2 outline-none focus:ring-2 focus:ring-primary text-sm font-sans" />
           </div>
-          <div className="flex items-center">
+          <div className="flex flex-col">
             <label className="flex items-center gap-3 cursor-pointer mt-4">
               <input type="checkbox" checked={hasSizeGuide} onChange={(e) => setHasSizeGuide(e.target.checked)} className="w-5 h-5 accent-primary cursor-pointer" />
               <span className="text-sm font-heading font-bold text-primary">Enable Size Guide Modal?</span>
             </label>
+            
+            {hasSizeGuide && (
+              <div className="mt-3 animate-in fade-in">
+                 <label className="block text-xs uppercase tracking-widest text-muted-foreground mb-1.5">Select Size Guide Template</label>
+                 <select 
+                   value={sizeGuideTemplate} 
+                   onChange={(e) => setSizeGuideTemplate(e.target.value)}
+                   className="w-full border border-border bg-background rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-primary text-sm font-sans cursor-pointer"
+                 >
+                   <option value="panjabi">Panjabi</option>
+                   <option value="shirt">Shirt</option>
+                   <option value="jubba">Jubba</option>
+                   <option value="pant">Pant</option>
+                   <option value="pajama">Pajama</option>
+                   <option value="shoes">Shoes</option>
+                 </select>
+              </div>
+            )}
           </div>
         </div>
 
