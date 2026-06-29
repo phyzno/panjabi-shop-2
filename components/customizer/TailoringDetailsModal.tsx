@@ -15,8 +15,8 @@ interface TailoringDetailsModalProps {
 export function TailoringDetailsModal({ isOpen, onClose, productType, productStyles, setProductStyle }: TailoringDetailsModalProps) {
   if (!isOpen) return null;
 
-  // Normalized product key for mapping
-  const activeKey = productType.startsWith('panjabi_') ? 'panjabi' : productType.startsWith('pant_') ? 'pant' : productType;
+  // Normalized product key for mapping (Dynamic and clean)
+  const activeKey = productType.split('_')[0];
   const allOptions = ADVANCED_TAILORING_OPTIONS[activeKey] || [];
   
   // কন্ডিশনাল লজিক প্রয়োগ করে যেগুলো হাইড হওয়া উচিত সেগুলো ফিল্টার আউট করা

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { PanjabiCanvas } from './PanjabiCanvas';
 import { useCustomizerStore } from '@/store/useCustomizerStore';
 import { resolveProductImageSrc } from '@/lib/productImages';
@@ -16,6 +16,7 @@ import { FabricQuickViewModal } from './FabricQuickViewModal';
 import { UI_VECTORS, JUBBA_CANVAS_MAP, PANT_CANVAS_MAP, PANJABI_CANVAS_MAP, SHIRT_CANVAS_MAP, PAJAMA_CANVAS_MAP, ADVANCED_TAILORING_OPTIONS } from '@/lib/config/productConfig';
 import { TailoringDetailsModal } from './TailoringDetailsModal';
 import { useSizeGuideStore } from '@/store/useSizeGuideStore';
+import { cn } from '@/lib/utils';
 
 const presetSizes = [
   { size: "S", yard: 2.25 },
@@ -26,13 +27,6 @@ const presetSizes = [
 ];
 
 const sizeOptions = ['preset', 'custom'] as const;
-
-const CORE_COLLARS = [
-  { id: 'band', name: 'Band Collar', type: 'band', image: '/assets/collars/band-collar.png' },
-  { id: 'mandarin', name: 'Mandarin Collar', type: 'mandarin', image: '/assets/collars/mandarin-collar.png' },
-  { id: 'round', name: 'Round Collar', type: 'round', image: '/assets/collars/round-collar.png' },
-  { id: 'vneck', name: 'V-Neck Collar', type: 'vneck', image: '/assets/collars/vneck-collar.png' }
-];
 
 interface CustomizeClientProps {
   productId: string;
@@ -58,6 +52,238 @@ export function CustomizeClient({
   const [activeSavedMeasurements, setActiveSavedMeasurements] = useState<any[]>(savedMeasurements || []);
   const cartStore = useCartStore();
   const store = useCustomizerStore();
+  const updateDraft = useCustomizerStore((state) => state.updateDraft);
+  const updateDraftMeasurement = useCustomizerStore((state) => state.updateDraftMeasurement);
+  const updateDraftStyle = useCustomizerStore((state) => state.updateDraftStyle);
+
+  const activeProductId = store.activeProductId;
+  const activeDraft = activeProductId ? store.drafts[activeProductId] : null;
+
+  // Proxy Variables (পুরনো কোডকে নতুন ড্রাফট আর্কিটেকচারের সাথে কানেক্ট করতে)
+  const selectedPerson = activeDraft?.selectedPerson || '';
+  const selectedFitId = activeDraft?.selectedFitId || null;
+  const standardSize = activeDraft?.standardSize || 'M';
+  const sizeType = activeDraft?.sizeType || 'preset';
+  const measurementMode = activeDraft?.measurementMode || 'new';
+  const customMeasurements = activeDraft?.customMeasurements || {};
+  const productStyles = activeDraft?.productStyles || {};
+  const yardage = activeDraft?.yardage || 0;
+  const selectedFabricId = activeDraft?.fabricId || null;
+  const selectedProduct = activeProductId || 'panjabi_regular';
+
+  // Proxy Setters (Optimized with stable Zustand actions)
+  const setSelectedPerson = useCallback((val: string) => activeProductId && updateDraft(activeProductId, { selectedPerson: val }), [activeProductId, updateDraft]);
+  const setSelectedFitId = useCallback((val: number | null) => activeProductId && updateDraft(activeProductId, { selectedFitId: val }), [activeProductId, updateDraft]);
+  const setStandardSize = useCallback((val: string) => activeProductId && updateDraft(activeProductId, { standardSize: val }), [activeProductId, updateDraft]);
+  const setSizeType = useCallback((val: 'preset' | 'custom') => activeProductId && updateDraft(activeProductId, { sizeType: val }), [activeProductId, updateDraft]);
+  const setMeasurementMode = useCallback((val: 'saved' | 'new') => activeProductId && updateDraft(activeProductId, { measurementMode: val }), [activeProductId, updateDraft]);
+  const setCustomMeasurement = useCallback((key: string, val: string) => activeProductId && updateDraftMeasurement(activeProductId, key, val), [activeProductId, updateDraftMeasurement]);
+  const setProductStyle = useCallback((key: string, val: string) => activeProductId && updateDraftStyle(activeProductId, key, val), [activeProductId, updateDraftStyle]);
+  const setYardage = useCallback((val: number) => activeProductId && updateDraft(activeProductId, { yardage: val }), [activeProductId, updateDraft]);
+  const setSelectedFabricId = useCallback((val: string | null) => activeProductId && updateDraft(activeProductId, { fabricId: val }), [activeProductId, updateDraft]);
+
+  // 🎯 NEW: Helper for Dynamic Category Emoji
+  const getCategoryEmoji = (prodId: string) => {
+    if (!prodId) return '👕';
+    if (prodId.startsWith('pant') || prodId.startsWith('pajama')) return '👖';
+    if (prodId === 'jubba' || prodId.startsWith('panjabi')) return '🥼';
+    return '👕'; // Default for Panjabi, Shirt etc.
+  };
+
+  // 🎯 NEW: Helper to dynamically get basic style categories and their valid options
+  const getBasicStyleCategories = (prodId: string) => {
+    let categories: { id: string; choices: string[] }[] = [];
+    if (prodId === 'jubba') {
+      categories = [
+        { id: 'collar', choices: ['band', 'round'] },
+        { id: 'placket', choices: ['hidden', 'visible'] },
+        { id: 'pocket', choices: ['chest', 'side', 'no_pocket'] } // 'chest' কে প্রথমে রাখা হলো সেফ ডিফল্টের জন্য
+      ];
+    }
+    else if (prodId.startsWith('panjabi_')) {
+      const type = prodId.split('_')[1];
+      let collars = type === 'madani' ? ['band', 'round'] : type === 'kabuli' ? ['band', 'shirt'] : type === 'short' ? ['band', 'mandarin', 'shirt'] : ['band', 'mandarin', 'round'];
+      let pockets = type === 'kabuli' ? ['chest', 'double_flap'] : ['chest', 'side', 'no_pocket'];
+
+      categories.push({ id: 'collar', choices: collars });
+      if (type !== 'kabuli') categories.push({ id: 'placket', choices: ['hidden', 'visible'] });
+      categories.push({ id: 'pocket', choices: pockets });
+    }
+    else if (prodId === 'shirt') {
+      categories = [
+        { id: 'sleeve', choices: ['full', 'half'] },
+        { id: 'collar', choices: ['spread', 'buttondown', 'mandarin'] },
+        { id: 'placket', choices: ['hidden', 'visible'] },
+        { id: 'pocket', choices: ['chest', 'no_pocket'] }
+      ];
+    }
+    else if (prodId.startsWith('pant_')) {
+      categories = [
+        { id: 'front', choices: ['flat', 'pleated'] },
+        { id: 'hem', choices: ['regular', 'cuffed'] }
+      ];
+    }
+    return categories;
+  };
+
+  // 🎯 NEW: Fully Dynamic Product Select Engine
+  const handleProductSelect = (newProductId: string) => {
+    isProductSwitching.current = true; // 🎯 FIX: অটো-জাম্প বন্ধ করার ফ্ল্যাগ
+
+    const newMotherCat = newProductId.split('_')[0];
+    const defaultFabricId = null;
+
+    const defaultStyles: Record<string, string> = {};
+    const basicCategories = getBasicStyleCategories(newProductId);
+    basicCategories.forEach(cat => {
+      if (cat.choices.length > 0) defaultStyles[cat.id] = cat.choices[0];
+    });
+
+    const advancedOptionsDef = ADVANCED_TAILORING_OPTIONS[newMotherCat] || [];
+    advancedOptionsDef.forEach(group => {
+      if (!group.condition || group.condition(newProductId, defaultStyles)) {
+        defaultStyles[group.id] = group.choices[0][0];
+      }
+    });
+
+    store.setActiveProduct(newProductId);
+    store.initDraft(newProductId, defaultStyles, defaultFabricId);
+    store.markStepCompleted(newProductId, 'product'); 
+
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setActiveBottomSheet(null); 
+    } else {
+      setExpandedStep(1); // পিসিতে স্টেপ ১-এই থাকবে
+    }
+
+    // 🎯 FIX: স্টেট আপডেটের পর ফ্ল্যাগটি রিসেট করা
+    setTimeout(() => {
+      isProductSwitching.current = false;
+    }, 200);
+  };
+
+  // 🎯 NEW: Helper to dynamically get active sequence
+  const getActiveSequence = () => {
+    const isFabricMode = store.orderMode === 'fabric';
+    const isPajamaProduct = (activeProductId || 'panjabi_regular').startsWith('pajama');
+
+    const steps = ['product', 'fabric'];
+    if (!isFabricMode && !isPajamaProduct) steps.push('style');
+    if (!isFabricMode) steps.push('advanced');
+    steps.push('measurements');
+    return steps;
+  };
+
+  const getStepName = (stepNumber: number) => {
+    switch (stepNumber) {
+      case 1: return 'product';
+      case 2: return 'fabric';
+      case 3: return 'style';
+      case 4: return 'advanced';
+      case 5: return 'measurements';
+      default: return '';
+    }
+  };
+
+  // 🎯 NEW: Dynamic Step Lock Engine
+  const isStepLocked = (stepNumber: number) => {
+    if (!activeProductId || !activeDraft) return stepNumber > 1; // isZeroState check
+
+    // 🎯 FIX: ফ্যাব্রিক সিলেক্ট না করা পর্যন্ত ২য় স্টেপের পরের সব স্টেপ লক থাকবে
+    if (stepNumber > 2 && !selectedFabric) return true;
+
+    const completed = activeDraft.completedSteps || [];
+    const stepName = getStepName(stepNumber);
+    const activeSequence = getActiveSequence();
+
+    if (!activeSequence.includes(stepName)) return true;
+
+    const stepIndex = activeSequence.indexOf(stepName);
+    if (stepIndex === 0) return false; 
+
+    const prevStepName = activeSequence[stepIndex - 1];
+    return !completed.includes(prevStepName);
+  };
+
+  // 🎯 NEW: Dynamic Sequence Controller
+  const handleChameleonNext = () => {
+    if (!activeProductId || !activeDraft) {
+      setExpandedStep(1);
+      return;
+    }
+
+    const currentStepName = getStepName(expandedStep);
+    if (currentStepName) {
+      store.markStepCompleted(activeProductId, currentStepName);
+    }
+
+    if (expandedStep === 5) {
+      // 🎯 Final Wall: Validation Before Add to Cart
+      if (store.orderMode === 'tailoring') {
+        const motherCat = activeProductId.split('_')[0];
+        const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
+
+        if (measurementMode === 'new' && sizeType === 'custom') {
+          const hasEmpty = dynamicFields.some(f => !customMeasurements[f.id] || Number(customMeasurements[f.id]) <= 0);
+          if (hasEmpty) {
+            alert("Please complete all custom measurements before adding to cart.");
+            return;
+          }
+        } else if (measurementMode === 'saved' && !selectedFitId) {
+          alert("Please select a measurement profile before adding to cart.");
+          return;
+        }
+      }
+      handleAddToCart();
+      return;
+    }
+
+    // Find the next logical step and navigate to it
+    const activeSequence = getActiveSequence();
+    const currentIndex = activeSequence.indexOf(currentStepName);
+
+    if (currentIndex !== -1 && currentIndex < activeSequence.length - 1) {
+      const nextStepName = activeSequence[currentIndex + 1];
+      const nextStepNum = {
+        'product': 1, 'fabric': 2, 'style': 3, 'advanced': 4, 'measurements': 5
+      }[nextStepName];
+      if (nextStepNum) setExpandedStep(nextStepNum);
+    }
+  };
+
+  // 🎯 NEW: Dynamic Button Text Generator
+  const getButtonText = () => {
+    if (!activeProductId || !activeDraft) return "Start Customizing";
+    if (!isFabricStockSufficient) return "Out of Stock";
+
+    if (expandedStep === 5) {
+      const motherCatName = activeProductId.startsWith('panjabi') ? 'Panjabi' :
+        activeProductId.startsWith('pajama') ? 'Pajama' :
+          activeProductId.startsWith('pant') ? 'Pant' :
+            activeProductId === 'jubba' ? 'Jubba' :
+              activeProductId === 'shirt' ? 'Shirt' : 'Product';
+      return store.orderMode === 'tailoring'
+        ? `Add Tailored ${motherCatName} to Cart`
+        : 'Purchase Fabric Bolt';
+    }
+
+    const currentStepName = getStepName(expandedStep);
+    const activeSequence = getActiveSequence();
+    const currentIndex = activeSequence.indexOf(currentStepName);
+
+    if (currentIndex !== -1 && currentIndex < activeSequence.length - 1) {
+      const nextStepName = activeSequence[currentIndex + 1];
+      if (nextStepName === 'fabric') return "Next: Choose Fabric";
+      if (nextStepName === 'style') return "Next: Configure Style";
+      if (nextStepName === 'advanced') return "Next: Advanced Tailoring";
+      if (nextStepName === 'measurements') return store.orderMode === 'fabric' ? "Next: Estimate Fabric Yardage" : "Next: Measurements";
+    }
+
+    return "Next";
+  };
+
+
+
   const openSizeGuide = useSizeGuideStore((state) => state.openModal);
   const [isHydrated, setIsHydrated] = useState(false);
   const [saveProfileToggle, setSaveProfileToggle] = useState(false);
@@ -66,35 +292,69 @@ export function CustomizeClient({
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [hasSavedCurrentProfile, setHasSavedCurrentProfile] = useState(false);
-  const getCanvasCollarType = (collar: any) => {
-    if (!collar || !collar.name) return 'band';
-    const nameLower = collar.name.toLowerCase();
-    if (nameLower.includes('v-neck') || nameLower.includes('vneck')) return 'vneck';
-    if (nameLower.includes('round')) return 'round';
-    if (nameLower.includes('mandarin')) return 'mandarin';
-    return 'band';
-  };
   const [expandedStep, setExpandedStep] = useState<number>(0);
+  const [zeroStateReason, setZeroStateReason] = useState<'fresh' | 'reset' | 'cart'>('fresh');
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [modalFabric, setModalFabric] = useState<any>(null);
   const [mobileStep, setMobileStep] = useState<'design' | 'checkout'>('design');
   const [activeBottomSheet, setActiveBottomSheet] = useState<'product' | 'fabric' | 'style' | 'advanced' | null>(null);
+
+  // 🎯 Phase 3: Mobile Sequence & Auto-Scroll State
+  const [mobileSequenceIndex, setMobileSequenceIndex] = useState(0);
+  const mobilePillRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
   const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
   const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedPatterns, setSelectedPatterns] = useState<string[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [isTailoringModalOpen, setIsTailoringModalOpen] = useState(false);
+
+  const [isTrackerOpen, setIsTrackerOpen] = useState(false);
   const stepRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const isProductSwitching = useRef(false);
   // কন্টেইনার স্ক্রল ট্র্যাক করার জন্য Ref এবং State
   const pillContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(true);
 
   // কম্পোনেন্টের শুরুর দিকের স্টেটগুলোর মধ্যে এই স্টেটগুলো যোগ/আপডেট করুন
-  const motherCat = store.selectedProduct.split('_')[0]; // যেমন: 'panjabi', 'shirt'
+  const motherCat = activeProductId ? activeProductId.split('_')[0] : '';
+  const isZeroState = !activeProductId || !activeDraft;
   const uniquePersons = useMemo(() => Array.from(new Set(activeSavedMeasurements.map(m => m.person_name))), [activeSavedMeasurements]);
-  const availableFits = useMemo(() => activeSavedMeasurements.filter(m => m.person_name === store.selectedPerson && m.product_type === motherCat), [activeSavedMeasurements, store.selectedPerson, motherCat]);
+  const availableFits = useMemo(() => activeSavedMeasurements.filter(m => m.person_name === selectedPerson && m.product_type === motherCat), [activeSavedMeasurements, selectedPerson, motherCat]);
+
+  // --- ক্যাটাগরি অনুযায়ী সাইজ ফিল্টার (S/M/L vs Numbered) ---
+  const rawPresets = useMemo(() => Object.keys(STANDARD_SIZES[motherCat] || {}), [motherCat]);
+
+  const availablePresets = useMemo(() => {
+    return rawPresets.filter(key => {
+      const isNumeric = !isNaN(Number(key));
+
+      // পাঞ্জাবি, শার্ট এবং পাজামার জন্য S, M, L (Alphabetic) দেখানো হবে
+      if (motherCat === 'panjabi' || motherCat === 'shirt' || motherCat === 'pajama') {
+        return !isNumeric;
+      }
+      // জুব্বা এবং প্যান্টের জন্য Numbered (52, 54 বা 32, 34) দেখানো হবে
+      else if (motherCat === 'jubba' || motherCat === 'pant') {
+        return isNumeric;
+      }
+      return true; // ফলব্যাক
+    });
+  }, [rawPresets, motherCat]);
+
+  // 🎯 NEW: Smart Zero State Message Logic
+  const zeroStateMessage =
+    zeroStateReason === 'cart' ? "Added to Cart! Design your next item." :
+      zeroStateReason === 'reset' ? "Reset Done. Please select a product." :
+        "Please select a product to start customizing.";
+
+  // ক্যাটাগরি পরিবর্তনের সময় সাইজ রিসেট লজিক (Top-level Hook)
+  useEffect(() => {
+    if (availablePresets.length > 0 && !availablePresets.includes(standardSize)) {
+      setStandardSize(availablePresets[0]);
+    }
+  }, [motherCat, availablePresets, standardSize, setStandardSize]);
 
   // On-the-fly Save States
   const [saveTargetPerson, setSaveTargetPerson] = useState<string>('');
@@ -102,53 +362,79 @@ export function CustomizeClient({
   const [newFitName, setNewFitName] = useState('');
   const [isSaveDisabled, setIsSaveDisabled] = useState(false);
 
+  // 🎯 NEW: Accordion Auto-Expand Engine on Mount/Reload
+  useEffect(() => {
+    // 🎯 FIX: ইউজার অ্যাক্টিভলি প্রোডাক্ট সুইচ করলে এই অটো-জাম্প কাজ করবে না
+    if (isHydrated && activeProductId && activeDraft && !isProductSwitching.current) {
+      const activeSequence = getActiveSequence();
+      const completed = activeDraft.completedSteps || [];
+
+      let targetStepName = activeSequence.find(step => !completed.includes(step));
+
+      if (!targetStepName) {
+        targetStepName = activeSequence[activeSequence.length - 1];
+      }
+
+      const stepNameToNumber: Record<string, number> = {
+        'product': 1, 'fabric': 2, 'style': 3, 'advanced': 4, 'measurements': 5
+      };
+
+      const targetStepNumber = stepNameToNumber[targetStepName];
+      if (targetStepNumber) {
+        setTimeout(() => {
+          setExpandedStep(targetStepNumber);
+        }, 100);
+      }
+    }
+  }, [isHydrated, activeProductId]);
+
   // 1. Auto-Select Logic (Person and Fit Dropdowns)
   useEffect(() => {
     if (!isHydrated || activeSavedMeasurements.length === 0) return;
 
     // Set Featured Person if none selected
-    if (!store.selectedPerson || !uniquePersons.includes(store.selectedPerson)) {
+    if (!selectedPerson || !uniquePersons.includes(selectedPerson)) {
       const featuredPerson = activeSavedMeasurements.find(m => m.is_person_default)?.person_name || uniquePersons[0];
-      store.setSelectedPerson(featuredPerson);
+      setSelectedPerson(featuredPerson);
       return; // Will re-trigger due to dependency change
     }
 
     // Set Featured Fit for the selected Person and Product
     if (availableFits.length > 0) {
       const featuredFit = availableFits.find(m => m.is_default) || availableFits[0];
-      if (store.selectedFitId !== featuredFit.id && !availableFits.some(m => m.id === store.selectedFitId)) {
-        store.setSelectedFitId(featuredFit.id);
+      if (selectedFitId !== featuredFit.id && !availableFits.some(m => m.id === selectedFitId)) {
+        setSelectedFitId(featuredFit.id);
       }
     } else {
-      store.setSelectedFitId(null);
+      setSelectedFitId(null);
     }
-  }, [isHydrated, activeSavedMeasurements, store.selectedPerson, motherCat, uniquePersons, availableFits]);
+  }, [isHydrated, activeSavedMeasurements, selectedPerson, motherCat, uniquePersons, availableFits]);
 
   // 2. Dynamic Fabric Yardage Calculator
   const calculatedYardage = useMemo(() => {
     let meas: Record<string, number> = {};
 
-    if (store.measurementMode === 'saved') {
-      const fit = activeSavedMeasurements.find(m => m.id === store.selectedFitId);
+    if (measurementMode === 'saved') {
+      const fit = activeSavedMeasurements.find(m => m.id === selectedFitId);
       if (fit && fit.measurements) meas = fit.measurements;
-    } else if (store.sizeType === 'preset') {
-      meas = STANDARD_SIZES[motherCat]?.[store.standardSize] || {};
+    } else if (sizeType === 'preset') {
+      meas = STANDARD_SIZES[motherCat]?.[standardSize] || {};
     } else {
       // Custom Inputs
-      Object.keys(store.customMeasurements).forEach(k => {
-        meas[k] = Number(store.customMeasurements[k]) || 0;
+      Object.keys(customMeasurements).forEach(k => {
+        meas[k] = Number(customMeasurements[k]) || 0;
       });
     }
 
-    return calculateFabricYardage({ productKey: store.selectedProduct, measurements: meas });
-  }, [store.selectedProduct, store.measurementMode, store.selectedFitId, store.sizeType, store.standardSize, store.customMeasurements, activeSavedMeasurements, motherCat]);
+    return calculateFabricYardage({ productKey: selectedProduct, measurements: meas });
+  }, [selectedProduct, measurementMode, selectedFitId, sizeType, standardSize, customMeasurements, activeSavedMeasurements, motherCat]);
 
   // Update yardage automatically for Fabric Mode
   useEffect(() => {
     if (store.orderMode === 'fabric') {
-      store.setYardage(calculatedYardage);
+      setYardage(calculatedYardage);
     }
-  }, [calculatedYardage, store.orderMode, store.setYardage]);
+  }, [calculatedYardage, store.orderMode, setYardage]);
 
   // 3. On-The-Fly Save Logic
   const handleSaveProfileOnTheFly = async () => {
@@ -167,7 +453,7 @@ export function CustomizeClient({
     // Blank Data Validation: সাবমিটের সময় চেক করবে কোনো ফিল্ড খালি আছে কি না
     const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
     const hasEmptyMeasurements = dynamicFields.some(field => {
-      const val = store.customMeasurements[field.id];
+      const val = customMeasurements[field.id];
       return !val || Number(val) <= 0;
     });
 
@@ -182,8 +468,8 @@ export function CustomizeClient({
     const finalPersonName = saveTargetPerson === 'NEW_PROFILE' ? newProfileName.trim() : saveTargetPerson;
 
     const numericMeasurements: Record<string, number> = {};
-    Object.keys(store.customMeasurements).forEach(k => {
-      numericMeasurements[k] = Number(store.customMeasurements[k]) || 0;
+    Object.keys(customMeasurements).forEach(k => {
+      numericMeasurements[k] = Number(customMeasurements[k]) || 0;
     });
 
     const payload = {
@@ -202,8 +488,8 @@ export function CustomizeClient({
         const latest = await getUserMeasurements(userId!);
         if (latest.success && latest.data) {
           setActiveSavedMeasurements(latest.data);
-          store.setMeasurementMode('saved');
-          store.setSelectedPerson(finalPersonName);
+          setMeasurementMode('saved');
+          setSelectedPerson(finalPersonName);
           setSaveProfileToggle(false);
           setNewProfileName('');
           setNewFitName('');
@@ -238,7 +524,7 @@ export function CustomizeClient({
       window.addEventListener("resize", handlePillScroll);
       return () => window.removeEventListener("resize", handlePillScroll);
     }
-  }, [store.selectedProduct]); // প্রোডাক্ট চেঞ্জ হলে রিক্যালকুলেট হবে
+  }, [selectedProduct]); // প্রোডাক্ট চেঞ্জ হলে রিক্যালকুলেট হবে
 
   useEffect(() => {
     if (expandedStep > 0 && stepRefs.current[expandedStep]) {
@@ -262,7 +548,7 @@ export function CustomizeClient({
       setActiveSavedMeasurements([]);
       setSaveProfileToggle(false);
       setShowLoginModal(false);
-      store.setSelectedFitId(null);
+      setSelectedFitId(null);
       return;
     }
 
@@ -280,7 +566,7 @@ export function CustomizeClient({
     return () => {
       isActive = false;
     };
-  }, [isLoaded, user?.id, savedMeasurements, store.setSelectedFitId]);
+  }, [isLoaded, user?.id, savedMeasurements, setSelectedFitId]);
 
   // 🎯 Smart Live Validation: Deep Duplicate, Name Duplicate & Auto-Unlock Engine
   useEffect(() => {
@@ -312,20 +598,20 @@ export function CustomizeClient({
     // ২. Fit Name & Deep Measurement Duplicate Check
     if (!isDisabled && finalPersonName) {
       const currentFitName = newFitName.trim().toLowerCase();
-      
+
       // শুধুমাত্র এই নির্দিষ্ট Person এবং Product-এর ফিটগুলো ফিল্টার করা হচ্ছে
       const personFits = activeSavedMeasurements.filter(
         m => m.person_name === finalPersonName && m.product_type === motherCat
       );
 
       const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
-      
+
       // Deep Duplicate Check (হুবহু মাপের মিল খোঁজা)
       exactDuplicateFit = personFits.find(fit => {
         if (!fit.measurements) return false;
         let isMatch = true;
         for (const field of dynamicFields) {
-          const currentVal = Number(store.customMeasurements[field.id]) || 0;
+          const currentVal = Number(customMeasurements[field.id]) || 0;
           const savedVal = Number(fit.measurements[field.id]) || 0;
           if (currentVal !== savedVal) {
             isMatch = false;
@@ -361,72 +647,146 @@ export function CustomizeClient({
     setIsSaveDisabled(isDisabled);
 
   }, [
-    saveProfileToggle, 
-    saveTargetPerson, 
-    newProfileName, 
-    newFitName, 
-    store.customMeasurements, 
-    activeSavedMeasurements, 
+    saveProfileToggle,
+    saveTargetPerson,
+    newProfileName,
+    newFitName,
+    customMeasurements,
+    activeSavedMeasurements,
     motherCat,
     hasSavedCurrentProfile // ডিপেন্ডেন্সিতে যুক্ত করা হলো সেফ ট্র্যাকিংয়ের জন্য
   ]);
 
-  useEffect(() => {
-    if (store.orderMode === 'fabric') {
-      store.setYardage(calculatedYardage);
-    }
-  }, [calculatedYardage, store.orderMode, store.setYardage]);
+  // 🎯 NEW: Product Specific Allowed Fabrics
+  const allowedFabricsForProduct = useMemo(() => {
+    return fabrics.filter((f: any) => {
+      const hasAllowedProducts = Array.isArray(f.allowed_products) && f.allowed_products.length > 0;
+      return !hasAllowedProducts || f.allowed_products.some(
+        (product: string) => product.toLowerCase() === motherCat.toLowerCase()
+      );
+    });
+  }, [fabrics, motherCat]);
 
   const filteredFabrics = useMemo(() => {
-    return fabrics.filter((f: any) => {
+    return allowedFabricsForProduct.filter((f: any) => {
       const matchSearch = f.name.toLowerCase().includes(store.searchQuery.toLowerCase());
       const fabricColors = Array.isArray(f.colors) ? f.colors : [];
       const fabricPatterns = Array.isArray(f.patterns) ? f.patterns : [];
-      
-      // 🎯 Product Category Filter Logic (New)
-      // ডাটাবেসে সেভ থাকা ট্যাগ (যেমন: 'Panjabi') এবং কারেন্ট মাদার ক্যাটাগরির (যেমন: 'panjabi') মধ্যে Case-Insensitive মিল খোঁজা হচ্ছে
-      const hasAllowedProducts = Array.isArray(f.allowed_products) && f.allowed_products.length > 0;
-      const matchProduct = !hasAllowedProducts || f.allowed_products.some(
-        (product: string) => product.toLowerCase() === motherCat.toLowerCase()
-      );
 
       const matchColor = selectedColors.length === 0 || selectedColors.some((color) => fabricColors.includes(color));
       const matchPattern = selectedPatterns.length === 0 || selectedPatterns.some((pattern) => fabricPatterns.includes(pattern));
-      
-      // matchProduct-কে রিটার্ন কন্ডিশনে যুক্ত করা হলো
-      return matchSearch && matchColor && matchPattern && matchProduct;
-    });
-  }, [fabrics, store.searchQuery, selectedColors, selectedPatterns, motherCat]); // ডিপেন্ডেন্সিতে motherCat যুক্ত করা হয়েছে
 
+      return matchSearch && matchColor && matchPattern;
+    });
+  }, [allowedFabricsForProduct, store.searchQuery, selectedColors, selectedPatterns]);
+
+  // 🎯 NEW: Validate Fabric (কোনো অটো-সিলেক্ট হবে না, শুধু আনচেকড ফ্যাব্রিক রিমুভ হবে)
   useEffect(() => {
     if (!isHydrated) return;
-    if (fabrics.length > 0 && !store.selectedFabricId) store.setSelectedFabricId(String(fabrics[0].id));
-    if (!store.collarId) store.setCollarId(CORE_COLLARS[0].id);
-  }, [fabrics]);
+    
+    if (selectedFabricId) {
+      const isValidFabric = allowedFabricsForProduct.some((f: any) => String(f.id) === selectedFabricId);
+      if (!isValidFabric) {
+        setSelectedFabricId(null); 
+      }
+    }
+  }, [allowedFabricsForProduct, selectedFabricId, isHydrated, setSelectedFabricId]);
 
-  const selectedFabric = fabrics.find((f: any) => String(f.id) === store.selectedFabricId) || fabrics[0];
-  const selectedCollar = CORE_COLLARS.find((c: any) => c.id === store.collarId) || CORE_COLLARS[0];
+  // 🎯 NEW: Safe Fallback to null
+  const selectedFabric = selectedFabricId ? allowedFabricsForProduct.find((f: any) => String(f.id) === selectedFabricId) || null : null;
+  
   const selectedFabricImageUrl = selectedFabric?.image_url ? resolveProductImageSrc(selectedFabric.image_url) : undefined;
   const selectedFabricTextureUrl = selectedFabric?.texture_url || undefined;
   const selectedFabricCoverUrl = (Array.isArray(selectedFabric?.preview_images) && selectedFabric.preview_images.length > 0)
     ? selectedFabric.preview_images[0]
     : (selectedFabric?.raw_image_url || selectedFabric?.texture_url || undefined);
+    
   const stitchingCharge = 450;
-  const activeYardage = store.orderMode === 'tailoring' ? calculatedYardage : store.yardage;
+  const activeYardage = store.orderMode === 'tailoring' ? calculatedYardage : yardage;
   const maxFabricYards = selectedFabric?.yards || 0;
-  const isFabricStockSufficient = maxFabricYards >= activeYardage;
-  const fabricPrice = (selectedFabric?.price || 0) * activeYardage;
+  
+  // 🎯 NEW FIX: ফ্যাব্রিক সিলেক্ট না থাকলে Out of Stock এর এরর দেখাবে না
+  const isFabricStockSufficient = selectedFabric ? maxFabricYards >= activeYardage : true;
+
+  // 🎯 ডাইনামিক প্রাইসিং (ফ্যাব্রিক null হলে 0 হবে)
+  const rawFabricPricePerYard = selectedFabric ? Number(selectedFabric.price || 0) : 0;
+  const fabricDiscountPercentage = selectedFabric ? (selectedFabric.discount_percentage || 0) : 0;
+  const discountedFabricPricePerYard = fabricDiscountPercentage > 0
+    ? Math.round(rawFabricPricePerYard - (rawFabricPricePerYard * (fabricDiscountPercentage / 100)))
+    : rawFabricPricePerYard;
+
+  const originalFabricPrice = selectedFabric ? (rawFabricPricePerYard * activeYardage) : 0;
+  const fabricPrice = selectedFabric ? (discountedFabricPricePerYard * activeYardage) : 0;
+
   const collarPrice = 0;
+  const originalTotalCost = store.orderMode === 'tailoring'
+    ? originalFabricPrice + stitchingCharge + collarPrice
+    : originalFabricPrice;
   const totalCost = store.orderMode === 'tailoring'
     ? fabricPrice + stitchingCharge + collarPrice
     : fabricPrice;
 
   // --- NEW CONDITIONAL LOGIC ---
   const isFabricOnly = store.orderMode === 'fabric';
-  const isPajama = store.selectedProduct.startsWith('pajama');
+  const isPajama = selectedProduct.startsWith('pajama');
 
   const showStyleSection = !isFabricOnly && !isPajama;
   const showAdvancedSection = !isFabricOnly;
+
+  // 🎯 NEW: Dynamic Button Text Generator (Wizard Flow)
+  const getMobileMainButtonText = () => {
+    if (!activeProductId || !activeDraft) return "Select Product";
+    if (!isFabricStockSufficient) return "Out of Stock";
+
+    const activeSequence = getActiveSequence();
+    const completed = activeDraft.completedSteps || [];
+
+    // 🎯 SMART LOGIC: কোন স্টেপটি এখনো কমপ্লিট হয়নি তা খুঁজে বের করা
+    const nextPendingStep = activeSequence.find(step => !completed.includes(step));
+
+    if (nextPendingStep === 'product') return "Select Product";
+    if (nextPendingStep === 'fabric') return "Choose Fabric";
+    if (nextPendingStep === 'style') return "Configure Style";
+    if (nextPendingStep === 'advanced') return "Advanced Fit";
+    if (nextPendingStep === 'measurements') return isFabricOnly ? "Estimate Fabric" : "Enter Measurements";
+
+    return "Continue";
+  };
+
+  // 🎯 Phase 3: Check if a pill should be locked
+  const isMobilePillLocked = (stepName: string) => {
+    const activeSequence = getActiveSequence();
+    const stepIndex = activeSequence.indexOf(stepName);
+    
+    // 🎯 FIX: ফ্যাব্রিক সিলেক্ট না করা পর্যন্ত ২য় স্টেপের (fabric) পরের সব পিল লক থাকবে
+    if (stepIndex > 1 && !selectedFabric) return true;
+    
+    return stepIndex > mobileSequenceIndex;
+  };
+
+  // 🎯 Phase 3: Auto-Center Active Pill Effect
+  useEffect(() => {
+    const activeSequence = getActiveSequence();
+    // শিট ওপেন থাকলে সেটিকে টার্গেট করবে, নাহলে পেন্ডিং স্টেপটিকে টার্গেট করবে
+    const targetPillKey = activeBottomSheet || activeSequence[Math.min(mobileSequenceIndex, activeSequence.length - 1)];
+
+    if (targetPillKey && mobilePillRefs.current[targetPillKey] && pillContainerRef.current) {
+      const pill = mobilePillRefs.current[targetPillKey];
+      const container = pillContainerRef.current;
+
+      const pillLeft = pill.offsetLeft;
+      const pillWidth = pill.offsetWidth;
+      const containerWidth = container.offsetWidth;
+
+      // স্ক্রিনের ঠিক মাঝখানে আনার ম্যাথ
+      const scrollPos = pillLeft - (containerWidth / 2) + (pillWidth / 2);
+
+      container.scrollTo({
+        left: scrollPos,
+        behavior: 'smooth'
+      });
+    }
+  }, [activeBottomSheet, mobileSequenceIndex, store.orderMode]);
 
   // Dynamic Mother Category Name for Toggle
   const getMotherCategoryName = (productId: string) => {
@@ -437,7 +797,7 @@ export function CustomizeClient({
     if (productId === 'shirt') return 'Shirt';
     return 'Product';
   };
-  const tailoredLabel = `Tailored ${getMotherCategoryName(store.selectedProduct)}`;
+  const tailoredLabel = `Tailored ${getMotherCategoryName(selectedProduct)}`;
 
   // Dynamic Step Numbering
   const stepProduct = "01. ";
@@ -447,14 +807,14 @@ export function CustomizeClient({
   const stepMeasure = isFabricOnly ? "03. " : (isPajama ? "04. " : "05. ");
 
   const getDynamicOverlayImage = () => {
-    if (store.selectedProduct === 'jubba') {
-      const { collar, placket, pocket } = store.productStyles;
+    if (selectedProduct === 'jubba') {
+      const { collar, placket, pocket } = productStyles;
       return JUBBA_CANVAS_MAP[collar || 'band']?.[placket || 'hidden']?.[pocket || 'chest']
         || JUBBA_CANVAS_MAP['band']['hidden']['chest'];
     }
-    else if (store.selectedProduct.startsWith('panjabi_')) {
-      const type = store.selectedProduct.split('_')[1];
-      const { collar, placket, pocket } = store.productStyles;
+    else if (selectedProduct.startsWith('panjabi_')) {
+      const type = selectedProduct.split('_')[1];
+      const { collar, placket, pocket } = productStyles;
 
       let safeCollar = collar || 'band';
       let safePlacket = placket || 'hidden';
@@ -473,12 +833,12 @@ export function CustomizeClient({
       return PANJABI_CANVAS_MAP[type]?.[safeCollar]?.[safePlacket]?.[safePocket]
         || PANJABI_CANVAS_MAP['regular']['band']['hidden']['chest'];
     }
-    else if (store.selectedProduct.startsWith('pajama_')) {
-      const safeFit = store.selectedProduct.replace('pajama_', '') || 'aligarhi';
+    else if (selectedProduct.startsWith('pajama_')) {
+      const safeFit = selectedProduct.replace('pajama_', '') || 'aligarhi';
       return PAJAMA_CANVAS_MAP[safeFit] || PAJAMA_CANVAS_MAP['aligarhi'];
     }
-    else if (store.selectedProduct === 'shirt') {
-      const { sleeve, collar, placket, pocket } = store.productStyles;
+    else if (selectedProduct === 'shirt') {
+      const { sleeve, collar, placket, pocket } = productStyles;
 
       // সেফটি ফলব্যাক এবং ডাইনামিক স্লিভ ডিটেকশন
       let safeSleeve = sleeve || 'full';
@@ -493,14 +853,14 @@ export function CustomizeClient({
       return SHIRT_CANVAS_MAP[safeSleeve]?.[safeCollar]?.[safePlacket]?.[safePocket]
         || SHIRT_CANVAS_MAP['full']['spread']['hidden']['chest'];
     }
-    else if (store.selectedProduct.startsWith('pant_')) {
-      const pantType = store.selectedProduct.split('_')[1];
-      const { front, hem } = store.productStyles;
+    else if (selectedProduct.startsWith('pant_')) {
+      const pantType = selectedProduct.split('_')[1];
+      const { front, hem } = productStyles;
       return PANT_CANVAS_MAP[pantType]?.[front || 'flat']?.[hem || 'regular']
         || PANT_CANVAS_MAP['formal']['flat']['regular'];
     }
 
-    return `/assets/punjabi/collar-${getCanvasCollarType(selectedCollar)}.png`;
+    return PANJABI_CANVAS_MAP['regular']['band']['hidden']['chest'];
   };
 
   const handleSaveToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -519,8 +879,8 @@ export function CustomizeClient({
   const handleAddToCart = async () => {
     if (!isFabricStockSufficient) return;
 
-    if (store.orderMode === 'tailoring' && store.measurementMode === 'saved') {
-      const profile = activeSavedMeasurements.find(p => p.id.toString() === store.selectedFitId);
+    if (store.orderMode === 'tailoring' && measurementMode === 'saved') {
+      const profile = activeSavedMeasurements.find(p => p.id.toString() === selectedFitId?.toString());
       if (!profile) {
         alert("Please select or create a valid measurement profile first.");
         return;
@@ -528,27 +888,44 @@ export function CustomizeClient({
     }
 
     const isTailoring = store.orderMode === 'tailoring';
-    const selectedProfile = store.measurementMode === 'saved'
-      ? activeSavedMeasurements.find((p: any) => p.id.toString() === store.selectedFitId)
+
+    const selectedProfile = measurementMode === 'saved'
+      ? activeSavedMeasurements.find((p: any) => p.id.toString() === selectedFitId?.toString())
       : null;
-    const finalCustomMeasurements = isTailoring ? (
-      store.measurementMode === 'saved' && selectedProfile ? {
-        length: selectedProfile.measurements.length.toString(),
-        chest: selectedProfile.measurements.chest.toString(),
-        shoulder: selectedProfile.measurements.shoulder.toString(),
-        sleeve: selectedProfile.measurements.sleeve.toString(),
-      } : (store.sizeType === 'custom' ? {
-        length: store.customMeasurements.length,
-        chest: store.customMeasurements.chest,
-        shoulder: store.customMeasurements.shoulder,
-        sleeve: store.customMeasurements.sleeve,
-      } : undefined)
-    ) : undefined;
+
+    // 🎯 1. Dynamic Measurements Logic (Remove Hardcoded L, C, Sh, Sl)
+    let finalCustomMeasurements: Record<string, string | number> | undefined = undefined;
+
+    if (isTailoring) {
+      if (measurementMode === 'saved' && selectedProfile?.measurements) {
+        finalCustomMeasurements = { ...selectedProfile.measurements };
+      } else if (sizeType === 'custom') {
+        finalCustomMeasurements = { ...customMeasurements };
+      }
+    }
+
+    // 🎯 2. Logic to Split Styles vs Advanced Tailoring
+    const basicStyles: Record<string, string> = {};
+    const tailoringDetails: Record<string, string> = {};
+
+    if (isTailoring) {
+      // ADVANCED_TAILORING_OPTIONS থেকে কারেন্ট প্রোডাক্টের অ্যাডভান্সড অপশনগুলো বের করা
+      const advancedOptionsDef = ADVANCED_TAILORING_OPTIONS[motherCat] || [];
+      const advancedKeys = advancedOptionsDef.map(group => group.id);
+
+      Object.entries(productStyles).forEach(([key, value]) => {
+        if (advancedKeys.includes(key)) {
+          tailoringDetails[key] = value;
+        } else {
+          basicStyles[key] = value;
+        }
+      });
+    }
 
     cartStore.addItem({
       productId: productId,
       productName: isTailoring
-        ? `Custom Tailored Panjabi - ${selectedFabric?.name || 'Premium Fabric'}`
+        ? `Custom Tailored ${getMotherCategoryName(selectedProduct)} - ${selectedFabric?.name || 'Premium Fabric'}` // Dynamic Name Fix
         : `Premium Fabric Bolt - ${selectedFabric?.name || 'Premium Fabric'}`,
       productType: isTailoring ? 'custom_tailored' : 'custom_fabric_only',
       image: selectedFabricCoverUrl || '/placeholder-image.jpg',
@@ -558,19 +935,30 @@ export function CustomizeClient({
       yardage: activeYardage,
 
       sizeMode: isTailoring
-        ? (store.measurementMode === 'saved' ? 'saved_profile' : (store.sizeType === 'custom' ? 'custom_measurements' : 'preset'))
+        ? (measurementMode === 'saved' ? 'saved_profile' : (sizeType === 'custom' ? 'custom_measurements' : 'preset'))
         : undefined,
       sizeValue: isTailoring
-        ? (store.measurementMode === 'saved' ? selectedProfile?.profile_name : (store.sizeType === 'custom' ? 'Custom' : store.standardSize))
+        ? (measurementMode === 'saved' ? selectedProfile?.person_name + ' - ' + selectedProfile?.fit_name : (sizeType === 'custom' ? 'Custom' : standardSize))
         : undefined,
 
       customMeasurements: finalCustomMeasurements,
-      collarType: isTailoring ? selectedCollar?.name : undefined,
+      productStyles: isTailoring ? basicStyles : undefined,
+      tailoringDetails: isTailoring ? tailoringDetails : undefined,
+
+      originalUnitPrice: originalFabricPrice,
+      discountPercentage: fabricDiscountPercentage,
       unitPrice: fabricPrice,
       stitchingCharge: isTailoring ? stitchingCharge : 0,
     });
 
     cartStore.openCart();
+
+    // 🎯 NEW: Auto Reset to Zero State after Cart Add
+    if (activeProductId) {
+      store.clearDraft(activeProductId);
+    }
+    setZeroStateReason('cart');
+    if (mobileStep === 'checkout') setMobileStep('design');
   };
 
   const toggleFilterArray = (item: string, list: string[], setList: any) => {
@@ -648,14 +1036,14 @@ export function CustomizeClient({
             <button
               onClick={() => {
                 if (product.type === 'single') {
-                  store.setSelectedProduct(product.id);
+                  handleProductSelect(product.id);
                   setExpandedCategory(null);
                   setActiveBottomSheet(null); // মোবাইলে অটো-ক্লোজ
                 } else {
                   setExpandedCategory(expandedCategory === product.id ? null : product.id);
                 }
               }}
-              className={`flex items-center justify-between p-4 rounded-xl border transition-all ${store.selectedProduct === product.id || store.selectedProduct.startsWith(product.id + '_')
+              className={`flex items-center justify-between p-4 rounded-xl border transition-all ${selectedProduct === product.id || selectedProduct.startsWith(product.id + '_')
                 ? 'border-[#4A5D23] shadow-sm bg-[#F8F9F5]'
                 : 'border-[#D4D7C9] bg-white hover:border-[#4A5D23]/50'
                 }`}
@@ -674,10 +1062,10 @@ export function CustomizeClient({
                   <button
                     key={sub.id}
                     onClick={() => {
-                      store.setSelectedProduct(sub.id);
+                      handleProductSelect(sub.id);
                       setActiveBottomSheet(null); // মোবাইলে অটো-ক্লোজ
                     }}
-                    className={`p-3 rounded-xl border transition-all text-left ${store.selectedProduct === sub.id
+                    className={`p-3 rounded-xl border transition-all text-left ${selectedProduct === sub.id
                       ? 'border-[#4A5D23] bg-[#4A5D23]/10 ring-1 ring-[#4A5D23]'
                       : 'border-[#D4D7C9] bg-white hover:border-[#4A5D23]/50'
                       }`}
@@ -762,9 +1150,36 @@ export function CustomizeClient({
         </div>
       </div>
 
-      {/* 🎯 গ্রিড ফিক্স: মোবাইলে ফুল হাইট (প্যারেন্ট স্ক্রল করবে), পিসিতে নিজস্ব স্ক্রল */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-none overflow-visible lg:max-h-[360px] lg:overflow-y-auto lg:pr-2 custom-scrollbar relative z-10 pb-6 mt-4 lg:mt-0">
-        {filteredFabrics.map((fabric: any) => {
+      {/* 🎯 গ্রিড ফিক্স ও Empty States: মোবাইলে ফুল হাইট, পিসিতে নিজস্ব স্ক্রল */}
+      {allowedFabricsForProduct.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-white/50 rounded-2xl border border-[#D4D7C9]/40 mt-4 lg:mt-0">
+          <span className="text-3xl mb-3">😕</span>
+          <h4 className="font-heading text-[13px] font-bold uppercase tracking-widest text-[#17210C] mb-2">No Fabrics Available</h4>
+          <p className="font-sans text-[11px] text-[#1C221A]/60 max-w-xs mx-auto">
+            We currently don't have any premium fabrics assigned for {getMotherCategoryName(selectedProduct)}. Please select a different product.
+          </p>
+        </div>
+      ) : filteredFabrics.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-white/50 rounded-2xl border border-[#D4D7C9]/40 mt-4 lg:mt-0">
+          <span className="text-3xl mb-3">🔍</span>
+          <h4 className="font-heading text-[13px] font-bold uppercase tracking-widest text-[#17210C] mb-2">No Matches Found</h4>
+          <p className="font-sans text-[11px] text-[#1C221A]/60 max-w-xs mx-auto mb-4">
+            No fabrics match your selected filters. Try adjusting your search or clearing the filters.
+          </p>
+          <button
+            onClick={() => {
+              setSelectedColors([]);
+              setSelectedPatterns([]);
+              store.setSearchQuery('');
+            }}
+            className="px-5 py-2 bg-[#F8F9F5] border border-[#D4D7C9] rounded-lg text-[10px] font-medium uppercase tracking-widest text-[#1C221A] hover:border-[#4A5D23] transition-colors cursor-pointer shadow-sm"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-none overflow-visible lg:max-h-[360px] lg:overflow-y-auto lg:pr-2 custom-scrollbar relative z-10 pb-6 mt-4 lg:mt-0">
+          {filteredFabrics.map((fabric: any) => {
           const outOfStock = fabric.yards <= 0;
 
           const fabricCoverImage = (Array.isArray(fabric?.preview_images) && fabric.preview_images.length > 0)
@@ -783,12 +1198,15 @@ export function CustomizeClient({
               key={fabric.id}
               onClick={(e) => {
                 if (!outOfStock) {
-                  store.setSelectedFabricId(String(fabric.id));
+                  setSelectedFabricId(String(fabric.id));
+                  if (activeProductId) {
+                    store.markStepCompleted(activeProductId, 'fabric');
+                  }
                   setActiveBottomSheet(null);
                 }
               }}
               className={`group relative flex flex-col rounded-xl overflow-hidden border transition-all bg-white ${outOfStock ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-[#D4D7C9]'
-                } ${store.selectedFabricId === String(fabric.id) ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23]' : 'border-[#EBECE3]'}`}
+                } ${selectedFabricId === String(fabric.id) ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23]' : 'border-[#EBECE3]'}`}
             >
               <div className="aspect-square bg-[#EBECE3] relative overflow-hidden">
                 <img src={fabricCoverImage} alt={fabric.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -808,7 +1226,7 @@ export function CustomizeClient({
                   </div>
                 )}
 
-                {store.selectedFabricId === String(fabric.id) && !outOfStock && (
+                {selectedFabricId === String(fabric.id) && !outOfStock && (
                   <div className="absolute top-2 right-2 bg-[#4A5D23] rounded-full p-1 shadow-sm z-10">
                     <Check className="w-3 h-3 text-white stroke-[3]" />
                   </div>
@@ -848,21 +1266,22 @@ export function CustomizeClient({
           );
         })}
       </div>
+      )}
     </>
   );
 
   const renderStyleContent = () => {
     let styleCategories: any[] = [];
 
-    if (store.selectedProduct === 'jubba') {
+    if (selectedProduct === 'jubba') {
       styleCategories = [
         { id: 'collar', title: 'Collar Style', choices: Object.entries(UI_VECTORS.collar).filter(([k]) => ['band', 'round'].includes(k)) },
         { id: 'placket', title: 'Placket Style', choices: Object.entries(UI_VECTORS.placket) },
         { id: 'pocket', title: 'Pocket Style', choices: Object.entries(UI_VECTORS.pocket).filter(([k]) => ['no_pocket', 'side', 'chest'].includes(k)) }
       ];
     }
-    else if (store.selectedProduct.startsWith('panjabi_')) {
-      const type = store.selectedProduct.split('_')[1];
+    else if (selectedProduct.startsWith('panjabi_')) {
+      const type = selectedProduct.split('_')[1];
 
       let collars: Record<string, string | null> = {};
       let plackets: Record<string, string | null> = {};
@@ -893,7 +1312,7 @@ export function CustomizeClient({
         { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) }
       ];
     }
-    else if (store.selectedProduct === 'shirt') {
+    else if (selectedProduct === 'shirt') {
       const collars = { spread: UI_VECTORS.collar.spread, buttondown: UI_VECTORS.collar.buttondown, mandarin: UI_VECTORS.collar.mandarin };
       const plackets = UI_VECTORS.placket;
       const pockets = { no_pocket: UI_VECTORS.pocket.no_pocket, chest: UI_VECTORS.pocket.chest };
@@ -907,7 +1326,7 @@ export function CustomizeClient({
         { id: 'pocket', title: 'Pocket Style', choices: Object.entries(pockets) }
       ];
     }
-    else if (store.selectedProduct.startsWith('pant_')) {
+    else if (selectedProduct.startsWith('pant_')) {
       styleCategories = [
         { id: 'front', title: 'Front Style', choices: Object.entries(UI_VECTORS.front) },
         { id: 'hem', title: 'Hem Style', choices: Object.entries(UI_VECTORS.hem) }
@@ -924,14 +1343,14 @@ export function CustomizeClient({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {category.choices.map(([key, imagePath]: [string, string | null]) => {
 
-                const isSelected = store.productStyles[category.id] === key;
+                const isSelected = productStyles[category.id] === key;
 
                 // Badge এর জন্য স্পেশাল UI
                 if (imagePath === 'badge') {
                   return (
                     <div
                       key={key}
-                      onClick={() => store.setProductStyle(category.id, key)}
+                      onClick={() => setProductStyle(category.id, key)}
                       className={`relative flex items-center justify-center py-4 px-3 rounded-xl border cursor-pointer transition-all ${isSelected
                         ? 'border-[#4A5D23] bg-[#4A5D23]/10 ring-1 ring-[#4A5D23]'
                         : 'border-[#EBECE3] bg-white hover:border-[#D4D7C9]'
@@ -953,7 +1372,7 @@ export function CustomizeClient({
                 return (
                   <div
                     key={key}
-                    onClick={() => store.setProductStyle(category.id, key)}
+                    onClick={() => setProductStyle(category.id, key)}
                     className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-all bg-white ${isSelected
                       ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23] bg-[#F8F9F5]'
                       : 'border-[#EBECE3] hover:border-[#D4D7C9]'
@@ -986,12 +1405,11 @@ export function CustomizeClient({
 
   const renderTailoringContent = () => {
     // বর্তমান প্রোডাক্টের অ্যাডভান্সড অপশনগুলো বের করা
-    const activeKey = store.selectedProduct.startsWith('panjabi_') ? 'panjabi' : store.selectedProduct.startsWith('pant_') ? 'pant' : store.selectedProduct;
-    const allOptions = ADVANCED_TAILORING_OPTIONS[activeKey] || [];
+    const allOptions = ADVANCED_TAILORING_OPTIONS[motherCat] || [];
 
     // কন্ডিশনাল লজিক প্রয়োগ
     const visibleOptions = allOptions.filter(group =>
-      group.condition ? group.condition(store.selectedProduct, store.productStyles) : true
+      group.condition ? group.condition(selectedProduct, productStyles) : true
     );
 
     if (visibleOptions.length === 0) {
@@ -1030,7 +1448,7 @@ export function CustomizeClient({
         {/* Selected Summary List */}
         <div className="flex flex-col gap-2 mt-1">
           {visibleOptions.map(group => {
-            const selectedValue = store.productStyles[group.id];
+            const selectedValue = productStyles[group.id];
             // সিলেক্টেড ভ্যালু না থাকলে ডিফল্ট (প্রথম) ভ্যালুটি দেখাবে
             const choice = group.choices.find(c => c[0] === selectedValue) || group.choices[0];
             const label = choice[0].replace(/_/g, ' ');
@@ -1053,13 +1471,12 @@ export function CustomizeClient({
 
   const renderMeasurementContent = () => {
     const dynamicFields = MEASUREMENT_FIELDS[motherCat] || [];
-    const availablePresets = Object.keys(STANDARD_SIZES[motherCat] || {});
 
     return (
       <>
-      <div className="flex justify-between items-center mb-4 mt-2">
+        <div className="flex justify-between items-center mb-4 mt-2">
           <span className="text-[10px] font-medium uppercase tracking-widest text-[#1C221A]/70">Enter Your Measurements</span>
-          <button 
+          <button
             type="button"
             onClick={() => openSizeGuide({ isGlobal: false, tab: 'guide', category: motherCat })}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#4A5D23]/10 text-[#4A5D23] text-[10px] font-medium uppercase tracking-widest hover:bg-[#4A5D23]/20 transition-all cursor-pointer"
@@ -1068,11 +1485,11 @@ export function CustomizeClient({
           </button>
         </div>
         <div className="flex bg-[#EBECE3]/60 p-1 rounded-xl mb-6">
-          <button onClick={() => store.setMeasurementMode('saved')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>My Profiles</button>
-          <button onClick={() => store.setMeasurementMode('new')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${store.measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>New Size</button>
+          <button onClick={() => setMeasurementMode('saved')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${measurementMode === 'saved' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>My Profiles</button>
+          <button onClick={() => setMeasurementMode('new')} className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all ${measurementMode === 'new' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50 hover:text-[#1C221A] cursor-pointer'}`}>New Size</button>
         </div>
 
-        {store.measurementMode === 'saved' && (
+        {measurementMode === 'saved' && (
           <div className="animate-in fade-in duration-300">
             {!userId ? (
               <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
@@ -1087,8 +1504,8 @@ export function CustomizeClient({
                   <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Select Profile</label>
                   <div className="relative">
                     <select
-                      value={store.selectedPerson}
-                      onChange={(e) => store.setSelectedPerson(e.target.value)}
+                      value={selectedPerson}
+                      onChange={(e) => setSelectedPerson(e.target.value)}
                       className="w-full bg-white border border-[#D4D7C9] p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans appearance-none cursor-pointer text-[#17210C]"
                     >
                       {uniquePersons.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -1103,8 +1520,8 @@ export function CustomizeClient({
                     <label className="block text-[10px] uppercase tracking-widest text-[#1C221A]/70 mb-1.5">Select {motherCat} Fit</label>
                     <div className="relative">
                       <select
-                        value={store.selectedFitId || ''}
-                        onChange={(e) => store.setSelectedFitId(Number(e.target.value))}
+                        value={selectedFitId || ''}
+                        onChange={(e) => setSelectedFitId(Number(e.target.value))}
                         className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/60 p-3.5 pr-10 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl font-sans appearance-none cursor-pointer text-[#17210C]"
                       >
                         {availableFits.map((fit) => (
@@ -1117,10 +1534,10 @@ export function CustomizeClient({
                     </div>
 
                     {/* Display Measurements for Selected Fit */}
-                    {store.selectedFitId && (
+                    {selectedFitId && (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 mt-3 bg-white rounded-xl border border-[#D4D7C9]/40 shadow-sm">
                         {(() => {
-                          const fit = availableFits.find(p => p.id === store.selectedFitId);
+                          const fit = availableFits.find(p => p.id === selectedFitId);
                           if (!fit || !fit.measurements) return null;
                           return Object.entries(fit.measurements).map(([key, val]) => {
                             const labelDef = dynamicFields.find(f => f.id === key);
@@ -1137,8 +1554,8 @@ export function CustomizeClient({
                   </div>
                 ) : (
                   <div className="p-4 bg-red-50 text-red-600 rounded-xl border border-red-100 text-center">
-                    <p className="font-sans text-xs mb-2">No {motherCat} size found for '{store.selectedPerson}'.</p>
-                    <button onClick={() => store.setMeasurementMode('new')} className="px-4 py-2 bg-[#4A5D23] text-white text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:bg-[#3D4C1D] transition-colors cursor-pointer">
+                    <p className="font-sans text-xs mb-2">No {motherCat} size found for '{selectedPerson}'.</p>
+                    <button onClick={() => setMeasurementMode('new')} className="px-4 py-2 bg-[#4A5D23] text-white text-[10px] uppercase tracking-widest rounded-lg shadow-sm hover:bg-[#3D4C1D] transition-colors cursor-pointer">
                       + Create New {motherCat} Size
                     </button>
                   </div>
@@ -1147,26 +1564,26 @@ export function CustomizeClient({
             ) : (
               <div className="text-center py-8 bg-white/50 rounded-xl border border-[#D4D7C9]/40">
                 <p className="font-sans text-xs text-[#1C221A]/70 mb-2">No profiles found.</p>
-                <button onClick={() => store.setMeasurementMode('new')} className="inline-flex justify-center w-fit mx-auto text-[#4A5D23] text-[12px] hover:text-accent uppercase tracking-widest hover:underline cursor-pointer">Create Profile <ChevronRight className="w-4 h-4" /></button>
+                <button onClick={() => setMeasurementMode('new')} className="inline-flex justify-center w-fit mx-auto text-[#4A5D23] text-[12px] hover:text-accent uppercase tracking-widest hover:underline cursor-pointer">Create Profile <ChevronRight className="w-4 h-4" /></button>
               </div>
             )}
           </div>
         )}
 
-        {store.measurementMode === 'new' && (
+        {measurementMode === 'new' && (
           <div className="animate-in fade-in duration-300">
             <div className="flex gap-4 mb-6">
               {['preset', 'custom'].map((t) => (
-                <button key={t} onClick={() => store.setSizeType(t as any)} className={`flex-1 py-2 text-[10px] font-medium uppercase tracking-[0.15em] border-b-2 transition-all cursor-pointer ${store.sizeType === t ? 'border-[#4A5D23] text-[#4A5D23]' : 'border-transparent text-[#1C221A]/40 hover:text-[#1C221A]/70'}`}>
+                <button key={t} onClick={() => setSizeType(t as any)} className={`flex-1 py-2 text-[10px] font-medium uppercase tracking-[0.15em] border-b-2 transition-all cursor-pointer ${sizeType === t ? 'border-[#4A5D23] text-[#4A5D23]' : 'border-transparent text-[#1C221A]/40 hover:text-[#1C221A]/70'}`}>
                   {t} Size
                 </button>
               ))}
             </div>
 
-            {store.sizeType === 'preset' ? (
+            {sizeType === 'preset' ? (
               <div className="flex flex-wrap gap-3 justify-center">
                 {availablePresets.length > 0 ? availablePresets.map(sizeKey => (
-                  <button key={sizeKey} onClick={() => store.setStandardSize(sizeKey)} className={`w-10 h-10 md:w-12 md:h-12 rounded-xl text-[11px] md:text-[13px] font-heading font-bold transition-all cursor-pointer ${store.standardSize === sizeKey ? 'bg-[#4A5D23] text-white shadow-sm' : 'bg-white border border-[#D4D7C9] text-[#1C221A]/60 hover:border-[#4A5D23]'}`}>
+                  <button key={sizeKey} onClick={() => setStandardSize(sizeKey)} className={`w-10 h-10 md:w-12 md:h-12 rounded-xl text-[11px] md:text-[13px] font-heading font-bold transition-all cursor-pointer ${standardSize === sizeKey ? 'bg-[#4A5D23] text-white shadow-sm' : 'bg-white border border-[#D4D7C9] text-[#1C221A]/60 hover:border-[#4A5D23]'}`}>
                     {sizeKey}
                   </button>
                 )) : <span className="text-xs text-[#1C221A]/50">Presets unavailable for this product.</span>}
@@ -1179,8 +1596,8 @@ export function CustomizeClient({
                       <label className="block text-[10px] font-medium uppercase text-[#4A5D23] mb-1">{field.label}</label>
                       <input
                         type="number" step="0.25"
-                        value={store.customMeasurements[field.id] || ''}
-                        onChange={(e) => store.setCustomMeasurement(field.id, e.target.value)}
+                        value={customMeasurements[field.id] || ''}
+                        onChange={(e) => setCustomMeasurement(field.id, e.target.value)}
                         className="w-full bg-white border border-[#D4D7C9] p-2.5 text-sm focus:outline-none focus:border-[#4A5D23] rounded-xl shadow-sm font-sans" placeholder="0.0"
                       />
                     </div>
@@ -1229,8 +1646,8 @@ export function CustomizeClient({
                         onClick={handleSaveProfileOnTheFly}
                         disabled={hasSavedCurrentProfile || isSavingProfile || isSaveDisabled}
                         className={`w-full mt-2 py-2.5 rounded-lg font-sans text-[11px] uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-sm ${(hasSavedCurrentProfile || isSaveDisabled)
-                            ? 'bg-[#EBECE3] text-[#1C221A]/40 cursor-not-allowed'
-                            : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] cursor-pointer'
+                          ? 'bg-[#EBECE3] text-[#1C221A]/40 cursor-not-allowed'
+                          : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] cursor-pointer'
                           }`}
                       >
                         {isSavingProfile ? 'Saving...' : hasSavedCurrentProfile ? 'Fit Saved Successfully' : 'Save Fit'}
@@ -1258,12 +1675,12 @@ export function CustomizeClient({
         <div className="bg-white/60 p-5 rounded-2xl border border-[#D4D7C9] flex items-center justify-between animate-in fade-in duration-300 shadow-sm">
           <span className="text-[12px] font-medium uppercase tracking-widest text-[#17210C]">Adjust Required Yards</span>
           <div className="flex items-center gap-4">
-            <button onClick={() => store.setYardage(Math.max(0.5, store.yardage - 0.5))} className="w-8 h-8 rounded-full border border-[#4A5D23] text-[#4A5D23] flex items-center justify-center font-medium hover:bg-[#4A5D23] hover:text-white transition-colors cursor-pointer">-</button>
-            <span className="font-heading text-lg font-bold">{store.yardage}</span>
+            <button onClick={() => setYardage(Math.max(0.5, yardage - 0.5))} className="w-8 h-8 rounded-full border border-[#4A5D23] text-[#4A5D23] flex items-center justify-center font-medium hover:bg-[#4A5D23] hover:text-white transition-colors cursor-pointer">-</button>
+            <span className="font-heading text-lg font-bold">{yardage}</span>
             <button
-              onClick={() => store.setYardage(store.yardage + 0.5)}
-              disabled={store.yardage + 0.5 > maxFabricYards}
-              className={`w-8 h-8 rounded-full border border-[#4A5D23] text-[#4A5D23] flex items-center justify-center font-medium transition-colors ${store.yardage + 0.5 > maxFabricYards ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#4A5D23] hover:text-white cursor-pointer'
+              onClick={() => setYardage(yardage + 0.5)}
+              disabled={yardage + 0.5 > maxFabricYards}
+              className={`w-8 h-8 rounded-full border border-[#4A5D23] text-[#4A5D23] flex items-center justify-center font-medium transition-colors ${yardage + 0.5 > maxFabricYards ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[#4A5D23] hover:text-white cursor-pointer'
                 }`}>+</button>
           </div>
         </div>
@@ -1301,22 +1718,28 @@ export function CustomizeClient({
             color="#FFFFFF"
             fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'}
             fabricImageUrl={selectedFabricTextureUrl}
-            collarType={getCanvasCollarType(selectedCollar)} // আপাদত পুরনো সিস্টেম ব্রেক না করার জন্য রাখা হলো
-            productOverlayUrl={getDynamicOverlayImage()} // নতুন ডাইনামিক পাথ
+            productOverlayUrl={getDynamicOverlayImage()}
+            hasFabric={!!selectedFabric}
             onReset={() => setIsResetModalOpen(true)}
             onInfoClick={() => {
               setModalFabric(selectedFabric);
               setIsInfoModalOpen(true);
             }}
+            showTracker={!isZeroState}
+            onTrackerClick={() => setIsTrackerOpen(true)}
+            showZeroState={isZeroState}
+            zeroStateMessage={zeroStateMessage}
           />
         </div>
       </div>
 
       <div className="hidden lg:flex w-full lg:w-1/2 min-h-screen px-4 md:px-8 lg:px-8 py-6 flex-col justify-start">
         <div className="mb-6 flex justify-between items-center">
-          <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.05em] text-[#17210C]">
-            Bespoke Atelier
-          </h1>
+          <div className="flex items-center gap-4">
+            <h1 className="font-heading text-3xl font-bold uppercase tracking-[0.05em] text-[#17210C]">
+              Bespoke Atelier
+            </h1>
+          </div>
         </div>
 
         {/* 🎯 NEW TOP TOGGLE (Segmented Control) */}
@@ -1337,7 +1760,7 @@ export function CustomizeClient({
 
         <div className="space-y-4">
           {/* 01. Choose Product */}
-          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
+          <div className={cn("border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300", isStepLocked(1) ? "opacity-50 pointer-events-none grayscale-[0.5]" : "opacity-100")}>
             <button
               ref={(el) => { stepRefs.current[1] = el; }}
               onClick={() => setExpandedStep(expandedStep === 1 ? 0 : 1)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
@@ -1350,7 +1773,7 @@ export function CustomizeClient({
           </div>
 
           {/* 02. Choose Fabric */}
-          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
+          <div className={cn("border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300", isStepLocked(2) ? "opacity-50 pointer-events-none grayscale-[0.5]" : "opacity-100")}>
             <button
               ref={(el) => { stepRefs.current[2] = el; }}
               onClick={() => setExpandedStep(expandedStep === 2 ? 0 : 2)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
@@ -1364,7 +1787,7 @@ export function CustomizeClient({
 
           {/* 03. Choose Style (Conditionally Hidden) */}
           {showStyleSection && (
-            <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300">
+            <div className={cn("border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300", isStepLocked(3) ? "opacity-50 pointer-events-none grayscale-[0.5]" : "opacity-100")}>
               <button
                 ref={(el) => { stepRefs.current[3] = el; }}
                 onClick={() => setExpandedStep(expandedStep === 3 ? 0 : 3)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
@@ -1379,7 +1802,7 @@ export function CustomizeClient({
 
           {/* 04. Advanced Tailoring (Conditionally Hidden) */}
           {showAdvancedSection && (
-            <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300">
+            <div className={cn("border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300", isStepLocked(4) ? "opacity-50 pointer-events-none grayscale-[0.5]" : "opacity-100")}>
               <button
                 ref={(el) => { stepRefs.current[4] = el; }}
                 onClick={() => setExpandedStep(expandedStep === 4 ? 0 : 4)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
@@ -1393,7 +1816,7 @@ export function CustomizeClient({
           )}
 
           {/* 05. Measurements / Fabric Estimator */}
-          <div className="border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all">
+          <div className={cn("border border-[#D4D7C9]/60 rounded-2xl overflow-hidden bg-white/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300", isStepLocked(5) ? "opacity-50 pointer-events-none grayscale-[0.5]" : "opacity-100")}>
             <button
               ref={(el) => { stepRefs.current[5] = el; }}
               onClick={() => setExpandedStep(expandedStep === 5 ? 0 : 5)} className="w-full flex items-center justify-between p-5 bg-[#EBECE3]/30 hover:bg-[#EBECE3]/60 transition-colors cursor-pointer">
@@ -1417,34 +1840,49 @@ export function CustomizeClient({
             {store.orderMode === 'tailoring' ? (
               <>
                 <div><p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-1">Tailoring Cost</p><p className="font-sans text-xs font-medium text-[#17210C]">৳{(stitchingCharge + collarPrice).toLocaleString()}</p></div>
-                <div><p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-1">Fabric Cost</p><p className="font-sans text-xs font-medium text-[#17210C]">৳{fabricPrice.toLocaleString()}</p></div>
+                <div><p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-1">Fabric Cost</p><p className="font-sans text-xs font-medium text-[#17210C]">{selectedFabric ? `৳${fabricPrice.toLocaleString()}` : '---'}</p></div>
               </>
             ) : (
-              <div><p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-1">Fabric Investment ({store.yardage} yds)</p><p className="font-sans text-xs font-medium text-[#17210C]">৳{fabricPrice.toLocaleString()}</p></div>
+              <div><p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-1">Fabric Investment {selectedFabric ? `(${yardage} yds)` : ''}</p><p className="font-sans text-xs font-medium text-[#17210C]">{selectedFabric ? `৳${fabricPrice.toLocaleString()}` : '---'}</p></div>
             )}
             <div className="h-8 w-px bg-[#D4D7C9] mx-2" />
-            <div><p className="text-[11px] font-medium uppercase tracking-widest text-[#4A5D23] mb-1">Total Statement</p><p className="font-heading text-2xl font-bold text-[#C25934]">৳{totalCost.toLocaleString()}</p></div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-[#4A5D23] mb-1">Total Statement</p>
+              <div className="flex items-center gap-2">
+                <p className={`font-heading text-2xl font-bold ${selectedFabric ? 'text-[#C25934]' : 'text-[#1C221A]/40'}`}>
+                  {selectedFabric || store.orderMode === 'tailoring' ? `৳${totalCost.toLocaleString()}` : '---'}
+                </p>
+                {fabricDiscountPercentage > 0 && selectedFabric && (
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-sans text-sm text-[#1C221A]/40 line-through">৳{originalTotalCost.toLocaleString()}</p>
+                    <span className="text-[10px] bg-[#C25934]/10 text-[#C25934] px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
+                      -{fabricDiscountPercentage}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-4">
-            {!isFabricStockSufficient && (
-              <div className="text-red-500 text-[11px] uppercase text-right">
+            {!selectedFabric && !isZeroState ? (
+              <div className="text-[#C25934] text-[11px] uppercase text-right font-medium">
+                Please select a fabric<br />to continue
+              </div>
+            ) : !isFabricStockSufficient ? (
+              <div className="text-red-500 text-[11px] uppercase text-right font-medium">
                 Not enough stock!<br />({maxFabricYards} yds available)
               </div>
-            )}
+            ) : null}
             <button
-              onClick={handleAddToCart}
-              disabled={!isFabricStockSufficient}
-              className={`w-full md:w-auto px-12 py-4 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${!isFabricStockSufficient
+              onClick={handleChameleonNext}
+              disabled={(!isZeroState && !selectedFabric) || (!isZeroState && !isFabricStockSufficient)}
+              className={`w-full md:w-auto px-12 py-4 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${((!isZeroState && !selectedFabric) || (!isZeroState && !isFabricStockSufficient))
                 ? 'bg-[#D4D7C9] text-white cursor-not-allowed'
                 : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] active:scale-[0.98] cursor-pointer'
                 }`}
             >
-              <ShoppingCart className="w-4 h-4" />
-              {!isFabricStockSufficient
-                ? 'Out of Stock'
-                : store.orderMode === 'tailoring'
-                  ? `Add Customized ${getMotherCategoryName(store.selectedProduct)} to Cart`
-                  : 'Purchase Fabric Bolt'}
+              {expandedStep === 5 ? <ShoppingCart className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {getButtonText()}
             </button>
           </div>
         </div>
@@ -1456,13 +1894,17 @@ export function CustomizeClient({
             color="#FFFFFF"
             fabricType={selectedFabric?.patterns?.[0]?.toLowerCase() || 'plain'}
             fabricImageUrl={selectedFabricTextureUrl}
-            collarType={getCanvasCollarType(selectedCollar)} // আপাদত পুরনো সিস্টেম ব্রেক না করার জন্য রাখা হলো
-            productOverlayUrl={getDynamicOverlayImage()} // নতুন ডাইনামিক পাথ
+            productOverlayUrl={getDynamicOverlayImage()}
+            hasFabric={!!selectedFabric}
             onReset={() => setIsResetModalOpen(true)}
             onInfoClick={() => {
               setModalFabric(selectedFabric);
               setIsInfoModalOpen(true);
             }}
+            showTracker={!isZeroState}
+            onTrackerClick={() => setIsTrackerOpen(true)}
+            showZeroState={isZeroState}
+            zeroStateMessage={zeroStateMessage}
           />
         </div>
       </div>
@@ -1477,7 +1919,7 @@ export function CustomizeClient({
               onClick={() => store.setOrderMode('tailoring')}
               className={`flex-1 py-2.5 rounded-lg text-[11px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer ${store.orderMode === 'tailoring' ? 'bg-[#4A5D23] text-white shadow-sm' : 'text-[#1C221A]/50'}`}
             >
-              <span>✂️</span> Tailored {getMotherCategoryName(store.selectedProduct)}
+              <span>✂️</span> Tailored {getMotherCategoryName(selectedProduct)}
             </button>
             <button
               onClick={() => store.setOrderMode('fabric')}
@@ -1510,36 +1952,56 @@ export function CustomizeClient({
             >
               {/* Product Card Pill */}
               <button
+                ref={(el) => { mobilePillRefs.current['product'] = el; }}
+                disabled={isMobilePillLocked('product')}
                 onClick={() => setActiveBottomSheet('product')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'product'
-                  ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                  : 'border-[#D4D7C9] text-[#1C221A]'
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${isMobilePillLocked('product')
+                  ? 'opacity-40 grayscale pointer-events-none border-[#EBECE3]'
+                  : activeBottomSheet === 'product'
+                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                    : 'border-[#D4D7C9] text-[#1C221A] hover:border-[#4A5D23]/50'
                   }`}
               >
-                <span>👕</span> {getMotherCategoryName(store.selectedProduct)}
+                <span>{getCategoryEmoji(selectedProduct)}</span>
+                {isZeroState ? 'Select Product' : getMotherCategoryName(selectedProduct)}
               </button>
 
               {/* Fabric Card Pill */}
               <button
+                ref={(el) => { mobilePillRefs.current['fabric'] = el; }}
+                disabled={isMobilePillLocked('fabric')}
                 onClick={() => setActiveBottomSheet('fabric')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'fabric'
-                  ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                  : 'border-[#D4D7C9] text-[#1C221A]'
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${isMobilePillLocked('fabric')
+                  ? 'opacity-40 grayscale pointer-events-none border-[#EBECE3]'
+                  : activeBottomSheet === 'fabric'
+                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                    : 'border-[#D4D7C9] text-[#1C221A] hover:border-[#4A5D23]/50'
                   }`}
               >
-                <div className="w-5 h-5 rounded-full overflow-hidden border border-[#D4D7C9] shrink-0">
-                  <img src={selectedFabricCoverUrl} alt="Fabric" className="w-full h-full object-cover bg-gray-100" />
-                </div>
-                Fabric: {selectedFabric?.name || 'Select'}
+                {/* 🎯 SMART LOGIC: স্টেপ কমপ্লিট না হওয়া পর্যন্ত 'Choose Fabric' দেখাবে */}
+                {isMobilePillLocked('fabric') || !activeDraft?.completedSteps?.includes('fabric') ? (
+                  <><span>🧵</span> Choose Fabric</>
+                ) : (
+                  <>
+                    <div className="w-5 h-5 rounded-full overflow-hidden border border-[#D4D7C9] shrink-0">
+                      <img src={selectedFabricCoverUrl} alt="Fabric" className="w-full h-full object-cover bg-gray-100" />
+                    </div>
+                    Fabric: {selectedFabric?.name || 'Select'}
+                  </>
+                )}
               </button>
 
               {/* Style Card Pill (Conditionally Rendered) */}
               {showStyleSection && (
                 <button
+                  ref={(el) => { mobilePillRefs.current['style'] = el; }}
+                  disabled={isMobilePillLocked('style')}
                   onClick={() => setActiveBottomSheet('style')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'style'
-                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                    : 'border-[#D4D7C9] text-[#1C221A]'
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${isMobilePillLocked('style')
+                    ? 'opacity-40 grayscale pointer-events-none border-[#EBECE3]'
+                    : activeBottomSheet === 'style'
+                      ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                      : 'border-[#D4D7C9] text-[#1C221A] hover:border-[#4A5D23]/50'
                     }`}
                 >
                   <span>✂️</span> Choose Style
@@ -1549,10 +2011,14 @@ export function CustomizeClient({
               {/* Advanced Card Pill (Conditionally Rendered) */}
               {showAdvancedSection && (
                 <button
+                  ref={(el) => { mobilePillRefs.current['advanced'] = el; }}
+                  disabled={isMobilePillLocked('advanced')}
                   onClick={() => setActiveBottomSheet('advanced')}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${activeBottomSheet === 'advanced'
-                    ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
-                    : 'border-[#D4D7C9] text-[#1C221A]'
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full border text-[11px] font-medium uppercase tracking-wider shrink-0 snap-center transition-all bg-white shadow-sm ${isMobilePillLocked('advanced')
+                    ? 'opacity-40 grayscale pointer-events-none border-[#EBECE3]'
+                    : activeBottomSheet === 'advanced'
+                      ? 'border-[#4A5D23] text-[#4A5D23] bg-[#4A5D23]/5 ring-1 ring-[#4A5D23]'
+                      : 'border-[#D4D7C9] text-[#1C221A] hover:border-[#4A5D23]/50'
                     }`}
                 >
                   <span>⚙️</span> Advanced Fit
@@ -1565,15 +2031,48 @@ export function CustomizeClient({
           <div className="flex items-center justify-between pt-2 border-t border-[#D4D7C9]/40 w-full">
             <div>
               <p className="text-[9px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-0.5">Total Amount</p>
-              <p className="font-heading text-lg font-bold text-[#C25934]">৳{totalCost.toLocaleString()}</p>
+              <div className="flex items-baseline gap-1.5">
+                <p className={`font-heading text-lg md:text-2xl font-bold ${selectedFabric ? 'text-[#C25934]' : 'text-[#1C221A]/40'}`}>
+                  {selectedFabric || store.orderMode === 'tailoring' ? `৳${totalCost.toLocaleString()}` : '---'}
+                </p>
+                {fabricDiscountPercentage > 0 && selectedFabric && (
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-sans text-sm text-[#1C221A]/40 line-through">৳{originalTotalCost.toLocaleString()}</p>
+                    <span className="text-[10px] bg-[#C25934]/10 text-[#C25934] px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
+                      -{fabricDiscountPercentage}%
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button
-              onClick={() => { setActiveBottomSheet(null); setMobileStep('checkout'); }}
-              disabled={!isFabricStockSufficient}
-              className="bg-[#17210C] text-white h-11 px-6 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg hover:bg-[#4A5D23] active:scale-[0.98] transition-all"
+              onClick={() => {
+                const activeSequence = getActiveSequence();
+                const completed = activeDraft?.completedSteps || [];
+                
+                const targetStep = activeSequence.find(step => !completed.includes(step)) || 'measurements';
+                const targetIndex = activeSequence.indexOf(targetStep);
+
+                if (targetIndex > mobileSequenceIndex) {
+                  setMobileSequenceIndex(targetIndex);
+                }
+
+                if (targetStep === 'measurements') {
+                  setActiveBottomSheet(null);
+                  setMobileStep('checkout');
+                } else {
+                  setActiveBottomSheet(targetStep as any);
+                }
+              }}
+              disabled={(!selectedFabric && mobileSequenceIndex > 0) || (!isFabricStockSufficient && mobileSequenceIndex > 0)}
+              className={`h-11 px-6 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg transition-all ${
+                (!selectedFabric && mobileSequenceIndex > 0) || (!isFabricStockSufficient && mobileSequenceIndex > 0)
+                  ? 'bg-[#EBECE3] text-[#1C221A]/40 cursor-not-allowed'
+                  : 'bg-[#17210C] text-white hover:bg-[#4A5D23] active:scale-[0.98] cursor-pointer'
+              }`}
             >
-              <span>{isFabricStockSufficient ? (isFabricOnly ? 'Yards & Checkout' : 'Measurements') : 'Out of Stock'}</span>
+              <span>{getMobileMainButtonText()}</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -1585,6 +2084,16 @@ export function CustomizeClient({
       <div className={`lg:hidden fixed inset-0 z-[1001] transition-opacity duration-300 ${activeBottomSheet ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setActiveBottomSheet(null)} />
         <div className={`absolute bottom-0 left-0 w-full bg-[#F8F9F5] rounded-t-3xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col h-[90dvh] ${activeBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
+
+          {/* 🎯 Phase 2: Solo Island Progress Tracker Button */}
+          <button
+            onClick={() => setIsTrackerOpen(true)}
+            className={`absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-white/60 text-[#17210C] transition-all active:scale-95 cursor-pointer z-50 ${isZeroState ? 'opacity-0 pointer-events-none invisible' : 'opacity-100 pointer-events-auto visible'
+              }`}
+          >
+            <Eye className="w-[18px] h-[18px] text-[#4A5D23]" />
+            <span className="font-sans text-[10px] uppercase tracking-widest mt-0.5">View Progress</span>
+          </button>
 
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#D4D7C9]/50 shrink-0 bg-white rounded-t-3xl">
             <span className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#17210C]">
@@ -1617,7 +2126,12 @@ export function CustomizeClient({
           {(activeBottomSheet === 'style' || activeBottomSheet === 'advanced') && (
             <div className="p-4 bg-white border-t border-[#D4D7C9]/40 flex justify-end shrink-0">
               <button
-                onClick={() => setActiveBottomSheet(null)}
+                onClick={() => {
+                  if (activeProductId && activeBottomSheet) {
+                    store.markStepCompleted(activeProductId, activeBottomSheet);
+                  }
+                  setActiveBottomSheet(null);
+                }}
                 className="px-6 py-2.5 bg-[#4A5D23] text-white text-[11px] font-medium uppercase tracking-wider rounded-full shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 Apply & View Change
@@ -1637,6 +2151,16 @@ export function CustomizeClient({
       {/* এখানে z-50 পরিবর্তন করে z-[1002] করা হয়েছে */}
       <div className={`lg:hidden fixed bottom-0 left-0 w-full h-[90dvh] bg-[#F8F9F5] rounded-t-3xl z-[1002] flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${mobileStep === 'checkout' ? 'translate-y-0' : 'translate-y-full'}`}>
 
+        {/* 🎯 Phase 2: Solo Island Progress Tracker Button */}
+        <button
+          onClick={() => setIsTrackerOpen(true)}
+          className={`absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-white/60 text-[#17210C] transition-all active:scale-95 cursor-pointer z-50 ${mobileStep === 'checkout' && !isZeroState ? 'opacity-100 pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
+            }`}
+        >
+          <Eye className="w-[18px] h-[18px] text-[#4A5D23]" />
+          <span className="font-sans text-[10px] uppercase tracking-widest mt-0.5">View Progress</span>
+        </button>
+
         <div className="flex items-center px-4 py-4 border-b border-[#D4D7C9]/50 shrink-0 bg-white rounded-t-3xl relative">
           <button
             onClick={() => setMobileStep('design')}
@@ -1650,23 +2174,14 @@ export function CustomizeClient({
         </div>
 
         <div className="p-5 overflow-y-auto pb-32 flex-1">
-          {/* Conditionally hide measurements block entirely if Fabric Only */}
-          {!isFabricOnly && (
-            <>
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23]">Measurements</h3>
-                <button 
-                  onClick={() => openSizeGuide({ isGlobal: false, tab: 'guide', category: motherCat })}
-                  className="text-[#C25934] flex items-center gap-1 hover:underline cursor-pointer"
-                >
-                  <Ruler className="w-3.5 h-3.5" /> <span className="text-[9px] uppercase tracking-wider font-medium">Guide</span>
-                </button>
-              </div>
-              <div className="bg-white p-4 rounded-2xl border border-[#D4D7C9]/40 shadow-sm mb-6">
-                {renderMeasurementContent()}
-              </div>
-            </>
-          )}
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23]">
+              {isFabricOnly ? 'Fabric Estimator' : 'Measurements'}
+            </h3>
+          </div>
+          <div className="bg-white p-4 rounded-2xl border border-[#D4D7C9]/40 shadow-sm mb-6">
+            {renderMeasurementContent()}
+          </div>
 
           <h3 className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-[#4A5D23] mb-3">
             {isFabricOnly ? 'Required Yardage' : 'Preferences & Tailor Notes'}
@@ -1677,7 +2192,7 @@ export function CustomizeClient({
         </div>
 
         <div className="absolute bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-[#D4D7C9]/60 p-4 pb-safe shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-          {!isFabricStockSufficient && (
+          {!isFabricStockSufficient && selectedFabric && (
             <div className="text-red-500 text-center text-[11px] uppercase mb-2">
               Not enough stock! (Only {maxFabricYards} yds available)
             </div>
@@ -1685,24 +2200,26 @@ export function CustomizeClient({
           <div className="flex justify-between items-center mb-3 px-2">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-widest text-[#1C221A]/50 mb-0.5">Total Amount</p>
-              <p className="font-heading text-2xl font-bold text-[#C25934]">৳{totalCost.toLocaleString()}</p>
+              <p className={`font-heading text-2xl font-bold ${selectedFabric ? 'text-[#C25934]' : 'text-[#1C221A]/40'}`}>
+                {selectedFabric || store.orderMode === 'tailoring' ? `৳${totalCost.toLocaleString()}` : '---'}
+              </p>
             </div>
             <div className="text-right">
               <p className="font-sans text-[10px] font-medium text-[#17210C] uppercase tracking-widest">
-                {isFabricOnly ? `Premium Fabric Bolt` : `Tailored ${getMotherCategoryName(store.selectedProduct)}`}
+                {isFabricOnly ? `Premium Fabric Bolt` : `Tailored ${getMotherCategoryName(selectedProduct)}`}
               </p>
             </div>
           </div>
           <button
             onClick={handleAddToCart}
-            disabled={!isFabricStockSufficient}
-            className={`w-full py-3.5 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${!isFabricStockSufficient
+            disabled={!selectedFabric || !isFabricStockSufficient}
+            className={`w-full py-3.5 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${!selectedFabric || !isFabricStockSufficient
               ? 'bg-[#D4D7C9] text-white cursor-not-allowed'
               : 'bg-[#4A5D23] text-white active:bg-[#3D4C1D] cursor-pointer'
               }`}
           >
             <ShoppingCart className="w-4 h-4" />
-            {!isFabricStockSufficient ? 'Out of Stock' : (isFabricOnly ? 'Add Fabric to Cart' : `Add Customized ${getMotherCategoryName(store.selectedProduct)} to Cart`)}
+            {!selectedFabric ? 'No Fabric Selected' : !isFabricStockSufficient ? 'Out of Stock' : (isFabricOnly ? 'Add Fabric to Cart' : `Add Customized ${getMotherCategoryName(selectedProduct)} to Cart`)}
           </button>
         </div>
       </div>
@@ -1713,7 +2230,7 @@ export function CustomizeClient({
         isOpen={isInfoModalOpen}
         onClose={() => setIsInfoModalOpen(false)}
         onSelectFabric={(fabricId) => {
-          store.setSelectedFabricId(fabricId);
+          setSelectedFabricId(fabricId);
           setIsInfoModalOpen(false); // মডাল ক্লোজ হবে
         }}
       />
@@ -1722,10 +2239,143 @@ export function CustomizeClient({
       <TailoringDetailsModal
         isOpen={isTailoringModalOpen}
         onClose={() => setIsTailoringModalOpen(false)}
-        productType={store.selectedProduct}
-        productStyles={store.productStyles}
-        setProductStyle={store.setProductStyle}
+        productType={selectedProduct}
+        productStyles={productStyles}
+        setProductStyle={setProductStyle}
       />
+
+      {/* 🎯 Live Progress Tracker Modal */}
+      {isTrackerOpen && activeDraft && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-[#111410]/70 backdrop-blur-md transition-opacity" onClick={() => setIsTrackerOpen(false)} />
+          <div className="relative w-full max-w-md bg-[#F8F9F5] rounded-[24px] shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+            <div className="flex justify-between items-center border-b border-[#D4D7C9] pb-4 mb-4">
+              <h3 className="font-heading text-lg font-bold uppercase tracking-widest text-[#17210C]">
+                Draft Summary
+              </h3>
+              <button onClick={() => setIsTrackerOpen(false)} className="p-2 bg-white rounded-full text-[#1C221A]/60 hover:text-red-500 shadow-sm cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2 font-sans text-xs">
+              {/* Product */}
+              <div className="bg-white p-3 rounded-xl border border-[#D4D7C9]/40 flex justify-between items-center">
+                <span className="font-medium text-[#1C221A]/70 uppercase tracking-wider">Product</span>
+                <span className="text-[#4A5D23] capitalize font-medium">{selectedProduct.replace('_', ' ')}</span>
+              </div>
+
+              {(() => {
+                // 🎯 SMART LOGIC: মোবাইল এবং পিসি উভয়ের Active State সিঙ্ক করা
+                const currentActiveStepName =
+                  activeBottomSheet || // যদি মোবাইলের কোনো শিট ওপেন থাকে
+                  (mobileStep === 'checkout' ? 'measurements' : null) || // যদি মোবাইলে চেকআউট পেজে থাকে
+                  getStepName(expandedStep); // যদি পিসিতে থাকে
+
+                const getStatus = (step: string) => {
+                  if (activeDraft.completedSteps.includes(step)) return 'completed';
+                  if (currentActiveStepName === step) return 'active';
+                  return 'pending';
+                };
+
+                const fabricStatus = getStatus('fabric');
+                const styleStatus = getStatus('style');
+                const advStatus = getStatus('advanced');
+                const measStatus = getStatus('measurements');
+
+                return (
+                  <>
+                    {/* Fabric */}
+                    <div className={`bg-white p-3 rounded-xl border flex justify-between items-center transition-all ${fabricStatus === 'pending' ? 'border-red-500/20 opacity-70' : 'border-[#D4D7C9]/40'}`}>
+                      <span className="font-medium text-[#1C221A]/70 uppercase tracking-wider text-[10px]">Fabric</span>
+                      <div className="flex items-center gap-2">
+                        {fabricStatus === 'pending' ? (
+                          <span className="text-[#C25934] text-[9px] uppercase tracking-widest font-medium bg-[#C25934]/10 px-2 py-0.5 rounded-sm">Pending</span>
+                        ) : (
+                          <>
+                            <span className="text-[#4A5D23] font-medium">{selectedFabric?.name || 'Loading...'}</span>
+                            {fabricStatus === 'completed' ? <Check className="w-3.5 h-3.5 text-[#4A5D23]" /> : <span className="w-2.5 h-2.5 rounded-full bg-[#4A5D23] animate-pulse" />}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Basic Styles */}
+                    {showStyleSection && (
+                      <div className={`bg-white p-3.5 rounded-xl border transition-all ${styleStatus === 'pending' ? 'border-red-500/20 opacity-70' : 'border-[#D4D7C9]/40'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-medium text-[#1C221A]/70 uppercase tracking-wider text-[10px]">Configured Styles</span>
+                          {styleStatus === 'completed' ? <Check className="w-3.5 h-3.5 text-[#4A5D23]" /> :
+                            styleStatus === 'active' ? <span className="w-2.5 h-2.5 rounded-full bg-[#4A5D23] animate-pulse" /> :
+                              <span className="text-[#C25934] text-[9px] uppercase tracking-widest font-medium bg-[#C25934]/10 px-2 py-0.5 rounded-sm">Pending</span>}
+                        </div>
+                        {styleStatus !== 'pending' && (
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {Object.entries(productStyles)
+                              .filter(([k]) => !ADVANCED_TAILORING_OPTIONS[motherCat]?.find(g => g.id === k))
+                              .map(([k, v]) => (
+                                <div key={k} className="flex flex-col bg-[#F8F9F5] px-3 py-2 rounded-lg border border-[#D4D7C9]/30">
+                                  <span className="text-[9px] text-[#1C221A]/50 uppercase tracking-widest mb-0.5">{k.replace(/_/g, ' ')}</span>
+                                  <span className="text-[11px] font-medium text-[#17210C] capitalize">{v.replace(/_/g, ' ')}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Advanced Tailoring */}
+                    {showAdvancedSection && Object.keys(productStyles).some(k => ADVANCED_TAILORING_OPTIONS[motherCat]?.find(g => g.id === k)) && (
+                      <div className={`p-3.5 rounded-xl border transition-all ${advStatus === 'pending' ? 'bg-white border-red-500/20 opacity-70' : 'bg-[#4A5D23]/5 border-[#4A5D23]/20'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className={`font-medium uppercase tracking-wider text-[10px] ${advStatus === 'pending' ? 'text-[#1C221A]/70' : 'text-[#4A5D23]'}`}>Advanced Tailoring</span>
+                          {advStatus === 'completed' ? <Check className="w-3.5 h-3.5 text-[#4A5D23]" /> :
+                            advStatus === 'active' ? <span className="w-2.5 h-2.5 rounded-full bg-[#4A5D23] animate-pulse" /> :
+                              <span className="text-[#C25934] text-[9px] uppercase tracking-widest font-medium bg-[#C25934]/10 px-2 py-0.5 rounded-sm">Pending</span>}
+                        </div>
+                        {advStatus !== 'pending' && (
+                          <div className="grid grid-cols-2 gap-2.5">
+                            {Object.entries(productStyles)
+                              .filter(([k]) => ADVANCED_TAILORING_OPTIONS[motherCat]?.find(g => g.id === k))
+                              .map(([k, v]) => {
+                                const labelDef = ADVANCED_TAILORING_OPTIONS[motherCat]?.find(g => g.id === k);
+                                return (
+                                  <div key={k} className="flex flex-col bg-white px-3 py-2 rounded-lg border border-[#4A5D23]/20 shadow-sm">
+                                    <span className="text-[9px] text-[#4A5D23]/70 uppercase tracking-widest mb-0.5">{labelDef?.title || k.replace(/_/g, ' ')}</span>
+                                    <span className="text-[11px] font-medium text-[#17210C] capitalize">{v.replace(/_/g, ' ')}</span>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Measurements */}
+                    <div className={`bg-white p-3.5 rounded-xl border transition-all ${measStatus === 'pending' ? 'border-red-500/20 opacity-70' : 'border-[#D4D7C9]/40'}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-[#1C221A]/70 uppercase tracking-wider text-[10px]">{store.orderMode === 'fabric' ? 'Fabric Estimator' : 'Measurements'}</span>
+                        {measStatus === 'completed' ? <Check className="w-3.5 h-3.5 text-[#4A5D23]" /> :
+                          measStatus === 'active' ? <span className="w-2.5 h-2.5 rounded-full bg-[#4A5D23] animate-pulse" /> :
+                            <span className="text-[#C25934] text-[9px] uppercase tracking-widest font-medium bg-[#C25934]/10 px-2 py-0.5 rounded-sm">Pending</span>}
+                      </div>
+                      {measStatus !== 'pending' && (
+                        <div className="mt-3 text-left">
+                          <span className={`text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest font-medium ${measurementMode === 'saved' && selectedFitId ? 'bg-[#4A5D23]/10 text-[#4A5D23]' : 'bg-[#C25934]/10 text-[#C25934]'}`}>
+                            {measurementMode === 'saved' && selectedFitId ? 'Profile Linked' : 'Live Draft'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {showLoginModal && (
         <div className="fixed inset-0 z-[1005] flex items-center justify-center p-6">
@@ -1765,8 +2415,15 @@ export function CustomizeClient({
               </button>
               <button
                 onClick={() => {
-                  store.resetCustomizer();
+                  // বর্তমান প্রোডাক্টের ড্রাফট ক্লিয়ার করে জিরো-স্টেটে পাঠিয়ে দেবে
+                  if (activeProductId) {
+                    store.clearDraft(activeProductId);
+                  } else {
+                    store.resetEntireStore();
+                  }
                   setIsResetModalOpen(false);
+                  setMobileSequenceIndex(0);
+                  setZeroStateReason('reset');
                 }}
                 className="flex-1 py-3.5 bg-red-600 text-white hover:bg-red-700 rounded-xl font-sans text-[12px] uppercase tracking-widest shadow-md transition-colors cursor-pointer"
               >

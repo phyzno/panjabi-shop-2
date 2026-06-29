@@ -19,6 +19,8 @@ interface CheckoutPayload {
     productType: string;
     quantity: number;
     unitPrice: number;
+    originalUnitPrice?: number | null;
+    discountPercentage?: number | null;
     stitchingCharge?: number | null;
     totalPrice: number;
     sizeMode?: string | null;
@@ -27,7 +29,8 @@ interface CheckoutPayload {
     fabricName?: string | null;
     yardage?: number | null;
     customMeasurements?: Record<string, string | number> | null;
-    collarType?: string | null;
+    productStyles?: Record<string, string> | null;
+    tailoringDetails?: Record<string, string> | null;
   }>;
 }
 
@@ -97,6 +100,8 @@ export async function createOrder(payload: CheckoutPayload) {
         product_type: item.productType || "readymade",
         quantity: item.quantity || 1,
         unit_price: item.unitPrice || 0,
+        original_unit_price: item.originalUnitPrice || item.unitPrice || 0,
+        discount_percentage: item.discountPercentage || 0,
         stitching_charge: item.stitchingCharge || 0,
         fabric_id: item.fabricId ? String(item.fabricId) : null,
         fabric_name: item.fabricName || null,
@@ -105,7 +110,8 @@ export async function createOrder(payload: CheckoutPayload) {
         size_value: item.sizeValue || null,
         measurements: item.customMeasurements || null,
         fabric_yards: item.yardage || null,
-        collar_type: item.collarType || null,
+        product_styles: item.productStyles || null,
+        tailoring_details: item.tailoringDetails || null,
       }));
 
       await tx.insert(orderItems).values(itemsToInsert);

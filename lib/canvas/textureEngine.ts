@@ -5,7 +5,6 @@ export interface TextureConfig {
   color: string;
   fabricType: string;
   fabricImageUrl?: string;
-  collarType: 'band' | 'vneck' | 'round' | 'mandarin';
   productOverlayUrl?: string;
   fabricOpacity?: number;
   colorIntensity?: number;
@@ -29,15 +28,8 @@ export async function renderPanjabiTexture(
   canvas.width = W;
   canvas.height = H;
 
-  const collarImageMap: Record<string, string> = {
-    band: '/assets/punjabi/collar-band.png',
-    vneck: '/assets/punjabi/collar-vneck.png',
-    round: '/assets/punjabi/collar-round.png',
-    mandarin: '/assets/punjabi/collar-mandarin.png',
-  };
-
-  // ডাইনামিক ওভারলে পাথ (Jubba বা নতুন প্রোডাক্টের জন্য) থাকলে সেটি নেবে, না থাকলে পুরনো Panjabi-এর পাথ নেবে
-  const imageSrc = config.productOverlayUrl || (collarImageMap[config.collarType] ?? collarImageMap.band);
+  // সেফটির জন্য একটি ফলব্যাক ইমেজ দেওয়া হলো
+  const imageSrc = config.productOverlayUrl || '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/Chest Pocket/02 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.png';
 
   const rawUrl = config.fabricImageUrl;
   const isLocalOrData = rawUrl?.startsWith('data:') || rawUrl?.startsWith('blob:');

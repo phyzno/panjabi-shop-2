@@ -84,8 +84,12 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
       productName: product.name,
       productType: 'readymade',
       image: product.images?.[0] || '',
-      unitPrice: finalDiscountedPrice, // ডিসকাউন্টেড প্রাইস কার্টে যাচ্ছে
+      
+      originalUnitPrice: rawPrice,
+      discountPercentage: product.discount_percentage || 0,
+      unitPrice: finalDiscountedPrice,
       stitchingCharge: 0,
+      
       sizeMode: sizeMode,
       sizeValue: selectedSize,
     });

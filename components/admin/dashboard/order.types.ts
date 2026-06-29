@@ -15,6 +15,8 @@ export interface OrderItem {
     quantity: number;
     unitPrice: number;
     totalPrice: number;
+    originalUnitPrice?: number;
+    discountPercentage?: number;
     
     sizeMode?: SizeMode;
     sizeValue?: string; 

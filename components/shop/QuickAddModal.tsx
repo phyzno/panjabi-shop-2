@@ -51,13 +51,24 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
       ? product.price 
       : Number(String(product.price).replace(/[^0-9.]/g, ''));
 
+    // 🎯 ডাইনামিক প্রাইসিং ও ডিসকাউন্ট ক্যালকুলেশন
+    const discountPercent = product.discount_percentage || 0;
+    const discountedPrice = discountPercent > 0
+      ? Math.round(numericPrice - (numericPrice * (discountPercent / 100)))
+      : numericPrice;
+
     addItem({
       productId: String(product.id),
       productName: product.name,
       productType: 'readymade',
       image: product.images?.[0] || '',
-      unitPrice: numericPrice,
+      
+      // 🎯 নতুন প্রাইসিং ফিল্ডগুলো
+      originalUnitPrice: numericPrice,
+      discountPercentage: discountPercent,
+      unitPrice: discountedPrice,
       stitchingCharge: 0,
+      
       sizeMode: sizeMode,
       sizeValue: selectedSize,
     });

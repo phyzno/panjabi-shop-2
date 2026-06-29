@@ -184,8 +184,13 @@ export function CollectionQuickViewModal({
       productName: product.name,
       productType: 'readymade',
       image: product.images?.[0] || '',
-      unitPrice: finalDiscountedPrice, // ডিসকাউন্টেড প্রাইস কার্টে পাঠানো হচ্ছে
+      
+      // 🎯 নতুন প্রাইসিং ফিল্ডগুলো
+      originalUnitPrice: rawPrice,
+      discountPercentage: product.discount_percentage || 0,
+      unitPrice: finalDiscountedPrice,
       stitchingCharge: 0,
+      
       sizeMode: sizeMode,
       sizeValue: selectedSize,
     });

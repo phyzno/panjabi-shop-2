@@ -14,12 +14,21 @@ export interface CartItem {
   fabricName?: string;
   fabricImage?: string;
   yardage?: number;
+  
+  // Customization Data
   customMeasurements?: Record<string, string | number>;
-  collarType?: string;
+  productStyles?: Record<string, string>;
+  tailoringDetails?: Record<string, string>;
 
   quantity: number;
+  
+  // Pricing Data (Industry Standard)
+  originalUnitPrice: number;
+  discountPercentage: number;
   unitPrice: number;
   stitchingCharge: number;
+  
+  originalTotalPrice: number;
   totalPrice: number;
 
   sizeMode?: 'preset' | 'number' | 'custom_measurements' | 'saved_profile';
@@ -31,18 +40,21 @@ interface CartState {
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addItem: (item: Omit<CartItem, 'cartItemId' | 'quantity' | 'totalPrice'>) => void;
+  addItem: (item: Omit<CartItem, 'cartItemId' | 'quantity' | 'totalPrice' | 'originalTotalPrice'>) => void;
   removeItem: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
+  
+  // Calculation Helpers
   getSubTotal: () => number;
+  getOriginalSubTotal: () => number;
+  getTotalSavings: () => number;
 }
 
 let isCartCrossTabSyncReady = false;
 
 function readPersistedCartItems(value: string | null) {
   if (!value) return [];
-
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed?.state?.items) ? parsed.state.items : [];
@@ -62,16 +74,19 @@ export const useCartStore = create<CartState>()(
 
       addItem: (item) => {
         set((state) => {
+          // Strict Duplicate Checking
           const existingItem = state.items.find((i) =>
             i.productId === item.productId &&
             i.productType === item.productType &&
             i.sizeValue === item.sizeValue &&
             i.fabricId === item.fabricId &&
             i.yardage === item.yardage &&
-            i.collarType === item.collarType &&
-            JSON.stringify(i.customMeasurements) === JSON.stringify(item.customMeasurements)
+            JSON.stringify(i.customMeasurements) === JSON.stringify(item.customMeasurements) &&
+            JSON.stringify(i.productStyles) === JSON.stringify(item.productStyles) &&
+            JSON.stringify(i.tailoringDetails) === JSON.stringify(item.tailoringDetails)
           );
 
+          const originalUnitPrice = item.originalUnitPrice ?? item.unitPrice ?? 0;
           const unitPrice = item.unitPrice ?? 0;
           const stitchingCharge = item.stitchingCharge ?? 0;
 
@@ -82,7 +97,8 @@ export const useCartStore = create<CartState>()(
                   ? {
                     ...i,
                     quantity: i.quantity + 1,
-                    totalPrice: (i.quantity + 1) * ((i.unitPrice ?? 0) + (i.stitchingCharge ?? 0))
+                    originalTotalPrice: (i.quantity + 1) * (originalUnitPrice + stitchingCharge),
+                    totalPrice: (i.quantity + 1) * (unitPrice + stitchingCharge)
                   }
                   : i
               ),
@@ -95,6 +111,7 @@ export const useCartStore = create<CartState>()(
             ...item,
             cartItemId,
             quantity: 1,
+            originalTotalPrice: originalUnitPrice + stitchingCharge,
             totalPrice: unitPrice + stitchingCharge,
           };
 
@@ -115,7 +132,12 @@ export const useCartStore = create<CartState>()(
         set((state) => ({
           items: state.items.map((i) =>
             i.cartItemId === cartItemId && quantity > 0
-              ? { ...i, quantity, totalPrice: quantity * ((i.unitPrice ?? 0) + (i.stitchingCharge ?? 0)) }
+              ? { 
+                  ...i, 
+                  quantity, 
+                  originalTotalPrice: quantity * ((i.originalUnitPrice ?? 0) + (i.stitchingCharge ?? 0)),
+                  totalPrice: quantity * ((i.unitPrice ?? 0) + (i.stitchingCharge ?? 0)) 
+                }
               : i
           ),
         }));
@@ -123,9 +145,22 @@ export const useCartStore = create<CartState>()(
 
       clearCart: () => set({ items: [] }),
 
+      // 🎯 Helper: Final Price Sum (Subtotal for Checkout)
       getSubTotal: () => {
         return get().items.reduce((total, item) => total + item.totalPrice, 0);
       },
+
+      // 🎯 Helper: Original Price Sum (Without Discounts)
+      getOriginalSubTotal: () => {
+        return get().items.reduce((total, item) => total + item.originalTotalPrice, 0);
+      },
+
+      // 🎯 Helper: Total Savings (Original - Final)
+      getTotalSavings: () => {
+        const originalTotal = get().getOriginalSubTotal();
+        const finalTotal = get().getSubTotal();
+        return Math.max(0, originalTotal - finalTotal);
+      }
     }),
     {
       name: CART_STORAGE_KEY,

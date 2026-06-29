@@ -7,8 +7,13 @@ import { initCartCrossTabSync, useCartStore } from "@/store/cartStore";
 
 export function CartDrawer() {
   const router = useRouter();
-  const { items, isOpen, closeCart, updateQuantity, removeItem, getSubTotal } = useCartStore();
+  const { items, isOpen, closeCart, updateQuantity, removeItem, getSubTotal, getOriginalSubTotal, getTotalSavings } = useCartStore();
   const [mounted, setMounted] = useState(false);
+
+  const formatText = (text?: string) => {
+    if (!text) return '';
+    return text.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
 
   useEffect(() => {
     initCartCrossTabSync();
@@ -29,6 +34,8 @@ export function CartDrawer() {
   if (!mounted) return null;
 
   const subTotal = getSubTotal();
+  const originalSubTotal = getOriginalSubTotal();
+  const totalSavings = getTotalSavings();
 
   const handleCheckout = () => {
     closeCart();
@@ -133,22 +140,41 @@ export function CartDrawer() {
 
                       {item.productType === 'custom_tailored' && (
                         <>
-                          <p className="font-sans text-[10px] md:text-[11px] text-[#4A5D23] font-medium uppercase tracking-widest mt-1">
+                          <p className="font-sans text-[10px] md:text-[11px] text-[#4A5D23] font-medium uppercase tracking-widest mt-1 mb-2">
                             Size: {item.sizeValue || 'Custom'} ({item.yardage} Yards Fabric)
                           </p>
 
-                          {item.collarType && (
-                            <p className="font-sans text-[11px] text-[#1C221A]/70 mt-0.5 flex items-center gap-1">
-                              <span className="font-medium text-[#4A5D23]">Collar:</span> {item.collarType}
-                            </p>
+                          {/* 🎯 ১. ডাইনামিক বেসিক স্টাইলস */}
+                          {item.productStyles && Object.keys(item.productStyles).length > 0 && (
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+                              {Object.entries(item.productStyles).map(([key, val]) => (
+                                <p key={key} className="font-sans text-[10px] text-[#1C221A]/70 flex items-center gap-1">
+                                  <span className="font-medium text-[#4A5D23]">{formatText(key)}:</span> {formatText(val as string)}
+                                </p>
+                              ))}
+                            </div>
                           )}
 
-                          {item.customMeasurements && (
-                            <div className="text-[10px] text-[#1C221A]/50 font-sans mt-1 bg-[#F8F9F5] p-1.5 rounded-md border border-[#D4D7C9]/20 grid grid-cols-2 gap-x-2">
-                              <span>L: {item.customMeasurements.length}&quot;</span>
-                              <span>C: {item.customMeasurements.chest}&quot;</span>
-                              <span>Sh: {item.customMeasurements.shoulder}&quot;</span>
-                              <span>Sl: {item.customMeasurements.sleeve}&quot;</span>
+                          {/* 🎯 ২. ডাইনামিক অ্যাডভান্সড টেইলারিং ডিটেইলস */}
+                          {item.tailoringDetails && Object.keys(item.tailoringDetails).length > 0 && (
+                            <div className="flex flex-wrap gap-x-3 gap-y-1.5 p-2 bg-[#4A5D23]/5 rounded-lg border border-[#4A5D23]/10 mb-2">
+                              <span className="w-full font-heading text-[9px] font-bold uppercase tracking-widest text-[#4A5D23] mb-0.5">Advanced Specifications</span>
+                              {Object.entries(item.tailoringDetails).map(([key, val]) => (
+                                <p key={key} className="font-sans text-[10px] text-[#1C221A]/70 flex items-center gap-1">
+                                  <span className="font-medium text-[#4A5D23]">{formatText(key)}:</span> {formatText(val as string)}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 🎯 ৩. ডাইনামিক মেজারমেন্টস */}
+                          {item.customMeasurements && Object.keys(item.customMeasurements).length > 0 && (
+                            <div className="text-[10px] text-[#1C221A]/60 font-sans mt-1 bg-[#F8F9F5] p-2 rounded-lg border border-[#D4D7C9]/40 flex flex-wrap gap-x-3 gap-y-1.5">
+                              {Object.entries(item.customMeasurements).map(([key, val]) => (
+                                <span key={key} className="flex items-center gap-1">
+                                  <span className="font-medium text-[#4A5D23] uppercase tracking-wider">{formatText(key)}:</span> {String(val)}&quot;
+                                </span>
+                              ))}
                             </div>
                           )}
                         </>
@@ -187,9 +213,22 @@ export function CartDrawer() {
                         </button>
                       </div>
 
-                      <p className="font-sans text-[14px] md:text-sm text-[#C25934]">
-                        ৳ {(item.totalPrice ?? 0).toLocaleString('en-IN')}
-                      </p>
+                      {/* 🎯 ডাইনামিক অরিজিনাল ও ফাইনাল প্রাইস */}
+                      <div className="flex flex-col items-end">
+                        <p className="font-sans text-[14px] md:text-sm font-medium text-[#C25934]">
+                          ৳ {(item.totalPrice ?? 0).toLocaleString('en-IN')}
+                        </p>
+                        {(item.discountPercentage ?? 0) > 0 && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="font-sans text-[10px] text-[#1C221A]/40 line-through">
+                              ৳ {(item.originalTotalPrice ?? 0).toLocaleString('en-IN')}
+                            </span>
+                            <span className="text-[9px] bg-[#C25934]/10 text-[#C25934] px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
+                              -{item.discountPercentage}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -200,15 +239,34 @@ export function CartDrawer() {
 
         {items.length > 0 && (
           <div className="border-t border-[#D4D7C9]/60 bg-white p-6 shrink-0">
-            <div className="flex justify-between items-center mb-4">
+            
+            {/* 🎯 সাবটোটাল স্মার্ট লেআউট */}
+            <div className="flex justify-between items-center mb-1">
               <span className="font-sans text-sm uppercase tracking-widest text-[#1C221A]/70">
                 Subtotal
               </span>
-              <span className="font-heading text-xl font-bold text-[#17210C]">
-                ৳ {(subTotal ?? 0).toLocaleString('en-IN')}
-              </span>
+              <div className="flex items-center gap-2">
+                {totalSavings > 0 && (
+                  <span className="font-sans text-[13px] text-[#1C221A]/40 line-through">
+                    ৳ {(originalSubTotal ?? 0).toLocaleString('en-IN')}
+                  </span>
+                )}
+                <span className="font-heading text-xl font-bold text-[#17210C]">
+                  ৳ {(subTotal ?? 0).toLocaleString('en-IN')}
+                </span>
+              </div>
             </div>
-            <p className="font-sans text-[10px] text-[#1C221A]/50 text-center mb-4 uppercase tracking-wider">
+
+            {/* 🎯 সেভিংস ব্যাজ */}
+            {totalSavings > 0 && (
+              <div className="flex justify-end mb-3">
+                <span className="inline-flex items-center px-2 py-0.5 bg-[#4A5D23]/10 text-[#4A5D23] rounded text-[10px] font-medium uppercase tracking-wider border border-[#4A5D23]/20">
+                  🎉 You Saved ৳ {totalSavings.toLocaleString('en-IN')}
+                </span>
+              </div>
+            )}
+
+            <p className="font-sans text-[10px] text-[#1C221A]/50 text-center mb-4 mt-2 uppercase tracking-wider">
               Shipping & taxes calculated at checkout
             </p>
             <button

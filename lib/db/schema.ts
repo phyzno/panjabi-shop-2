@@ -141,5 +141,8 @@ export const orderItems = pgTable("order_items", {
   size_value: text("size_value"), 
   measurements: jsonb("measurements"),
   fabric_yards: real("fabric_yards"),
-  collar_type: text("collar_type"),
+  product_styles: jsonb("product_styles"), 
+  tailoring_details: jsonb("tailoring_details"),
+  original_unit_price: integer("original_unit_price"),
+  discount_percentage: integer("discount_percentage").default(0),
 });
