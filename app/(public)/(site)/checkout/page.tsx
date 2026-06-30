@@ -15,6 +15,10 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+  const toggleNote = (cartItemId: string) => {
+    setExpandedNotes(prev => ({ ...prev, [cartItemId]: !prev[cartItemId] }));
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -111,6 +115,7 @@ export default function CheckoutPage() {
         productType: item.productType,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
+        originalUnitPrice: item.originalUnitPrice,
         stitchingCharge: item.stitchingCharge || 0,
         totalPrice: item.totalPrice,
         sizeMode: item.sizeMode || null,
@@ -121,6 +126,7 @@ export default function CheckoutPage() {
         customMeasurements: item.customMeasurements || null,
         productStyles: item.productStyles || null,
         tailoringDetails: item.tailoringDetails || null,
+        specialInstructions: item.specialInstructions || null,
       })),
     };
 
@@ -321,7 +327,7 @@ export default function CheckoutPage() {
 
                     {item.productType === 'custom_tailored' && (
                       <div className="mt-2 space-y-2">
-                        
+
                         {item.fabricName && (
                           <p className="font-sans text-[10px] text-[#1C221A]/70 flex items-center gap-1 truncate">
                             <span className="font-medium text-[#4A5D23]">Fabric:</span> {item.fabricName}
@@ -359,6 +365,27 @@ export default function CheckoutPage() {
                                 <span className="font-medium text-[#4A5D23] uppercase tracking-wider">{formatText(key)}:</span> {String(val)}&quot;
                               </span>
                             ))}
+                          </div>
+                        )}
+
+                        {item.specialInstructions && (
+                          <div className="mt-2 mb-2">
+                            <button
+                              onClick={() => toggleNote(item.cartItemId)}
+                              type="button" // ⚠️ ফর্ম সাবমিট যেন না হয় তাই type="button" দেওয়া জরুরি
+                              className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-widest text-[#C25934] hover:text-[#A04525] transition-colors cursor-pointer"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                              {expandedNotes[item.cartItemId] ? 'Hide Note' : 'View Note'}
+                            </button>
+
+                            {expandedNotes[item.cartItemId] && (
+                              <div className="mt-2 p-2 bg-[#FFF9F5] rounded-md border border-[#C25934]/20 animate-in slide-in-from-top-2 duration-200">
+                                <p className="font-sans text-[10px] text-[#1C221A]/80 leading-relaxed italic">
+                                  "{item.specialInstructions}"
+                                </p>
+                              </div>
+                            )}
                           </div>
                         )}
 

@@ -31,13 +31,14 @@ interface CheckoutPayload {
     customMeasurements?: Record<string, string | number> | null;
     productStyles?: Record<string, string> | null;
     tailoringDetails?: Record<string, string> | null;
+    specialInstructions?: string | null;
   }>;
 }
 
 export async function createOrder(payload: CheckoutPayload) {
   try {
-    const subTotal = payload.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-    const grandTotal = subTotal + (payload.deliveryCharge || 0) - (payload.discount || 0);
+    const subTotal = Math.round(payload.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0));
+    const grandTotal = Math.round(subTotal + (payload.deliveryCharge || 0) - (payload.discount || 0));
 
     const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -99,19 +100,20 @@ export async function createOrder(payload: CheckoutPayload) {
         name: item.productName,
         product_type: item.productType || "readymade",
         quantity: item.quantity || 1,
-        unit_price: item.unitPrice || 0,
-        original_unit_price: item.originalUnitPrice || item.unitPrice || 0,
-        discount_percentage: item.discountPercentage || 0,
-        stitching_charge: item.stitchingCharge || 0,
+        unit_price: Math.round(Number(item.unitPrice || 0)),
+        original_unit_price: Math.round(Number(item.originalUnitPrice || item.unitPrice || 0)), 
+        discount_percentage: Math.round(Number(item.discountPercentage || 0)),
+        stitching_charge: Math.round(Number(item.stitchingCharge || 0)),
+        total_price: Math.round(Number(item.totalPrice || 0)),
         fabric_id: item.fabricId ? String(item.fabricId) : null,
         fabric_name: item.fabricName || null,
-        total_price: item.totalPrice || 0,
         size_mode: item.sizeMode || null,
         size_value: item.sizeValue || null,
         measurements: item.customMeasurements || null,
         fabric_yards: item.yardage || null,
         product_styles: item.productStyles || null,
         tailoring_details: item.tailoringDetails || null,
+        special_instructions: item.specialInstructions || null,
       }));
 
       await tx.insert(orderItems).values(itemsToInsert);

@@ -39,9 +39,11 @@ export async function getAdminOrders() {
           sizeValue: item.size_value || undefined,
           measurements: item.measurements || undefined,
           fabricYards: item.fabric_yards || undefined,
-          collarType: item.collar_type || undefined,
           fabricName: item.fabric_name || undefined,
-          stitchingCharge: item.stitching_charge ? Number(item.stitching_charge) : undefined
+          stitchingCharge: item.stitching_charge ? Number(item.stitching_charge) : undefined,
+          productStyles: item.product_styles || undefined,
+          tailoringDetails: item.tailoring_details || undefined,
+          specialInstructions: item.special_instructions || undefined
         }))
       };
     });
@@ -94,7 +96,7 @@ export async function bulkToggleArchiveOrders(ids: string[], isArchived: boolean
 export async function getOrderById(orderId: string) {
   try {
     const orderRecord = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-    
+
     if (orderRecord.length === 0) {
       return { success: false, error: "Order not found" };
     }
@@ -129,9 +131,11 @@ export async function getOrderById(orderId: string) {
         sizeValue: item.size_value || undefined,
         measurements: item.measurements || undefined,
         fabricYards: item.fabric_yards || undefined,
-        collarType: item.collar_type || undefined,
         fabricName: item.fabric_name || undefined,
-        stitchingCharge: item.stitching_charge ? Number(item.stitching_charge) : undefined
+        stitchingCharge: item.stitching_charge ? Number(item.stitching_charge) : undefined,
+        productStyles: item.product_styles || undefined,
+        tailoringDetails: item.tailoring_details || undefined,
+        specialInstructions: item.special_instructions || undefined
       }))
     };
 

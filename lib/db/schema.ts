@@ -145,4 +145,5 @@ export const orderItems = pgTable("order_items", {
   tailoring_details: jsonb("tailoring_details"),
   original_unit_price: integer("original_unit_price"),
   discount_percentage: integer("discount_percentage").default(0),
+  special_instructions: text("special_instructions"),
 });

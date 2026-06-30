@@ -27,6 +27,10 @@ export interface OrderItem {
 
     stitchingCharge?: number;
     fabricName?: string;
+
+    productStyles?: Record<string, string>;
+    tailoringDetails?: Record<string, string>;
+    specialInstructions?: string;
 }
 
 export interface Order {
