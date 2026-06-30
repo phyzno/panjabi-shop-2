@@ -16,6 +16,7 @@ export interface ProductDraft {
   
   // Progress Tracking (For our Info/Detail Modal & Sequential Flow)
   completedSteps: string[]; // e.g., ['product', 'fabric', 'style', 'advanced', 'measurements']
+  specialInstructions: string;
 }
 
 // ডিফল্ট ড্রাফট টেমপ্লেট
@@ -30,13 +31,13 @@ const defaultDraft: ProductDraft = {
   selectedFitId: null,
   customMeasurements: {},
   completedSteps: ['product'], // প্রোডাক্ট সিলেক্ট করার সাথে সাথেই এটি কমপ্লিট হবে
+  specialInstructions: '',
 };
 
 interface CustomizerState {
   // Global States (Zero-State Support)
   activeProductId: string | null; 
   orderMode: 'tailoring' | 'fabric';
-  specialInstructions: string;
   searchQuery: string;
   selectedColors: string[];
   selectedTypes: string[];
@@ -47,7 +48,6 @@ interface CustomizerState {
   // Global Actions
   setActiveProduct: (productId: string | null) => void;
   setOrderMode: (mode: 'tailoring' | 'fabric') => void;
-  setSpecialInstructions: (text: string) => void;
   setSearchQuery: (query: string) => void;
   toggleColorFilter: (color: string) => void;
   toggleTypeFilter: (type: string) => void;
@@ -68,7 +68,6 @@ export const useCustomizerStore = create<CustomizerState>()(
     (set, get) => ({
       activeProductId: null, // শুরুতে ক্যানভাস এবং অপশন ব্ল্যাংক থাকবে
       orderMode: 'tailoring',
-      specialInstructions: '',
       searchQuery: '',
       selectedColors: [],
       selectedTypes: [],
@@ -76,7 +75,6 @@ export const useCustomizerStore = create<CustomizerState>()(
 
       setActiveProduct: (productId) => set({ activeProductId: productId }),
       setOrderMode: (orderMode) => set({ orderMode }),
-      setSpecialInstructions: (specialInstructions) => set({ specialInstructions }),
       setSearchQuery: (searchQuery) => set({ searchQuery }),
       
       toggleColorFilter: (color) => set((state) => ({
@@ -172,7 +170,6 @@ export const useCustomizerStore = create<CustomizerState>()(
       resetEntireStore: () => set({
         activeProductId: null,
         orderMode: 'tailoring',
-        specialInstructions: '',
         searchQuery: '',
         selectedColors: [],
         selectedTypes: [],

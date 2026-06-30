@@ -10,6 +10,11 @@ export function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, getSubTotal, getOriginalSubTotal, getTotalSavings } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+  const toggleNote = (cartItemId: string) => {
+    setExpandedNotes(prev => ({ ...prev, [cartItemId]: !prev[cartItemId] }));
+  };
+
   const formatText = (text?: string) => {
     if (!text) return '';
     return text.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -175,6 +180,27 @@ export function CartDrawer() {
                                   <span className="font-medium text-[#4A5D23] uppercase tracking-wider">{formatText(key)}:</span> {String(val)}&quot;
                                 </span>
                               ))}
+                            </div>
+                          )}
+
+                          {/* 🎯 ৪. NEW: Minimal View Note Button */}
+                          {item.specialInstructions && (
+                            <div className="mt-2 mb-2">
+                              <button
+                                onClick={() => toggleNote(item.cartItemId)}
+                                className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-[#C25934] hover:text-[#A04525] transition-colors cursor-pointer"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                {expandedNotes[item.cartItemId] ? 'Hide Note' : 'View Note'}
+                              </button>
+                              
+                              {expandedNotes[item.cartItemId] && (
+                                <div className="mt-2 p-2.5 bg-[#FFF9F5] rounded-lg border border-[#C25934]/20 animate-in slide-in-from-top-2 duration-200">
+                                  <p className="font-sans text-[11px] text-[#1C221A]/80 leading-relaxed italic">
+                                    "{item.specialInstructions}"
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           )}
                         </>

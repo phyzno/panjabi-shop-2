@@ -19,6 +19,7 @@ export interface CartItem {
   customMeasurements?: Record<string, string | number>;
   productStyles?: Record<string, string>;
   tailoringDetails?: Record<string, string>;
+  specialInstructions?: string;
 
   quantity: number;
   
@@ -83,7 +84,8 @@ export const useCartStore = create<CartState>()(
             i.yardage === item.yardage &&
             JSON.stringify(i.customMeasurements) === JSON.stringify(item.customMeasurements) &&
             JSON.stringify(i.productStyles) === JSON.stringify(item.productStyles) &&
-            JSON.stringify(i.tailoringDetails) === JSON.stringify(item.tailoringDetails)
+            JSON.stringify(i.tailoringDetails) === JSON.stringify(item.tailoringDetails) &&
+            i.specialInstructions === item.specialInstructions
           );
 
           const originalUnitPrice = item.originalUnitPrice ?? item.unitPrice ?? 0;

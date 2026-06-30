@@ -70,6 +70,7 @@ export function CustomizeClient({
   const yardage = activeDraft?.yardage || 0;
   const selectedFabricId = activeDraft?.fabricId || null;
   const selectedProduct = activeProductId || 'panjabi_regular';
+  const specialInstructions = activeDraft?.specialInstructions || '';
 
   // Proxy Setters (Optimized with stable Zustand actions)
   const setSelectedPerson = useCallback((val: string) => activeProductId && updateDraft(activeProductId, { selectedPerson: val }), [activeProductId, updateDraft]);
@@ -81,6 +82,7 @@ export function CustomizeClient({
   const setProductStyle = useCallback((key: string, val: string) => activeProductId && updateDraftStyle(activeProductId, key, val), [activeProductId, updateDraftStyle]);
   const setYardage = useCallback((val: number) => activeProductId && updateDraft(activeProductId, { yardage: val }), [activeProductId, updateDraft]);
   const setSelectedFabricId = useCallback((val: string | null) => activeProductId && updateDraft(activeProductId, { fabricId: val }), [activeProductId, updateDraft]);
+  const setSpecialInstructions = useCallback((val: string) => activeProductId && updateDraft(activeProductId, { specialInstructions: val }), [activeProductId, updateDraft]);
 
   // 🎯 NEW: Helper for Dynamic Category Emoji
   const getCategoryEmoji = (prodId: string) => {
@@ -88,6 +90,22 @@ export function CustomizeClient({
     if (prodId.startsWith('pant') || prodId.startsWith('pajama')) return '👖';
     if (prodId === 'jubba' || prodId.startsWith('panjabi')) return '🥼';
     return '👕'; // Default for Panjabi, Shirt etc.
+  };
+
+  // 🎯 NEW: Dynamic Placeholder based on Product Category
+  const getNotePlaceholder = () => {
+    if (store.orderMode === 'fabric') return "Any special cutting, folding or packaging instructions for this fabric?";
+    
+    if (motherCat === 'panjabi' || motherCat === 'jubba') {
+      return "Any specific fitting instructions? (e.g., Keep the chest a bit loose, prefer shorter length...)";
+    }
+    if (motherCat === 'shirt') {
+      return "Any preferences for the shirt? (e.g., Tighter collar, relaxed sleeves...)";
+    }
+    if (motherCat === 'pant' || motherCat === 'pajama') {
+      return "Any specific instructions for the bottom? (e.g., Tapered ankle, extra room in thighs...)";
+    }
+    return "Final instructions or specific notes for our master tailor...";
   };
 
   // 🎯 NEW: Helper to dynamically get basic style categories and their valid options
@@ -149,6 +167,8 @@ export function CustomizeClient({
     store.setActiveProduct(newProductId);
     store.initDraft(newProductId, defaultStyles, defaultFabricId);
     store.markStepCompleted(newProductId, 'product'); 
+    setMobileViewedSteps([]);
+    setFurthestStepIndex(0);
 
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       setActiveBottomSheet(null); 
@@ -298,6 +318,8 @@ export function CustomizeClient({
   const [modalFabric, setModalFabric] = useState<any>(null);
   const [mobileStep, setMobileStep] = useState<'design' | 'checkout'>('design');
   const [activeBottomSheet, setActiveBottomSheet] = useState<'product' | 'fabric' | 'style' | 'advanced' | null>(null);
+  const [mobileViewedSteps, setMobileViewedSteps] = useState<string[]>([]);
+  const [furthestStepIndex, setFurthestStepIndex] = useState<number>(0);
 
   // 🎯 Phase 3: Mobile Sequence & Auto-Scroll State
   const [mobileSequenceIndex, setMobileSequenceIndex] = useState(0);
@@ -349,6 +371,38 @@ export function CustomizeClient({
       zeroStateReason === 'reset' ? "Reset Done. Please select a product." :
         "Please select a product to start customizing.";
 
+  useEffect(() => {
+    setFurthestStepIndex(0);
+  }, [store.orderMode]);
+
+  // 🎯 Furthest ইন-প্রোগ্রেস স্টেপ ট্র্যাক করার জন্য forward-only ইঞ্জিন
+  useEffect(() => {
+    if (!activeProductId || !activeDraft) return;
+    
+    const sequence = getActiveSequence();
+    let currentStepName = '';
+    
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      if (activeBottomSheet) {
+        currentStepName = activeBottomSheet;
+      } else if (mobileStep === 'checkout') {
+        currentStepName = 'measurements';
+      } else {
+        currentStepName = sequence[Math.min(mobileSequenceIndex, sequence.length - 1)] || '';
+      }
+    } else {
+      currentStepName = getStepName(expandedStep);
+    }
+    
+    if (currentStepName) {
+      const currentIndex = sequence.indexOf(currentStepName);
+      // 🎯 CRITICAL: ইণ্ডেক্স কেবল সামনে (বৃদ্ধি) যেতে পারবে, কখনো পেছনে (হ্রাস) ব্যাকট্র্যাক করবে না
+      if (currentIndex > furthestStepIndex) {
+        setFurthestStepIndex(currentIndex);
+      }
+    }
+  }, [expandedStep, activeBottomSheet, mobileStep, mobileSequenceIndex, activeProductId, furthestStepIndex]);
+
   // ক্যাটাগরি পরিবর্তনের সময় সাইজ রিসেট লজিক (Top-level Hook)
   useEffect(() => {
     if (availablePresets.length > 0 && !availablePresets.includes(standardSize)) {
@@ -369,12 +423,14 @@ export function CustomizeClient({
       const activeSequence = getActiveSequence();
       const completed = activeDraft.completedSteps || [];
 
+      // কোন স্টেপটি পেন্ডিং আছে তা বের করা
       let targetStepName = activeSequence.find(step => !completed.includes(step));
 
       if (!targetStepName) {
         targetStepName = activeSequence[activeSequence.length - 1];
       }
 
+      // ১. PC এর জন্য Expanded Step আপডেট করা (পিসিতে আগের মতোই টার্গেট স্টেপ ওপেন হবে)
       const stepNameToNumber: Record<string, number> = {
         'product': 1, 'fabric': 2, 'style': 3, 'advanced': 4, 'measurements': 5
       };
@@ -384,6 +440,17 @@ export function CustomizeClient({
         setTimeout(() => {
           setExpandedStep(targetStepNumber);
         }, 100);
+      }
+
+      // ২. 🎯 MOBILE FIX: রিলোডের পর Mobile Sequence Index আপডেট করা
+      const targetIndex = activeSequence.indexOf(targetStepName);
+      if (targetIndex !== -1) {
+        // 🎯 স্মার্ট লজিক: মোবাইলের নরমাল ফ্লো অনুযায়ী পিলটি লক রাখতে হবে, 
+        // তাই আমরা বর্তমান পেন্ডিং ইনডেক্সের ঠিক আগের ইনডেক্সটি (targetIndex - 1) সেট করব।
+        // এর ফলে চ্যামেলিয়ন বাটন সঠিক টেক্সট দেখাবে কিন্তু পিল লক থাকবে। 
+        // ক্লিক করার পরেই কেবল পিলটি আনলক হবে।
+        const lastCompletedIndex = Math.max(0, targetIndex - 1);
+        setMobileSequenceIndex(lastCompletedIndex);
       }
     }
   }, [isHydrated, activeProductId]);
@@ -657,6 +724,15 @@ export function CustomizeClient({
     hasSavedCurrentProfile // ডিপেন্ডেন্সিতে যুক্ত করা হলো সেফ ট্র্যাকিংয়ের জন্য
   ]);
 
+  // 🎯 NEW: শুধুমাত্র Style এবং Advanced শিট ওপেন হলেই তা Viewed হিসেবে অটো-ট্র্যাক হবে
+  useEffect(() => {
+    if (activeBottomSheet === 'style' || activeBottomSheet === 'advanced') {
+      setMobileViewedSteps((prev) => 
+        prev.includes(activeBottomSheet) ? prev : [...prev, activeBottomSheet]
+      );
+    }
+  }, [activeBottomSheet]);
+
   // 🎯 NEW: Product Specific Allowed Fabrics
   const allowedFabricsForProduct = useMemo(() => {
     return fabrics.filter((f: any) => {
@@ -739,10 +815,10 @@ export function CustomizeClient({
     if (!isFabricStockSufficient) return "Out of Stock";
 
     const activeSequence = getActiveSequence();
-    const completed = activeDraft.completedSteps || [];
-
-    // 🎯 SMART LOGIC: কোন স্টেপটি এখনো কমপ্লিট হয়নি তা খুঁজে বের করা
-    const nextPendingStep = activeSequence.find(step => !completed.includes(step));
+    
+    // 🎯 FIX: অরিজিনাল কমপ্লিট স্টেপ এবং মোবাইলের ভিউ করা স্টেপগুলোকে একত্রিত করা হলো
+    const mobileEffectiveCompleted = Array.from(new Set([...(activeDraft.completedSteps || []), ...mobileViewedSteps]));
+    const nextPendingStep = activeSequence.find(step => !mobileEffectiveCompleted.includes(step));
 
     if (nextPendingStep === 'product') return "Select Product";
     if (nextPendingStep === 'fabric') return "Choose Fabric";
@@ -944,6 +1020,7 @@ export function CustomizeClient({
       customMeasurements: finalCustomMeasurements,
       productStyles: isTailoring ? basicStyles : undefined,
       tailoringDetails: isTailoring ? tailoringDetails : undefined,
+      specialInstructions: specialInstructions.trim() || undefined,
 
       originalUnitPrice: originalFabricPrice,
       discountPercentage: fabricDiscountPercentage,
@@ -959,6 +1036,10 @@ export function CustomizeClient({
     }
     setZeroStateReason('cart');
     if (mobileStep === 'checkout') setMobileStep('design');
+
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setExpandedStep(1);
+    }
   };
 
   const toggleFilterArray = (item: string, list: string[], setList: any) => {
@@ -1270,6 +1351,136 @@ export function CustomizeClient({
     </>
   );
 
+  const StyleCategoryRow = ({ category, productStyles, setProductStyle }: any) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeft(scrollLeft > 5);
+    setShowRight(scrollWidth > clientWidth && scrollLeft < scrollWidth - clientWidth - 5);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+    return () => window.removeEventListener('resize', checkScroll);
+  }, [checkScroll]);
+
+  // Auto Center Active Element
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const timeoutId = setTimeout(() => {
+      const activeItem = container.querySelector('[data-active="true"]') as HTMLElement;
+      if (activeItem) {
+        const scrollPos = activeItem.offsetLeft - (container.clientWidth / 2) + (activeItem.offsetWidth / 2);
+        container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+      }
+      checkScroll();
+    }, 50);
+    return () => clearTimeout(timeoutId);
+  }, [productStyles[category.id], checkScroll]);
+
+  return (
+    <div className="relative w-full group/carousel">
+      {/* 🎯 Premium Peek Arrow & Fade (Left) - Matched with Modal */}
+      <div className={`absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#F8F9F5] sm:from-white via-[#F8F9F5]/80 sm:via-white/80 to-transparent z-10 flex items-center justify-start pl-1 pointer-events-none transition-opacity duration-300 ${showLeft ? 'opacity-100' : 'opacity-0'}`}>
+         <ChevronLeft className="w-4 h-4 text-[#1C221A]/30 transition-colors group-hover/carousel:text-[#4A5D23]" />
+      </div>
+
+      {/* 🎯 Premium Peek Arrow & Fade (Right) - Matched with Modal */}
+      <div className={`absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#F8F9F5] sm:from-white via-[#F8F9F5]/80 sm:via-white/80 to-transparent z-10 flex items-center justify-end pr-1 pointer-events-none transition-opacity duration-300 ${showRight ? 'opacity-100' : 'opacity-0'}`}>
+         <ChevronRight className="w-4 h-4 text-[#1C221A]/30 transition-colors group-hover/carousel:text-[#4A5D23]" />
+      </div>
+
+      <div
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory gap-3 pb-4 sm:pb-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:gap-3"
+      >
+        {category.choices.map(([key, imagePath]: [string, string | null]) => {
+          const isSelected = productStyles[category.id] === key;
+
+          if (imagePath === 'badge') {
+            return (
+              <div
+                key={key}
+                data-active={isSelected}
+                onClick={() => setProductStyle(category.id, key)}
+                // 🎯 FIX: snap-start changed to snap-center
+                className={`relative flex items-center justify-center py-4 px-3 rounded-[16px] border cursor-pointer transition-all shrink-0 w-[45%] snap-center sm:w-auto ${
+                  isSelected
+                    ? 'border-[#4A5D23] shadow-sm ring-1 ring-[#4A5D23] bg-white'
+                    : 'border-[#D4D7C9]/60 bg-white hover:border-[#D4D7C9]'
+                }`}
+              >
+                <span className={`font-sans text-[11px] uppercase tracking-widest text-center ${isSelected ? 'text-[#4A5D23]' : 'text-[#17210C]'}`}>
+                  {key.replace(/_/g, ' ')}
+                </span>
+                {isSelected && (
+                  <div className="absolute top-1.5 right-1.5 bg-[#4A5D23] rounded-full p-1 shadow-sm">
+                    <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={key}
+              data-active={isSelected}
+              onClick={() => setProductStyle(category.id, key)}
+              // 🎯 FIX: snap-start changed to snap-center & Wrapper colors matched with Modal
+              className={`group relative flex flex-col rounded-[16px] overflow-hidden border cursor-pointer transition-all duration-300 shrink-0 w-[45%] snap-center sm:w-auto ${
+                isSelected
+                  ? 'border-[#4A5D23] shadow-sm ring-1 ring-[#4A5D23]'
+                  : 'border-[#D4D7C9]/60 bg-white hover:border-[#D4D7C9]'
+              }`}
+            >
+              {/* 🎯 FIX: Image Box bg changed to #F8F9F5 and added border-b to match Modal */}
+              <div className="w-full aspect-square bg-[#F8F9F5] relative overflow-hidden flex items-center justify-center border-b border-[#EBECE3]/50">
+                {imagePath ? (
+                  <img
+                    src={imagePath}
+                    alt={key}
+                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <XCircle className="w-8 h-8 text-[#1C221A]/20 transition-colors group-hover:text-[#1C221A]/40" />
+                )}
+
+                <div 
+                  className={`absolute top-2 right-2 bg-[#4A5D23] rounded-full p-1 shadow-sm z-10 transition-all duration-200 transform ${
+                    isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'
+                  }`}
+                >
+                  <Check className="w-3 h-3 text-white stroke-[3]" />
+                </div>
+              </div>
+
+              {/* 🎯 FIX: Footer colors matched with Modal */}
+              <div className={`flex-1 p-2.5 flex items-center justify-center transition-colors ${
+                isSelected ? 'bg-[#4A5D23]/5' : 'bg-white'
+              }`}>
+                <span className={`font-sans text-[9px] uppercase tracking-widest text-center truncate px-1 ${
+                  isSelected ? 'text-[#4A5D23]' : 'text-[#17210C] font-medium'
+                }`}>
+                  {key.replace(/_/g, ' ')}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
   const renderStyleContent = () => {
     let styleCategories: any[] = [];
 
@@ -1336,67 +1547,17 @@ export function CustomizeClient({
     return (
       <div className="flex flex-col gap-6 max-h-none lg:max-h-[360px] overflow-y-auto pr-2 custom-scrollbar relative z-10 pb-6">
         {styleCategories.map((category) => (
-          <div key={category.id} className="animate-in fade-in duration-300">
-            <h4 className="font-heading text-[11px] font-bold uppercase tracking-widest text-[#4A5D23] mb-3">
+          <div key={category.id} className="animate-in fade-in duration-300 relative">
+            <h4 className="font-heading text-[11px] font-bold uppercase tracking-widest text-[#4A5D23] mb-3 px-1 sm:px-0">
               {category.title}
             </h4>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {category.choices.map(([key, imagePath]: [string, string | null]) => {
-
-                const isSelected = productStyles[category.id] === key;
-
-                // Badge এর জন্য স্পেশাল UI
-                if (imagePath === 'badge') {
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => setProductStyle(category.id, key)}
-                      className={`relative flex items-center justify-center py-4 px-3 rounded-xl border cursor-pointer transition-all ${isSelected
-                        ? 'border-[#4A5D23] bg-[#4A5D23]/10 ring-1 ring-[#4A5D23]'
-                        : 'border-[#EBECE3] bg-white hover:border-[#D4D7C9]'
-                        }`}
-                    >
-                      <span className={`font-sans text-[11px] uppercase tracking-widest text-center ${isSelected ? 'text-[#4A5D23]' : 'text-[#17210C]'}`}>
-                        {key.replace('_', ' ')}
-                      </span>
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 bg-[#4A5D23] rounded-full p-1 shadow-sm">
-                          <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                // রেগুলার আইকনের জন্য আগের UI
-                return (
-                  <div
-                    key={key}
-                    onClick={() => setProductStyle(category.id, key)}
-                    className={`group relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border cursor-pointer transition-all bg-white ${isSelected
-                      ? 'border-[#4A5D23] shadow-md ring-1 ring-[#4A5D23] bg-[#F8F9F5]'
-                      : 'border-[#EBECE3] hover:border-[#D4D7C9]'
-                      }`}
-                  >
-                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shrink-0">
-                      {imagePath ? (
-                        <img src={imagePath} alt={key} className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-[#1C221A]/30 group-hover:text-[#1C221A]/50 transition-colors" />
-                      )}
-                    </div>
-                    <span className="font-sans text-[9px] font-medium uppercase tracking-widest text-[#17210C] text-center">
-                      {key.replace('_', ' ')}
-                    </span>
-                    {isSelected && (
-                      <div className="absolute top-1.5 right-1.5 bg-[#4A5D23] rounded-full p-1 shadow-sm">
-                        <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            
+            {/* 🎯 NEW: Dynamic Carousel Component Injected Here */}
+            <StyleCategoryRow
+              category={category}
+              productStyles={productStyles}
+              setProductStyle={setProductStyle}
+            />
           </div>
         ))}
       </div>
@@ -1687,10 +1848,10 @@ export function CustomizeClient({
       ) : (
         <div className="animate-in fade-in duration-300">
           <textarea
-            value={store.specialInstructions}
-            onChange={(e) => store.setSpecialInstructions(e.target.value)}
-            className="w-full bg-white/60 border border-[#D4D7C9] p-4 rounded-2xl text-sm focus:outline-none focus:border-[#4A5D23] h-24 placeholder:text-[#1C221A]/30 font-sans shadow-sm"
-            placeholder="Final instructions or specific notes for our master tailor..."
+            value={specialInstructions}
+            onChange={(e) => setSpecialInstructions(e.target.value)}
+            className="w-full bg-white/60 border border-[#D4D7C9] p-4 rounded-2xl text-sm focus:outline-none focus:border-[#4A5D23] h-24 placeholder:text-[#1C221A]/40 font-sans shadow-sm"
+            placeholder={getNotePlaceholder()}
           />
         </div>
       )}
@@ -1864,22 +2025,19 @@ export function CustomizeClient({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {!selectedFabric && !isZeroState ? (
-              <div className="text-[#C25934] text-[11px] uppercase text-right font-medium">
-                Please select a fabric<br />to continue
-              </div>
-            ) : !isFabricStockSufficient ? (
+            {selectedFabric && !isFabricStockSufficient ? (
               <div className="text-red-500 text-[11px] uppercase text-right font-medium">
                 Not enough stock!<br />({maxFabricYards} yds available)
               </div>
             ) : null}
             <button
               onClick={handleChameleonNext}
-              disabled={(!isZeroState && !selectedFabric) || (!isZeroState && !isFabricStockSufficient)}
-              className={`w-full md:w-auto px-12 py-4 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${((!isZeroState && !selectedFabric) || (!isZeroState && !isFabricStockSufficient))
-                ? 'bg-[#D4D7C9] text-white cursor-not-allowed'
-                : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] active:scale-[0.98] cursor-pointer'
-                }`}
+              disabled={!isZeroState && selectedFabric && !isFabricStockSufficient}
+              className={`w-full md:w-auto px-12 py-4 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg transition-all flex items-center justify-center gap-2 ${
+                (!isZeroState && selectedFabric && !isFabricStockSufficient)
+                  ? 'bg-[#D4D7C9] text-white cursor-not-allowed'
+                  : 'bg-[#4A5D23] text-white hover:bg-[#3D4C1D] active:scale-[0.98] cursor-pointer'
+              }`}
             >
               {expandedStep === 5 ? <ShoppingCart className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               {getButtonText()}
@@ -2049,9 +2207,11 @@ export function CustomizeClient({
             <button
               onClick={() => {
                 const activeSequence = getActiveSequence();
-                const completed = activeDraft?.completedSteps || [];
                 
-                const targetStep = activeSequence.find(step => !completed.includes(step)) || 'measurements';
+                // 🎯 FIX: এখানেও Effective Completed ব্যবহার করা হলো
+                const mobileEffectiveCompleted = Array.from(new Set([...(activeDraft?.completedSteps || []), ...mobileViewedSteps]));
+                
+                const targetStep = activeSequence.find(step => !mobileEffectiveCompleted.includes(step)) || 'measurements';
                 const targetIndex = activeSequence.indexOf(targetStep);
 
                 if (targetIndex > mobileSequenceIndex) {
@@ -2065,9 +2225,9 @@ export function CustomizeClient({
                   setActiveBottomSheet(targetStep as any);
                 }
               }}
-              disabled={(!selectedFabric && mobileSequenceIndex > 0) || (!isFabricStockSufficient && mobileSequenceIndex > 0)}
+              disabled={selectedFabric && !isFabricStockSufficient}
               className={`h-11 px-6 rounded-full font-sans text-[11px] font-medium uppercase tracking-[0.2em] flex items-center gap-2 shadow-lg transition-all ${
-                (!selectedFabric && mobileSequenceIndex > 0) || (!isFabricStockSufficient && mobileSequenceIndex > 0)
+                (selectedFabric && !isFabricStockSufficient)
                   ? 'bg-[#EBECE3] text-[#1C221A]/40 cursor-not-allowed'
                   : 'bg-[#17210C] text-white hover:bg-[#4A5D23] active:scale-[0.98] cursor-pointer'
               }`}
@@ -2086,14 +2246,15 @@ export function CustomizeClient({
         <div className={`absolute bottom-0 left-0 w-full bg-[#F8F9F5] rounded-t-3xl transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col h-[90dvh] ${activeBottomSheet ? 'translate-y-0' : 'translate-y-full'}`}>
 
           {/* 🎯 Phase 2: Solo Island Progress Tracker Button */}
-          <button
-            onClick={() => setIsTrackerOpen(true)}
-            className={`absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-white/60 text-[#17210C] transition-all active:scale-95 cursor-pointer z-50 ${isZeroState ? 'opacity-0 pointer-events-none invisible' : 'opacity-100 pointer-events-auto visible'
-              }`}
-          >
-            <Eye className="w-[18px] h-[18px] text-[#4A5D23]" />
-            <span className="font-sans text-[10px] uppercase tracking-widest mt-0.5">View Progress</span>
-          </button>
+          {activeBottomSheet && !isZeroState && (
+            <button
+              onClick={() => setIsTrackerOpen(true)}
+              className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-white/60 text-[#17210C] transition-all active:scale-95 cursor-pointer z-50 opacity-100 pointer-events-auto visible"
+            >
+              <Eye className="w-[18px] h-[18px] text-[#4A5D23]" />
+              <span className="font-sans text-[10px] uppercase tracking-widest mt-0.5">View Progress</span>
+            </button>
+          )}
 
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#D4D7C9]/50 shrink-0 bg-white rounded-t-3xl">
             <span className="font-heading text-[13px] font-bold uppercase tracking-[0.1em] text-[#17210C]">
@@ -2134,7 +2295,7 @@ export function CustomizeClient({
                 }}
                 className="px-6 py-2.5 bg-[#4A5D23] text-white text-[11px] font-medium uppercase tracking-wider rounded-full shadow-md active:scale-95 transition-all cursor-pointer"
               >
-                Apply & View Change
+                {activeBottomSheet === 'style' ? 'Apply & View Change' : 'Confirm Details'}
               </button>
             </div>
           )}
@@ -2152,14 +2313,15 @@ export function CustomizeClient({
       <div className={`lg:hidden fixed bottom-0 left-0 w-full h-[90dvh] bg-[#F8F9F5] rounded-t-3xl z-[1002] flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.15)] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${mobileStep === 'checkout' ? 'translate-y-0' : 'translate-y-full'}`}>
 
         {/* 🎯 Phase 2: Solo Island Progress Tracker Button */}
-        <button
-          onClick={() => setIsTrackerOpen(true)}
-          className={`absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-white/60 text-[#17210C] transition-all active:scale-95 cursor-pointer z-50 ${mobileStep === 'checkout' && !isZeroState ? 'opacity-100 pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
-            }`}
-        >
-          <Eye className="w-[18px] h-[18px] text-[#4A5D23]" />
-          <span className="font-sans text-[10px] uppercase tracking-widest mt-0.5">View Progress</span>
-        </button>
+        {mobileStep === 'checkout' && !isZeroState && (
+          <button
+            onClick={() => setIsTrackerOpen(true)}
+            className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xl px-5 py-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-white/60 text-[#17210C] transition-all active:scale-95 cursor-pointer z-50 opacity-100 pointer-events-auto visible"
+          >
+            <Eye className="w-[18px] h-[18px] text-[#4A5D23]" />
+            <span className="font-sans text-[10px] uppercase tracking-widest mt-0.5">View Progress</span>
+          </button>
+        )}
 
         <div className="flex items-center px-4 py-4 border-b border-[#D4D7C9]/50 shrink-0 bg-white rounded-t-3xl relative">
           <button
@@ -2267,15 +2429,28 @@ export function CustomizeClient({
               </div>
 
               {(() => {
-                // 🎯 SMART LOGIC: মোবাইল এবং পিসি উভয়ের Active State সিঙ্ক করা
-                const currentActiveStepName =
-                  activeBottomSheet || // যদি মোবাইলের কোনো শিট ওপেন থাকে
-                  (mobileStep === 'checkout' ? 'measurements' : null) || // যদি মোবাইলে চেকআউট পেজে থাকে
-                  getStepName(expandedStep); // যদি পিসিতে থাকে
+                const sequence = getActiveSequence();
+                
+                // 🎯 FIX: কোনো অনুমানের ওপর ভিত্তি করে নয়, সরাসরি সর্বোচ্চ লকড ইণ্ডেক্স থেকে একটিভ স্টেপ বের করা
+                const currentActiveStepName = sequence[Math.min(furthestStepIndex, sequence.length - 1)];
 
                 const getStatus = (step: string) => {
-                  if (activeDraft.completedSteps.includes(step)) return 'completed';
+                  // প্রায়োরিটি ১: যদি এটি বর্তমান ওপেন বা আনলকড স্টেপ হয়, তবে completed লিস্টে থাকলেও 'active' (সবুজ পালস) দেখাবে
                   if (currentActiveStepName === step) return 'active';
+                  
+                  // প্রায়োরিটি ২: যদি বর্তমান স্টেপ না হয়, তবে দেখবে ডাটাবেজে কমপ্লিট হিসেবে মার্ক করা আছে কি না
+                  if (activeDraft.completedSteps.includes(step)) return 'completed';
+
+                  // 🎯 NEW FIX: মোবাইলের জন্য ইউজার যদি শিটটি ঘুরে আসে (Soft-complete হয়)
+                  if (
+                    typeof window !== 'undefined' && 
+                    window.innerWidth < 1024 && 
+                    mobileViewedSteps.includes(step)
+                  ) {
+                    return 'completed';
+                  }
+                  
+                  // প্রায়োরিটি ৩: ওপরের কোনোটি না হলে 'pending'
                   return 'pending';
                 };
 
@@ -2423,7 +2598,12 @@ export function CustomizeClient({
                   }
                   setIsResetModalOpen(false);
                   setMobileSequenceIndex(0);
+                  setMobileViewedSteps([]);
+                  setFurthestStepIndex(0);
                   setZeroStateReason('reset');
+                  if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+                    setExpandedStep(1);
+                  }
                 }}
                 className="flex-1 py-3.5 bg-red-600 text-white hover:bg-red-700 rounded-xl font-sans text-[12px] uppercase tracking-widest shadow-md transition-colors cursor-pointer"
               >
