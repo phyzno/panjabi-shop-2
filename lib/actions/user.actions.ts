@@ -54,14 +54,15 @@ export async function getUserOrders(userId: string) {
           sizeValue: item.size_value || undefined,
           measurements: item.measurements || undefined,
           fabricYards: item.fabric_yards || undefined,
-          collarType: item.collar_type || undefined
+          productStyles: item.product_styles || undefined,
+          tailoringDetails: item.tailoring_details || undefined,
+          specialInstructions: item.special_instructions || undefined
         }))
       };
     });
 
     return { success: true, data: formattedOrders };
 
-    return { success: true, data: formattedOrders };
   } catch (error) {
     console.error("Fetch User Orders Error:", error);
     return { success: false, error: "Failed to fetch order history." };

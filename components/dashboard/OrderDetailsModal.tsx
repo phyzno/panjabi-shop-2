@@ -1,9 +1,19 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Printer, MapPin, Package, Scissors, Phone, User } from 'lucide-react';
 
 export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: { order: any, isOpen: boolean, onClose: () => void, onPrint: () => void }) {
+
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+  const toggleNote = (itemId: string) => {
+    setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
+
+  const formatText = (text?: string) => {
+    if (!text) return '';
+    return text.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
 
   useEffect(() => {
     if (isOpen) document.body.style.overflow = 'hidden';
@@ -20,7 +30,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
       <div className="relative w-full max-w-4xl bg-[#F8F9F5] rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
 
         <div className="relative px-4 sm:px-6 py-4 sm:py-5 bg-white border-b border-[#D4D7C9]/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 print-hidden">
-          
+
           <div className="pr-12 sm:pr-0">
             <h2 className="font-heading text-base sm:text-lg font-bold uppercase tracking-widest text-[#17210C]">
               Order Details
@@ -36,8 +46,8 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
               <Printer className="w-4 h-4 sm:w-4 sm:h-4" /> Print Invoice
             </button>
 
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="absolute top-4 right-4 sm:static p-2 bg-[#EBECE3] rounded-full text-accent hover:bg-red-50 transition-colors cursor-pointer shrink-0 shadow-sm sm:shadow-none"
             >
               <X className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2]" />
@@ -95,32 +105,79 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                       </div>
 
                       {item.productType === 'custom_tailored' && (
-                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1 font-sans text-[13px] text-[#1C221A]/70">
-                          {item.fabricName && <p><span className="text-[#17210C]">Fabric:</span> {item.fabricName}</p>}
-                          {item.collarType && <p><span className="text-[#17210C]">Collar:</span> {item.collarType}</p>}
-                          {item.fabricYards && <p><span className="text-[#17210C]">Fabric Length:</span> {item.fabricYards} Yards</p>}
+                        <div className="mt-3 font-sans text-[13px] text-[#1C221A]/70">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mb-2">
+                            {item.fabricName && <p><span className="text-[#17210C]">Fabric:</span> {item.fabricName}</p>}
+                            {item.fabricYards && <p><span className="text-[#17210C]">Length:</span> {item.fabricYards} Yards</p>}
+                          </div>
 
+                          {/* 🎯 বেসিক স্টাইলস */}
+                          {item.productStyles && Object.keys(item.productStyles).length > 0 && (
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+                              {Object.entries(item.productStyles).map(([key, val]) => (
+                                <p key={key} className="text-[11px] text-[#1C221A]/70 flex items-center gap-1">
+                                  <span className="font-medium text-[#4A5D23]">{formatText(key)}:</span> {formatText(val as string)}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 🎯 অ্যাডভান্সড স্পেকস */}
+                          {item.tailoringDetails && Object.keys(item.tailoringDetails).length > 0 && (
+                            <div className="flex flex-wrap gap-x-3 gap-y-1.5 p-2 bg-[#4A5D23]/5 rounded-lg border border-[#4A5D23]/10 mb-2">
+                              <span className="w-full font-heading text-[9px] font-bold uppercase tracking-widest text-[#4A5D23] mb-0.5">Advanced Specs</span>
+                              {Object.entries(item.tailoringDetails).map(([key, val]) => (
+                                <p key={key} className="text-[11px] text-[#1C221A]/70 flex items-center gap-1">
+                                  <span className="font-medium text-[#4A5D23]">{formatText(key)}:</span> {formatText(val as string)}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* 🎯 মেজারমেন্টস */}
                           {item.measurements ? (
                             <>
                               <p><span className="text-[#17210C]">Size:</span> Custom</p>
-                              <div className="col-span-full mt-2 px-5 py-4 bg-white rounded-xl border border-[#D4D7C9]/40 shadow-sm w-fit justify-self-center sm:justify-self-start">
+                              <div className="mt-2 mb-2 px-4 py-3 bg-white rounded-xl border border-[#D4D7C9]/40 shadow-sm w-fit">
                                 <p className="text-[10px] font-medium uppercase tracking-widest mb-1.5 text-[#4A5D23] flex items-center gap-1.5">
-                                  <Scissors className="w-3.5 h-3.5" /> Tailoring Measurements
+                                  <Scissors className="w-3.5 h-3.5" /> Measurements
                                 </p>
-                                <div className="grid grid-cols-2 justify-items-start text-left w-fit mx-auto sm:mx-0 gap-x-8 gap-y-1.5 sm:flex sm:flex-row sm:gap-y-0 sm:divide-x sm:divide-[#D4D7C9]/80 font-mono text-xs text-[#1C221A]/80 tracking-tight sm:items-center">
-                                  <div className="sm:pr-3">Ln: {item.measurements.length}"</div>
-                                  <div className="sm:px-3">Ch: {item.measurements.chest}"</div>
-                                  <div className="sm:px-3">Sh: {item.measurements.shoulder}"</div>
-                                  <div className="sm:pl-3">Sl: {item.measurements.sleeve}"</div>
+                                <div className="flex gap-4 font-mono text-xs text-[#1C221A]/80 divide-x divide-[#D4D7C9]/80">
+                                  {Object.entries(item.measurements).map(([key, val], i) => (
+                                    <div key={key} className={i !== 0 ? "pl-4" : ""}>
+                                      {formatText(key).slice(0, 3)}: {String(val)}"
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             </>
                           ) : item.sizeValue ? (
-                            <p><span className="text-[#17210C]">Size:</span> {item.sizeValue}</p>
+                            <p className="mb-2"><span className="text-[#17210C]">Size:</span> {item.sizeValue}</p>
                           ) : null}
 
+                          {/* 🎯 মিনিমাল নোট ভিউ বাটন */}
+                          {item.specialInstructions && (
+                            <div className="mt-2 mb-2">
+                              <button
+                                onClick={() => toggleNote(item.id)}
+                                className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-[#C25934] hover:text-[#A04525] transition-colors cursor-pointer"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                {expandedNotes[item.id] ? 'Hide Note' : 'View Note'}
+                              </button>
+
+                              {expandedNotes[item.id] && (
+                                <div className="mt-2 p-3 bg-[#FFF9F5] rounded-lg border border-[#C25934]/20 animate-in slide-in-from-top-2 duration-200">
+                                  <p className="font-sans text-[12px] text-[#1C221A]/80 leading-relaxed italic">
+                                    "{item.specialInstructions}"
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
                           {item.stitchingCharge > 0 && (
-                            <p className="col-span-full text-[#C25934] mt-1.5">
+                            <p className="text-[#C25934] mt-2 font-medium">
                               + Stitching Charge: ৳ {item.stitchingCharge.toLocaleString()} × {item.quantity}
                             </p>
                           )}
