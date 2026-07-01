@@ -969,7 +969,7 @@ export function CustomizeClient({
       ? activeSavedMeasurements.find((p: any) => p.id.toString() === selectedFitId?.toString())
       : null;
 
-    // 🎯 1. Dynamic Measurements Logic (Remove Hardcoded L, C, Sh, Sl)
+    // 🎯 1. Dynamic Measurements Logic
     let finalCustomMeasurements: Record<string, string | number> | undefined = undefined;
 
     if (isTailoring) {
@@ -985,7 +985,6 @@ export function CustomizeClient({
     const tailoringDetails: Record<string, string> = {};
 
     if (isTailoring) {
-      // ADVANCED_TAILORING_OPTIONS থেকে কারেন্ট প্রোডাক্টের অ্যাডভান্সড অপশনগুলো বের করা
       const advancedOptionsDef = ADVANCED_TAILORING_OPTIONS[motherCat] || [];
       const advancedKeys = advancedOptionsDef.map(group => group.id);
 
@@ -998,11 +997,26 @@ export function CustomizeClient({
       });
     }
 
+    // 🎯 3. NEW: Dynamic Product Name & Grouping Logic
+    const motherCatName = getMotherCategoryName(selectedProduct);
+    const subCategoryStr = selectedProduct.includes('_') ? selectedProduct.split('_')[1] : '';
+    const formattedSubCat = subCategoryStr ? subCategoryStr.charAt(0).toUpperCase() + subCategoryStr.slice(1) : '';
+
+    // কার্টে একই ধরনের প্রোডাক্ট কয়টি আছে তা কাউন্ট করা হচ্ছে (১, ২, ৩ ইনডেক্সিংয়ের জন্য)
+    const existingItemsCount = cartStore.items.filter(i =>
+      i.productId === productId && i.productType === (isTailoring ? 'custom_tailored' : 'custom_fabric_only')
+    ).length;
+    const productIndex = existingItemsCount + 1;
+
+    const dynamicProductName = isTailoring
+      ? `Custom Tailored ${motherCatName}${formattedSubCat ? ` - ${formattedSubCat}` : ''} - ${productIndex}`
+      : `Premium Fabric Bolt - ${selectedFabric?.name || 'Premium Fabric'}`;
+
+
+    // 🎯 4. Add to Cart with updated Name and Size Value
     cartStore.addItem({
       productId: productId,
-      productName: isTailoring
-        ? `Custom Tailored ${getMotherCategoryName(selectedProduct)} - ${selectedFabric?.name || 'Premium Fabric'}` // Dynamic Name Fix
-        : `Premium Fabric Bolt - ${selectedFabric?.name || 'Premium Fabric'}`,
+      productName: dynamicProductName, // 👈 প্রোডাক্টের নাম আপডেট করা হয়েছে
       productType: isTailoring ? 'custom_tailored' : 'custom_fabric_only',
       image: selectedFabricCoverUrl || '/placeholder-image.jpg',
       fabricId: selectedFabric?.id?.toString(),
@@ -1013,8 +1027,10 @@ export function CustomizeClient({
       sizeMode: isTailoring
         ? (measurementMode === 'saved' ? 'saved_profile' : (sizeType === 'custom' ? 'custom_measurements' : 'preset'))
         : undefined,
+        
+      // 👈 সাইজ ডিসপ্লে লজিক আপডেট করা হয়েছে
       sizeValue: isTailoring
-        ? (measurementMode === 'saved' ? selectedProfile?.person_name + ' - ' + selectedProfile?.fit_name : (sizeType === 'custom' ? 'Custom' : standardSize))
+        ? (measurementMode === 'new' && sizeType === 'preset' ? standardSize : 'Custom')
         : undefined,
 
       customMeasurements: finalCustomMeasurements,

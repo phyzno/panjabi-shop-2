@@ -434,7 +434,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-2">
                     {totalSavings > 0 && (
                       <span className="font-sans text-xs text-[#1C221A]/40 line-through font-normal">
-                        ৳ {(subTotal + deliveryCharge).toLocaleString("en-IN")}
+                        ৳ {(subTotal + totalSavings + deliveryCharge).toLocaleString("en-IN")}
                       </span>
                     )}
                     <span className="text-[#C25934] text-base transition-all duration-300">

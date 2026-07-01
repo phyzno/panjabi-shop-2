@@ -193,7 +193,7 @@ export function CartDrawer() {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                 {expandedNotes[item.cartItemId] ? 'Hide Note' : 'View Note'}
                               </button>
-                              
+
                               {expandedNotes[item.cartItemId] && (
                                 <div className="mt-2 p-2.5 bg-[#FFF9F5] rounded-lg border border-[#C25934]/20 animate-in slide-in-from-top-2 duration-200">
                                   <p className="font-sans text-[11px] text-[#1C221A]/80 leading-relaxed italic">
@@ -241,12 +241,18 @@ export function CartDrawer() {
 
                       {/* 🎯 ডাইনামিক অরিজিনাল ও ফাইনাল প্রাইস */}
                       <div className="flex flex-col items-end">
+                        {/* Quantity ১ এর বেশি হলে ইউনিট প্রাইস দেখাবে */}
+                        {item.quantity > 1 && (
+                          <span className="font-sans text-[10px] text-[#1C221A]/50 mb-0.5">
+                            ৳ {((item.unitPrice ?? 0) + (item.stitchingCharge ?? 0)).toLocaleString('en-IN')} × {item.quantity}
+                          </span>
+                        )}
                         <p className="font-sans text-[14px] md:text-sm font-medium text-[#C25934]">
                           ৳ {(item.totalPrice ?? 0).toLocaleString('en-IN')}
                         </p>
                         {(item.discountPercentage ?? 0) > 0 && (
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span className="font-sans text-[10px] text-[#1C221A]/40 line-through">
+                            <span className="font-sans text-[12px] text-[#1C221A]/40 line-through">
                               ৳ {(item.originalTotalPrice ?? 0).toLocaleString('en-IN')}
                             </span>
                             <span className="text-[9px] bg-[#C25934]/10 text-[#C25934] px-1.5 py-0.5 rounded uppercase tracking-wider font-medium">
@@ -265,7 +271,7 @@ export function CartDrawer() {
 
         {items.length > 0 && (
           <div className="border-t border-[#D4D7C9]/60 bg-white p-6 shrink-0">
-            
+
             {/* 🎯 সাবটোটাল স্মার্ট লেআউট */}
             <div className="flex justify-between items-center mb-1">
               <span className="font-sans text-sm uppercase tracking-widest text-[#1C221A]/70">
