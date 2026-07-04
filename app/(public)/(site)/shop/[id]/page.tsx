@@ -54,7 +54,9 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
       name: p.name,
       category: p.categoryName || 'Uncategorized',
       price: `৳ ${p.price}`,
-      discount_percentage: p.discount_percentage || 0, // যুক্ত করা হয়েছে
+      discount_percentage: p.discount_percentage || 0,
+      has_price_variation: p.has_price_variation || false,
+      size_prices: (p.size_prices as Record<string, number>) || {},
       images: (p.images as string[]) || [],
       description: p.description || '',
     }));
@@ -64,7 +66,9 @@ export default async function ProductDetailsPage({ params }: ProductDetailsPageP
     name: product.name,
     category: product.categoryName || 'Uncategorized',
     price: `৳ ${product.price}`,
-    discount_percentage: product.discount_percentage || 0, // যুক্ত করা হয়েছে
+    discount_percentage: product.discount_percentage || 0,
+    has_price_variation: product.has_price_variation || false,
+    size_prices: (product.size_prices as Record<string, number>) || {},
     images: (product.images as string[]) || [],
     description: product.description || '',
     sizes: (product.sizes as string[]) || [],

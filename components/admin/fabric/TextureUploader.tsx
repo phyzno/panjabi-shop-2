@@ -207,7 +207,6 @@ export default function TextureUploader({ currentTextureUrl, currentRawUrl, onTe
                 color="#ffffff"
                 fabricType="custom"
                 fabricImageUrl={previewToRender}
-                collarType="band"
                 colorIntensity={0.05}
                 hideControls={true}
                 isProcessingExternal={processing}

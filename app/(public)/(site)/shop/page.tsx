@@ -17,7 +17,9 @@ export default async function ShopPage() {
     categoryId: p.categoryId ?? undefined,
     category: p.categoryName || 'Uncategorized',
     price: `৳ ${p.price}`,
-    discount_percentage: p.discount_percentage || 0, // যুক্ত করা হয়েছে
+    has_price_variation: p.has_price_variation || false,
+    size_prices: (p.size_prices || {}) as Record<string, number>,
+    discount_percentage: p.discount_percentage || 0,
     images: (p.images as string[]) || [],
     description: p.description || '',
     sizes: (p.sizes as string[]) || [],

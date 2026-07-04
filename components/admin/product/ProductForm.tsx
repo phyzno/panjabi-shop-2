@@ -80,6 +80,10 @@ export default function ProductForm({
   const [colorName, setColorName] = useState<string>(initialData?.color_name || "");
   const [colorHex, setColorHex] = useState<string>(initialData?.color_hex || "#ffffff");
 
+  // --- Price Variation States ---
+  const [hasPriceVariation, setHasPriceVariation] = useState<boolean>(initialData?.has_price_variation || false);
+  const [sizePrices, setSizePrices] = useState<Record<string, number>>(initialData?.size_prices || {});
+
   // --- Color Picker Modal States ---
   const [pickerImageSrc, setPickerImageSrc] = useState<string | null>(null);
   const [tempHex, setTempHex] = useState<string>("#ffffff");
@@ -346,13 +350,19 @@ export default function ProductForm({
         return;
       }
 
+      const basePrice = hasPriceVariation && selectedSizes.length > 0
+      ? Math.min(...selectedSizes.map(size => sizePrices[size] || 0))
+      : Number(formData.get("price"));
+
       const productData = {
         id: productId,
         category_id: categoryId,
         name: formData.get("name") as string,
         description: formData.get("description") as string,
-        price: Number(formData.get("price")),
+        price: basePrice,
         discount_percentage: Number(formData.get("discount_percentage")) || 0,
+        has_price_variation: hasPriceVariation,
+        size_prices: hasPriceVariation ? sizePrices : {},
         rating: rating,
         review_count: reviewCount,
         has_size_guide: hasSizeGuide,
@@ -462,11 +472,40 @@ export default function ProductForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-heading font-bold text-primary mb-2">Regular Price (৳)</label>
-            <input type="number" name="price" defaultValue={initialData?.price} required placeholder="e.g. 2500" className="w-full border border-border bg-secondary/50 rounded-md px-4 py-3 focus:ring-2 focus:ring-primary outline-none font-sans text-sm" />
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-heading font-bold text-primary">Regular Price (৳)</label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={hasPriceVariation} 
+                  onChange={(e) => setHasPriceVariation(e.target.checked)} 
+                  className="w-4 h-4 accent-primary cursor-pointer" 
+                />
+                <span className="text-xs font-sans font-medium text-muted-foreground uppercase tracking-wider">
+                  Varies on Size
+                </span>
+              </label>
+            </div>
+            
+            {hasPriceVariation ? (
+              <div className="w-full border border-dashed border-primary/30 bg-primary/5 rounded-md px-4 py-3 text-sm font-sans text-primary/70 text-center flex items-center justify-center h-[46px]">
+                Pricing is adjusted below while selecting sizes.
+              </div>
+            ) : (
+              <input 
+                type="number" 
+                name="price" 
+                defaultValue={initialData?.price} 
+                required={!hasPriceVariation} 
+                placeholder="e.g. 2500" 
+                className="w-full border border-border bg-secondary/50 rounded-md px-4 py-3 focus:ring-2 focus:ring-primary outline-none font-sans text-sm" 
+              />
+            )}
           </div>
           <div>
-            <label className="block text-sm font-heading font-bold text-primary mb-2">Discount Percentage (%) <span className="text-muted-foreground font-normal text-xs">(Optional)</span></label>
+            <label className="block text-sm font-heading font-bold text-primary mb-2">
+              Discount Percentage (%) <span className="text-muted-foreground font-normal text-xs">(Optional)</span>
+            </label>
             <input type="number" name="discount_percentage" defaultValue={initialData?.discount_percentage || 0} min="0" max="100" placeholder="e.g. 10" className="w-full border border-border bg-secondary/50 rounded-md px-4 py-3 focus:ring-2 focus:ring-primary outline-none font-sans text-sm" />
           </div>
         </div>
@@ -640,6 +679,34 @@ export default function ProductForm({
 
           </div>
         </div>
+
+        {/* --- Dynamic Size Pricing Section --- */}
+        {hasPriceVariation && selectedSizes.length > 0 && (
+          <div className="bg-primary/5 border border-primary/20 p-5 rounded-lg space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div>
+              <h3 className="text-sm font-heading font-bold text-primary">Set Prices for Selected Sizes</h3>
+              <p className="text-xs text-muted-foreground mt-1">Enter the specific price for each size variant.</p>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {selectedSizes.map((size) => (
+                <div key={size} className="space-y-1.5 bg-background p-3 rounded-md border border-border shadow-sm">
+                  <label className="block text-xs font-heading font-bold text-primary uppercase tracking-wider">
+                    {size}
+                  </label>
+                  <input
+                    type="number"
+                    value={sizePrices[size] || ""}
+                    onChange={(e) => setSizePrices(prev => ({ ...prev, [size]: Number(e.target.value) }))}
+                    placeholder="Price (৳)"
+                    required={hasPriceVariation}
+                    className="w-full border-b border-border bg-transparent px-1 py-1.5 outline-none focus:border-primary text-sm font-sans"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* --- Multi-Color Configuration Section --- */}
         <div className="bg-secondary/20 border border-border p-5 rounded-lg space-y-4">

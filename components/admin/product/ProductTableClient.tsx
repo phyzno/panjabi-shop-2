@@ -251,7 +251,25 @@ export default function ProductTableClient({
                       <div className="font-sans text-sm text-foreground line-clamp-2">{product.name}</div>
                       <div className="text-xs text-muted-foreground mt-1">ID: {product.id}</div>
                     </td>
-                    <td className="px-6 py-4 align-middle font-sans text-primary whitespace-nowrap">৳ {product.price}</td>
+                    <td className="px-6 py-4 align-middle font-sans whitespace-nowrap">
+                    {product.discount_percentage > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] text-muted-foreground line-through">
+                            ৳ {product.price}
+                          </span>
+                          <span className="text-[12px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                            -{product.discount_percentage}%
+                          </span>
+                        </div>
+                        <span className="text-primary font-medium text-base">
+                          ৳ {Math.round(product.price - (product.price * product.discount_percentage) / 100)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-primary">৳ {product.price}</span>
+                    )}
+                  </td>
                     <td className="px-6 py-4 align-middle text-right whitespace-nowrap">
                       <div className="flex justify-end gap-2">
                         <Link href={`/admin/products/edit/${product.id}`} className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary rounded-md transition-colors cursor-pointer">
@@ -308,7 +326,25 @@ export default function ProductTableClient({
                   {product.name}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">ID: {product.id}</p>
-                <p className="font-sans text-primary text-base mt-2">৳ {product.price}</p>
+                <div className="mt-2">
+                    {product.discount_percentage > 0 ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-sans text-primary text-base">
+                          ৳ {Math.round(product.price - (product.price * product.discount_percentage) / 100)}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] text-muted-foreground line-through">
+                            ৳ {product.price}
+                          </span>
+                          <span className="text-[11px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                            -{product.discount_percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="font-sans text-primary text-base font-bold">৳ {product.price}</p>
+                    )}
+                  </div>
               </div>
 
               <div className="absolute top-2 right-2">

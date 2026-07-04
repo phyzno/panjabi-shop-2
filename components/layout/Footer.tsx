@@ -37,7 +37,7 @@ export default function Footer() {
           
           <div className="flex flex-col space-y-6">
             <h3 className="font-heading text-2xl font-bold uppercase tracking-[0.15em] text-[#B5C293]">
-              PANJABI<span className="text-accent text-3xl leading-none font-sans">.</span>
+              MENS'O<span className="text-accent text-3xl leading-none font-sans">.</span>
             </h3>
             <p className="font-sans text-[13px] leading-relaxed text-white/70 max-w-[260px]">
               Crafting premium, royal heritage ethnic wear stitched to your exact measurements. Experience luxury fabrics and timeless designs.
@@ -128,7 +128,7 @@ export default function Footer() {
                 className="flex items-center gap-3 hover:text-[#B5C293] transition-colors duration-300 group/link"
               >
                 <Mail className="w-4 h-4 text-[#B5C293] hover:text-accent shrink-0 stroke-[1.5]" />
-                <span className="group-hover/link:underline underline-offset-4">info@panjabi.com</span>
+                <span className="group-hover/link:underline underline-offset-4">info@menso.com</span>
               </a>
             </div>
 
@@ -154,7 +154,7 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="font-sans text-[11px] uppercase tracking-[0.15em] text-white/50 text-center md:text-left">
-            © {new Date().getFullYear()} Panjabi Shop. All Rights Reserved.
+            © {new Date().getFullYear()} Mens'O Fashion Shop. All Rights Reserved.
           </p>
           <div className="flex items-center space-x-6">
             <Link href="/privacy" className="font-sans text-[11px] uppercase tracking-[0.1em] text-white/50 hover:text-accent transition-colors">

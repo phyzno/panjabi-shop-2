@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import {
     Search, Filter, ShoppingBag, DollarSign, Users, Archive,
-    Truck, CheckCircle, XCircle, Clock, Printer, ChevronDown, LayoutList, BarChart3, Eye, X, Loader2, User, Phone, MapPin
+    Truck, CheckCircle, XCircle, Clock, Printer, ChevronDown, LayoutList, BarChart3, Eye, X, Loader2, User, Phone, MapPin, Download
 } from "lucide-react";
 
 import PrintableInvoice from "./PrintableInvoice";
@@ -30,6 +32,17 @@ export default function OrderDashboardClient() {
     const [printingOrder, setPrintingOrder] = useState<any>(null);
     const [viewingOrder, setViewingOrder] = useState<any>(null);
 
+    const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+
+    const toggleNote = (itemId: string) => {
+        setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+    };
+
+    const formatText = (text?: string) => {
+        if (!text) return '';
+        return text.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
     useEffect(() => {
         const fetchOrders = async () => {
             setIsLoading(true);
@@ -45,21 +58,21 @@ export default function OrderDashboardClient() {
     }, []);
 
     useEffect(() => {
-        let originalTitle = document.title; 
+        let originalTitle = document.title;
 
         if (printingOrder) {
             document.title = `invoice-${printingOrder.id}`;
-            
+
             setTimeout(() => {
                 window.print();
             }, 150);
         }
 
         const handleAfterPrint = () => {
-            document.title = originalTitle; 
+            document.title = originalTitle;
             setPrintingOrder(null);
         };
-        
+
         window.addEventListener("afterprint", handleAfterPrint);
 
         return () => {
@@ -154,6 +167,132 @@ export default function OrderDashboardClient() {
 
     const activeCustomersCount = new Set(timeFilteredOrders.map(o => o.customerName)).size;
     const totalOrdersCount = timeFilteredOrders.length;
+
+    const handleExportExcel = async () => {
+        if (selectedOrderIds.length === 0) return;
+
+        // লোডিং বা অ্যালার্ট দেখাতে পারেন চাইলে
+        // alert("Exporting orders, please wait...");
+
+        const ordersToExport = orders.filter(order => selectedOrderIds.includes(order.id));
+
+        // নতুন এক্সেল ওয়ার্কবুক তৈরি
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Orders_Production_Sheet');
+
+        // কলামগুলোর নির্দিষ্ট সাইজ (Width) নির্ধারণ
+        worksheet.columns = [
+            { width: 22 }, // A
+            { width: 18 }, // B
+            { width: 25 }, // C
+            { width: 15 }, // D
+            { width: 28 }, // E
+            { width: 18 }, // F
+            { width: 15 }, // G
+            { width: 15 }, // H
+            { width: 25 }, // I
+        ];
+
+        // অবজেক্ট ফরম্যাটার ফাংশন (মেজারমেন্ট বা স্টাইল সুন্দরভাবে দেখানোর জন্য)
+        const formatObjectData = (obj: any) => {
+            if (!obj || Object.keys(obj).length === 0) return "N/A";
+            return Object.entries(obj)
+                .map(([key, val]) => `${key.replace(/_/g, ' ').toUpperCase()}: ${val}`)
+                .join("\n"); // লাইন ব্রেক দিয়ে নিচে নিচে দেখাবে
+        };
+
+        ordersToExport.forEach((order) => {
+            // ==========================================
+            // ১. Master Header (অর্ডার লেভেলের মূল হেডার)
+            // ==========================================
+            const masterHeader = worksheet.addRow([
+                "ORDER ID", "DATE", "CUSTOMER NAME", "PHONE", "ADDRESS", "PAYMENT STATUS", "ORDER STATUS", "TOTAL ITEMS", "GRAND TOTAL (৳)"
+            ]);
+
+            masterHeader.eachCell((cell) => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A8A' } }; // নেভি ব্লু ব্যাকগ্রাউন্ড
+                cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 10 }; // সাদা টেক্সট
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: { style: 'medium' }, bottom: { style: 'medium' } };
+            });
+
+            // ==========================================
+            // ২. Master Data (অর্ডারের মূল ডেটা)
+            // ==========================================
+            const masterData = worksheet.addRow([
+                order.id,
+                order.date,
+                order.customerName,
+                order.customerPhone,
+                order.customerAddress,
+                order.paymentStatus.toUpperCase(),
+                order.orderStatus.toUpperCase(),
+                order.items.length, // Item Count যুক্ত করা হয়েছে
+                order.grandTotal
+            ]);
+
+            masterData.eachCell((cell) => {
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+                cell.font = { size: 11, bold: true };
+            });
+
+            // ==========================================
+            // ৩. Item Header (আইটেম লেভেলের সাব-হেডার)
+            // ==========================================
+            const itemHeader = worksheet.addRow([
+                "Item Name", "Product Type", "Qty", "Unit Price", "Stitching Charge", "Fabric & Size", "Advanced Specs", "Measurements", "Note"
+            ]);
+
+            itemHeader.eachCell((cell) => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } }; // হালকা ধূসর ব্যাকগ্রাউন্ড
+                cell.font = { color: { argb: 'FF1F2937' }, bold: true, size: 10, italic: true };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: { style: 'thin', color: { argb: 'FFD1D5DB' } }, bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } } };
+            });
+
+            // ==========================================
+            // ৪. Item Data (অর্ডারের ভেতরের প্রতিটি আইটেম)
+            // ==========================================
+            order.items.forEach((item: any) => {
+                const fabricDetails = `Fabric: ${item.fabricName || 'N/A'}\nLength: ${item.fabricYards ? item.fabricYards + ' Yards' : 'N/A'}\nSize: ${item.sizeValue || 'N/A'}`;
+                const specs = Object.keys(item.tailoringDetails || {}).length > 0
+                    ? formatObjectData(item.tailoringDetails)
+                    : formatObjectData(item.productStyles);
+
+                const itemRow = worksheet.addRow([
+                    item.name,
+                    item.productType?.replace(/_/g, ' ').toUpperCase() || "N/A",
+                    item.quantity,
+                    `৳ ${item.unitPrice}`,
+                    `৳ ${item.stitchingCharge || 0}`,
+                    fabricDetails,
+                    specs,
+                    formatObjectData(item.measurements),
+                    item.specialInstructions || "None"
+                ]);
+
+                itemRow.eachCell((cell) => {
+                    cell.alignment = { vertical: 'top', horizontal: 'center', wrapText: true }; // wrapText ট্রু করা হয়েছে যাতে লাইন ব্রেক কাজ করে
+                    cell.font = { size: 10 };
+                });
+            });
+
+            // ==========================================
+            // ৫. Gap / Separator (পরবর্তী অর্ডারের আগে ফাঁকা সারি)
+            // ==========================================
+            const gapRow = worksheet.addRow([]);
+            gapRow.height = 15; // ফাঁকা সারির উচ্চতা কিছুটা কমিয়ে দেওয়া
+        });
+
+        // ফাইল জেনারেট এবং ডাউনলোড ট্রিগার
+        const dateString = new Date().toISOString().split('T')[0];
+        const fileName = `Production_Orders_${dateString}.xlsx`;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+        saveAs(blob, fileName);
+    };
 
     const handleBulkAction = async () => {
         if (selectedOrderIds.length === 0) return;
@@ -512,182 +651,324 @@ export default function OrderDashboardClient() {
                 )}
 
                 {selectedOrderIds.length > 0 && mainView === "orders" && (
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:bottom-8 md:right-8 md:left-auto md:translate-x-0 z-50 animate-in slide-in-from-bottom-4 duration-300 print:hidden">
-                        <div className="bg-background border border-border shadow-2xl rounded-full px-3 py-3 flex items-center gap-3 md:gap-4">
-                            <span className="text-xs md:text-sm font-sans text-primary bg-secondary px-3 py-1.5 rounded-full whitespace-nowrap">
-                                {selectedOrderIds.length} Selected
-                            </span>
+    <div className="fixed bottom-4 left-4 right-4 md:bottom-8 md:right-8 md:left-auto md:w-auto z-50 animate-in slide-in-from-bottom-4 duration-300 print:hidden">
+        
+        {/* কন্টেইনার: মোবাইলে পুরো স্ক্রিন জুড়ে থাকবে (মার্জিন সহ), পিসিতে অটোমেটিক সাইজ হবে */}
+        <div className="bg-background border border-border shadow-2xl rounded-2xl md:rounded-full p-2.5 md:px-3 md:py-3 flex items-center justify-between md:justify-start gap-2 md:gap-4 max-w-sm mx-auto md:max-w-none">
+            
+            {/* সিলেক্টেড কাউন্ট: মোবাইলে একটু ছোট টেক্সট হবে */}
+            <span className="flex-shrink-0 text-[11px] md:text-sm font-sans font-medium text-primary bg-secondary px-2.5 py-2 md:px-3 md:py-1.5 rounded-xl md:rounded-full whitespace-nowrap">
+                <span className="sm:hidden">{selectedOrderIds.length} Sel</span>
+                <span className="hidden sm:inline">{selectedOrderIds.length} Selected</span>
+            </span>
 
-                            <button
-                                onClick={handleBulkAction}
-                                className={`flex items-center gap-2 px-4 md:px-5 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap ${activeTab === "archived"
-                                    ? "bg-blue-600 border-blue-600 text-white hover:bg-blue-700"
-                                    : "bg-amber-500 border-amber-500 text-white hover:bg-amber-600"
-                                    }`}
-                            >
-                                <Archive size={16} />
-                                {activeTab === "archived" ? "Restore" : "Archive"}
-                            </button>
+            {/* এক্সপোর্ট বাটন: মোবাইলে flex-1 দিয়ে জায়গা ভাগ করে নেবে */}
+            <button
+                onClick={() => {
+                    handleExportExcel().catch(err => {
+                        console.error("Error exporting to Excel:", err);
+                        alert("Failed to export. Please try again.");
+                    });
+                }}
+                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 md:px-5 py-2 rounded-xl md:rounded-full text-[11px] md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap bg-green-600 border border-green-600 text-white hover:bg-green-700"
+            >
+                <Download size={14} className="md:w-4 md:h-4" />
+                <span>Export</span>
+            </button>
 
-                            <button
-                                onClick={() => setSelectedOrderIds([])}
-                                className="p-1.5 md:p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 bg-secondary rounded-full transition-colors cursor-pointer"
-                                title="Clear Selection"
-                            >
-                                <XCircle size={18} className="md:w-5 md:h-5" />
-                            </button>
-                        </div>
-                    </div>
-                )}
+            {/* আর্কাইভ/রিস্টোর বাটন */}
+            <button
+                onClick={handleBulkAction}
+                className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 md:px-5 py-2 rounded-xl md:rounded-full text-[11px] md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap ${
+                    activeTab === "archived"
+                        ? "bg-blue-600 border border-blue-600 text-white hover:bg-blue-700"
+                        : "bg-amber-500 border border-amber-500 text-white hover:bg-amber-600"
+                }`}
+            >
+                <Archive size={14} className="md:w-4 md:h-4" />
+                <span>{activeTab === "archived" ? "Restore" : "Archive"}</span>
+            </button>
+
+            {/* ক্লিয়ার বাটন */}
+            <button
+                onClick={() => setSelectedOrderIds([])}
+                className="flex-shrink-0 p-2 md:p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 bg-secondary rounded-xl md:rounded-full transition-colors cursor-pointer"
+                title="Clear Selection"
+            >
+                <XCircle size={16} className="md:w-5 md:h-5" />
+            </button>
+        </div>
+    </div>
+)}
             </div>
 
             {viewingOrder && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-background border border-border w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+                    {(() => {
+                        // 🎯 NEW: Calculate original subtotal and total savings dynamically
+                        const originalSubTotal = viewingOrder.items?.reduce((acc: number, item: any) => {
+                            const originalUnit = item.originalUnitPrice || item.unitPrice || 0;
+                            const stitch = item.stitchingCharge || 0;
+                            return acc + ((originalUnit + stitch) * item.quantity);
+                        }, 0) || viewingOrder.subTotal;
 
-                        <div className="px-6 py-4 bg-secondary/50 border-b border-border flex justify-between items-center">
-                            <div>
-                                <h2 className="text-sm font-mono font-bold text-foreground flex items-center gap-2">
-                                    <span>Order Details:</span>
-                                    <span className="text-primary">{viewingOrder.id}</span>
-                                </h2>
-                                <p className="text-[11px] text-muted-foreground font-sans mt-0.5">Placed on {viewingOrder.date}</p>
-                            </div>
-                            <button
-                                onClick={() => setViewingOrder(null)}
-                                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"
-                            >
-                                <X size={18} />
-                            </button>
-                        </div>
+                        const totalSavings = originalSubTotal > viewingOrder.subTotal ? originalSubTotal - viewingOrder.subTotal : 0;
 
-                        <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar flex-1 font-sans text-xs">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2 bg-secondary/20 p-4 rounded-lg border border-border/60">
-                                    <h3 className="font-heading font-bold text-primary uppercase tracking-wider text-[11px] mb-3">Customer Information</h3>
-                                    <div className="space-y-2.5 text-foreground">
-                                        <div className="font-medium text-sm flex items-center gap-2.5">
-                                            <User size={14} className="text-muted-foreground" />
-                                            {viewingOrder.customerName}
-                                        </div>
-                                        <div className="text-muted-foreground flex items-center gap-2.5">
-                                            <Phone size={14} />
-                                            {viewingOrder.customerPhone}
-                                        </div>
-                                        <div className="text-muted-foreground leading-relaxed flex items-start gap-2.5">
-                                            <MapPin size={14} className="shrink-0 mt-0.5" />
-                                            <span>{viewingOrder.customerAddress}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                        return (
+                            <div className="bg-background border border-border w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
 
-                                <div className="space-y-3 bg-secondary/20 p-4 rounded-lg border border-border/60 flex flex-col justify-between">
+                                <div className="px-6 py-4 bg-secondary/50 border-b border-border flex justify-between items-center">
                                     <div>
-                                        <h3 className="font-heading font-bold text-primary uppercase tracking-wider text-[11px] mb-2">Workflow Status</h3>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div>
-                                                <span className="text-[10px] text-muted-foreground block mb-1">Order Status</span>
-                                                <span className="capitalize font-medium px-2 py-1 bg-background border border-border rounded-md inline-block">
-                                                    {viewingOrder.orderStatus}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] text-muted-foreground block mb-1">Payment Status</span>
-                                                <span className="capitalize font-medium px-2 py-1 bg-background border border-border rounded-md inline-block">
-                                                    {viewingOrder.paymentStatus}
-                                                </span>
+                                        <h2 className="text-sm font-mono font-bold text-foreground flex items-center gap-2">
+                                            <span>Order Details:</span>
+                                            <span className="text-primary">{viewingOrder.id}</span>
+                                        </h2>
+                                        <p className="text-[11px] text-muted-foreground font-sans mt-0.5">Placed on {viewingOrder.date}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setViewingOrder(null)}
+                                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
+
+                                <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar flex-1 font-sans text-xs">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2 bg-secondary/20 p-4 rounded-lg border border-border/60">
+                                            <h3 className="font-heading font-bold text-primary uppercase tracking-wider text-[11px] mb-3">Customer Information</h3>
+                                            <div className="space-y-2.5 text-foreground">
+                                                <div className="font-medium text-sm flex items-center gap-2.5">
+                                                    <User size={14} className="text-muted-foreground" />
+                                                    {viewingOrder.customerName}
+                                                </div>
+                                                <div className="text-muted-foreground flex items-center gap-2.5">
+                                                    <Phone size={14} />
+                                                    {viewingOrder.customerPhone}
+                                                </div>
+                                                <div className="text-muted-foreground leading-relaxed flex items-start gap-2.5">
+                                                    <MapPin size={14} className="shrink-0 mt-0.5" />
+                                                    <span>{viewingOrder.customerAddress}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="space-y-3">
-                                <h3 className="font-heading font-bold text-primary uppercase tracking-wider text-[11px]">Ordered Items ({viewingOrder.items.length})</h3>
-                                <div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
-                                    {viewingOrder.items.map((item: any, idx: number) => (
-                                        <div key={item.id || idx} className="p-4 bg-background space-y-2">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <h4 className="text-sm text-foreground">{item.name}</h4>
-                                                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border/60 mt-1 inline-block">
-                                                        {item.productType.replace(/_/g, ' ')}
-                                                    </span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="font-mono font-medium text-foreground">৳ {item.unitPrice} x {item.quantity}</div>
-                                                    <div className="font-mono font-bold text-primary mt-0.5">৳ {item.totalPrice}</div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-secondary/10 p-3 rounded border border-border/40 text-[11px] text-muted-foreground">
-                                                {item.sizeMode && (
-                                                    <div><span className="font-medium text-foreground text-[12px]">Size Mode:</span> <span className="capitalize">{item.sizeMode.replace(/_/g, ' ')}</span></div>
-                                                )}
-                                                {item.sizeValue && (
-                                                    <div><span className="font-medium text-foreground text-[12px]">Size:</span> {item.sizeValue}</div>
-                                                )}
-                                                {item.fabricName && (
-                                                    <div><span className="font-medium text-foreground text-[12px]">Fabric:</span> {item.fabricName}</div>
-                                                )}
-                                                {item.fabricYards && (
-                                                    <div><span className="font-medium text-foreground text-[12px]">Length:</span> {item.fabricYards} Yards</div>
-                                                )}
-                                                {item.collarType && (
-                                                    <div><span className="font-medium text-foreground text-[12px]">Collar:</span> {item.collarType}</div>
-                                                )}
-                                                {item.stitchingCharge > 0 && (
-                                                    <div><span className="font-medium text-foreground text-[12px]">Stitching:</span> ৳ {item.stitchingCharge} × {item.quantity}</div>
-                                                )}
-                                            </div>
-
-                                            {item.measurements && Object.keys(item.measurements).length > 0 && (
-                                                <div className="bg-amber-50/40 border border-amber-100 p-3 rounded space-y-1.5">
-                                                    <div className="text-[11px] uppercase tracking-wider text-amber-800">Tailoring Measurements (Inches)</div>
-                                                    <div className="grid grid-cols-4 gap-2 text-foreground text-center font-mono">
-                                                        {item.measurements.length && <div><div className="text-[10px] text-muted-foreground">Length</div><div className="font-bold">{item.measurements.length}"</div></div>}
-                                                        {item.measurements.chest && <div><div className="text-[10px] text-muted-foreground">Chest</div><div className="font-bold">{item.measurements.chest}"</div></div>}
-                                                        {item.measurements.shoulder && <div><div className="text-[10px] text-muted-foreground">Shoulder</div><div className="font-bold">{item.measurements.shoulder}"</div></div>}
-                                                        {item.measurements.sleeve && <div><div className="text-[10px] text-muted-foreground">Sleeve</div><div className="font-bold">{item.measurements.sleeve}"</div></div>}
+                                        <div className="space-y-3 bg-secondary/20 p-4 rounded-lg border border-border/60 flex flex-col justify-between">
+                                            <div>
+                                                <h3 className="font-heading font-bold text-primary uppercase tracking-wider text-[11px] mb-2">Workflow Status</h3>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <span className="text-[10px] text-muted-foreground block mb-1">Order Status</span>
+                                                        <span className="capitalize font-medium px-2 py-1 bg-background border border-border rounded-md inline-block">
+                                                            {viewingOrder.orderStatus}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] text-muted-foreground block mb-1">Payment Status</span>
+                                                        <span className="capitalize font-medium px-2 py-1 bg-background border border-border rounded-md inline-block">
+                                                            {viewingOrder.paymentStatus}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                    </div>
 
-                            <div className="border-t border-border pt-4 flex justify-end">
-                                <div className="w-full max-w-xs space-y-1.5 font-sans text-muted-foreground">
-                                    <div className="flex justify-between"><span>Subtotal:</span> <span className="font-mono text-foreground">৳ {viewingOrder.subTotal}</span></div>
-                                    <div className="flex justify-between"><span>Delivery Charge:</span> <span className="font-mono text-foreground">৳ {viewingOrder.deliveryCharge}</span></div>
-                                    <div className="flex justify-between"><span>Discount:</span> <span className="font-mono text-red-600">- ৳ {viewingOrder.discount}</span></div>
-                                    <div className="flex justify-between border-t border-border pt-2 text-sm text-primary">
-                                        <span>Grand Total:</span>
-                                        <span className="font-mono text-base">৳ {viewingOrder.grandTotal}</span>
+                                    <div className="space-y-3">
+                                        <h3 className="font-heading font-bold text-primary uppercase tracking-wider text-[11px]">Ordered Items ({viewingOrder.items.length})</h3>
+                                        <div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
+                                            {viewingOrder.items.map((item: any, idx: number) => (
+                                                <div key={item.id || idx} className="p-4 bg-background space-y-2">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <h4 className="text-sm text-foreground">{item.name}</h4>
+                                                            <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border/60 mt-1 inline-block">
+                                                                {item.productType.replace(/_/g, ' ')}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* 🎯 NEW: Dynamic Item Pricing (Original vs Discounted) */}
+                                                        <div className="text-right font-sans shrink-0">
+                                                            {item.discountPercentage > 0 ? (
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="inline-block px-1.5 py-0.5 mb-1.5 text-[10px] uppercase tracking-widest text-amber-600 bg-amber-500/10 rounded border border-amber-500/20">
+                                                                        {item.discountPercentage}% OFF
+                                                                    </span>
+                                                                    <p className="font-mono text-[12px] text-muted-foreground flex items-center justify-end gap-1.5">
+                                                                        Qty: {item.quantity} ×
+                                                                        <span className="line-through decoration-red-400/40 text-muted-foreground/60">
+                                                                            ৳{(item.originalUnitPrice || item.unitPrice).toLocaleString('en-IN')}
+                                                                        </span>
+                                                                        <span className="font-medium text-foreground">
+                                                                            ৳{item.unitPrice.toLocaleString('en-IN')}
+                                                                        </span>
+                                                                    </p>
+                                                                    <div className="font-mono flex items-baseline justify-end gap-2 mt-1">
+                                                                        <span className="text-[13px] text-muted-foreground/60 line-through decoration-red-400/40">
+                                                                            ৳{(((item.originalUnitPrice || item.unitPrice) + (item.stitchingCharge || 0)) * item.quantity).toLocaleString('en-IN')}
+                                                                        </span>
+                                                                        <span className="text-[14px] font-bold text-primary">
+                                                                            ৳{item.totalPrice.toLocaleString('en-IN')}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="font-mono text-[11px] font-medium text-muted-foreground">Qty: {item.quantity} × ৳ {item.unitPrice.toLocaleString('en-IN')}</div>
+                                                                    <div className="font-mono font-bold text-primary mt-0.5 text-[13px]">৳ {item.totalPrice.toLocaleString('en-IN')}</div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* 🎯 Details Grid - Size Mode Removed, Only Size Kept */}
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-secondary/10 p-3 rounded border border-border/40 text-[13px] text-muted-foreground mt-2">
+                                                        {item.fabricName && <div><span className="font-medium text-foreground">Fabric:</span> {item.fabricName}</div>}
+                                                        {item.fabricYards && <div><span className="font-medium text-foreground">Length:</span> {item.fabricYards} Yards</div>}
+                                                        {item.sizeValue && <div><span className="font-medium text-foreground">Size:</span> {item.sizeValue}</div>}
+                                                        {item.stitchingCharge > 0 && <div><span className="font-medium text-foreground">Stitching:</span> ৳ {item.stitchingCharge} × {item.quantity}</div>}
+                                                    </div>
+
+                                                    {/* 🎯 NEW: Basic Styles */}
+                                                    {item.productStyles && Object.keys(item.productStyles).length > 0 && (
+                                                        <div className="mt-3">
+                                                            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">Basic Styles</p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {Object.entries(item.productStyles).map(([key, val]) => (
+                                                                    <div key={key} className="px-2.5 py-1.5 bg-secondary/40 rounded border border-border/60 flex flex-col justify-center">
+                                                                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">{formatText(key)}</span>
+                                                                        <span className="text-[12px] text-foreground capitalize">{formatText(val as string)}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* 🎯 NEW: Advanced Tailoring Specs */}
+                                                    {item.tailoringDetails && Object.keys(item.tailoringDetails).length > 0 && (
+                                                        <div className="mt-3 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                                            <p className="text-[10px] uppercase tracking-widest text-primary/70 mb-2 flex items-center gap-1.5">
+                                                                Advanced Specs
+                                                            </p>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {Object.entries(item.tailoringDetails).map(([key, val]) => (
+                                                                    <div key={key} className="px-2.5 py-1.5 bg-background/80 rounded border border-primary/15 flex flex-col justify-center">
+                                                                        <span className="text-[10px] uppercase tracking-widest text-primary/60 mb-0.5">{formatText(key)}</span>
+                                                                        <span className="text-[12px] text-foreground capitalize">{formatText(val as string)}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Tailoring Measurements */}
+                                                    {item.measurements && Object.keys(item.measurements).length > 0 && (
+                                                        <div className="bg-amber-50/40 border border-amber-100 p-3 rounded space-y-1.5">
+                                                            <div className="text-[11px] uppercase tracking-wider text-amber-800">Tailoring Measurements (Inches)</div>
+                                                            {/* মেজারমেন্টের সংখ্যার ওপর ভিত্তি করে পিসিতে ৫ বা ৬ কলামের গ্রিড তৈরি হবে */}
+                                                            <div className={`grid grid-cols-3 sm:grid-cols-4 ${Object.keys(item.measurements).length === 5 ? 'md:grid-cols-5' : 'md:grid-cols-6'} gap-2 text-foreground text-center font-mono`}>
+                                                                {Object.entries(item.measurements).map(([key, value]) => (
+                                                                    <div key={key}>
+                                                                        <div className="text-muted-foreground capitalize">
+                                                                            {key.replace(/_/g, ' ')}
+                                                                        </div>
+                                                                        <div className="font-bold">{String(value)}"</div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* 🎯 NEW: Minimal View Note Button */}
+                                                    {item.specialInstructions && (
+                                                        <div className="mt-3">
+                                                            <button
+                                                                onClick={() => toggleNote(item.id)}
+                                                                className="flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-widest text-amber-600 hover:text-amber-700 transition-colors cursor-pointer"
+                                                            >
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                                                {expandedNotes[item.id] ? 'Hide Note' : 'View Note'}
+                                                            </button>
+
+                                                            {expandedNotes[item.id] && (
+                                                                <div className="mt-2 p-2.5 bg-amber-50/50 rounded-lg border border-amber-500/20 animate-in slide-in-from-top-2 duration-200">
+                                                                    <p className="font-sans text-[11px] text-amber-900/80 leading-relaxed italic">
+                                                                        "{item.specialInstructions}"
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-border pt-4 flex justify-end">
+                                        <div className="w-full max-w-sm space-y-2.5 font-sans text-muted-foreground text-[13px]">
+
+                                            {/* 🎯 NEW: Savings Badge */}
+                                            {totalSavings > 0 && (
+                                                <div className="flex justify-end mb-1">
+                                                    <span className="inline-flex items-center px-2 py-0.5 bg-red-500/10 text-red-700 rounded text-[11px] font-medium uppercase tracking-wider border border-red-500/20">
+                                                        Total Discount: ৳ {totalSavings.toLocaleString('en-IN')}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-between items-center">
+                                                <span>Subtotal:</span>
+                                                <div className="flex items-center gap-2">
+                                                    {/* 🎯 NEW: Original Strikethrough Subtotal */}
+                                                    {totalSavings > 0 && (
+                                                        <span className="text-[12px] text-muted-foreground/50 line-through">
+                                                            ৳ {originalSubTotal.toLocaleString('en-IN')}
+                                                        </span>
+                                                    )}
+                                                    <span className="font-mono text-foreground font-medium">৳ {viewingOrder.subTotal.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-between">
+                                                <span>Delivery Charge:</span>
+                                                <span className="font-mono text-foreground">+ ৳ {viewingOrder.deliveryCharge.toLocaleString('en-IN')}</span>
+                                            </div>
+
+                                            {viewingOrder.discount > 0 && (
+                                                <div className="flex justify-between text-amber-600">
+                                                    <span>Discount:</span>
+                                                    <span className="font-mono">- ৳ {viewingOrder.discount.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex justify-between items-center border-t border-border pt-3 mt-3 text-sm text-primary">
+                                                <span className="uppercase tracking-widest">Grand Total:</span>
+                                                <span className="font-mono text-[16px] font-bold">৳ {viewingOrder.grandTotal.toLocaleString('en-IN')}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div className="px-6 py-4 bg-secondary/30 border-t border-border flex justify-between gap-3">
-                            <button
-                                onClick={() => setViewingOrder(null)}
-                                className="px-4 py-2 bg-background border border-border rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-xs font-medium"
-                            >
-                                Close Window
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setPrintingOrder(viewingOrder);
-                                    setViewingOrder(null);
-                                }}
-                                className="px-5 py-2 bg-primary text-white hover:bg-primary/90 rounded-md transition-all cursor-pointer flex items-center gap-2 text-xs font-medium shadow-sm"
-                            >
-                                <Printer size={14} /> Print Shipping Invoice
-                            </button>
-                        </div>
-                    </div>
+                                <div className="px-6 py-4 bg-secondary/30 border-t border-border flex justify-between gap-3">
+                                    <button
+                                        onClick={() => setViewingOrder(null)}
+                                        className="px-4 py-2 bg-background border border-border rounded-md text-muted-foreground hover:text-foreground transition-colors cursor-pointer text-xs font-medium"
+                                    >
+                                        Close Window
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setPrintingOrder(viewingOrder);
+                                            setViewingOrder(null);
+                                        }}
+                                        className="px-5 py-2 bg-primary text-white hover:bg-primary/90 rounded-md transition-all cursor-pointer flex items-center gap-2 text-xs font-medium shadow-sm"
+                                    >
+                                        <Printer size={14} /> Print Shipping Invoice
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
             )}
 

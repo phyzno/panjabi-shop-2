@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ChevronDown, Heart, RotateCcw, Ruler, ShieldCheck,
   ShoppingBag, Star, Truck, ChevronLeft, ChevronRight, Maximize2, X
@@ -25,8 +25,8 @@ interface ColorVariant {
 }
 
 interface ProductDetailsClientProps {
-  product: CollectionProduct & { 
-    sizes?: string[], 
+  product: CollectionProduct & {
+    sizes?: string[],
     stock?: Record<string, number>,
     group_id?: string | null,
     color_name?: string | null,
@@ -44,6 +44,7 @@ interface ProductDetailsClientProps {
 
 export default function ProductDetailsClient({ product, relatedProducts, colorVariants = [] }: ProductDetailsClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuthStore();
 
   const { wishlistedIds, addWishlistId, removeWishlistId } = useWishlistStore();
@@ -66,14 +67,40 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
     ? JSON.parse(product.stock)
     : (product?.stock || {});
 
-  // Pricing Logic
-  const rawPrice = product ? (typeof product.price === 'number'
-    ? product.price
-    : Number(String(product.price).replace(/[^0-9.]/g, ''))) : 0;
   
+
+  const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
+  const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
+  const hasBothModes = dbPresetSizes.length > 0 && dbNumericSizes.length > 0;
+
+  const [sizeMode, setSizeMode] = useState<SizeMode>('preset');
+  const [selectedSize, setSelectedSize] = useState<string>('');
+
+  const [quantity, setQuantity] = useState(1);
+  const [openTab, setOpenTab] = useState<number | null>(0);
+  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+
+  const activeSizes = sizeMode === 'preset' ? dbPresetSizes : dbNumericSizes;
+
+  // 🎯 Dynamic Pricing Logic 
+  const getDynamicRawPrice = () => {
+    const rawBasePrice = product ? (typeof product.price === 'number'
+      ? product.price
+      : Number(String(product.price).replace(/[^0-9.]/g, ''))) : 0;
+
+    if (product?.has_price_variation && selectedSize) {
+      const sizePricesObj = typeof product.size_prices === 'string'
+        ? JSON.parse(product.size_prices)
+        : (product.size_prices || {});
+      return sizePricesObj[selectedSize] ? Number(sizePricesObj[selectedSize]) : rawBasePrice;
+    }
+    return rawBasePrice;
+  };
+
+  const rawPrice = getDynamicRawPrice();
   const hasDiscount = ((product?.discount_percentage ?? 0) > 0);
-  const finalDiscountedPrice = hasDiscount 
-    ? Math.round(rawPrice - (rawPrice * (product!.discount_percentage! / 100))) 
+  const finalDiscountedPrice = hasDiscount
+    ? Math.round(rawPrice - (rawPrice * (product!.discount_percentage! / 100)))
     : rawPrice;
 
   const handleAddToCart = () => {
@@ -84,12 +111,12 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
       productName: product.name,
       productType: 'readymade',
       image: product.images?.[0] || '',
-      
+
       originalUnitPrice: rawPrice,
       discountPercentage: product.discount_percentage || 0,
       unitPrice: finalDiscountedPrice,
       stitchingCharge: 0,
-      
+
       sizeMode: sizeMode,
       sizeValue: selectedSize,
     });
@@ -118,26 +145,13 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
     }
   };
 
-  const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
-  const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
-  const hasBothModes = dbPresetSizes.length > 0 && dbNumericSizes.length > 0;
-
-  const [sizeMode, setSizeMode] = useState<SizeMode>('preset');
-  const [selectedSize, setSelectedSize] = useState<string>('');
-
-  const [quantity, setQuantity] = useState(1);
-  const [openTab, setOpenTab] = useState<number | null>(0);
-  const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-
-  const activeSizes = sizeMode === 'preset' ? dbPresetSizes : dbNumericSizes;
-
-  const dynamicSections = product?.additional_details?.length 
-    ? product.additional_details 
+  const dynamicSections = product?.additional_details?.length
+    ? product.additional_details
     : [
-        { title: 'Fabric & Material', content: 'Premium woven fabric with refined tailoring. Each piece is selected to complement the silhouette while keeping comfort in focus.' },
-        { title: 'Sizing & Fit', content: 'Fits true to size with a balanced drape. Use the size selector below or visit our measurement guide for a custom fit.' },
-        { title: 'Care Instructions', content: 'Dry clean only. Keep it in a breathable garment bag and avoid direct ironing on detailing.' }
-      ];
+      { title: 'Fabric & Material', content: 'Premium woven fabric with refined tailoring. Each piece is selected to complement the silhouette while keeping comfort in focus.' },
+      { title: 'Sizing & Fit', content: 'Fits true to size with a balanced drape. Use the size selector below or visit our measurement guide for a custom fit.' },
+      { title: 'Care Instructions', content: 'Dry clean only. Keep it in a breathable garment bag and avoid direct ironing on detailing.' }
+    ];
 
   useEffect(() => {
     if (!product) return;
@@ -145,17 +159,59 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
     setZoomBgPos('50% 50%');
     setIsFullscreenOpen(false);
     setIsHoveringBtn(false);
-    
-    const initialMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
-    setSizeMode(initialMode);
 
-    const initialSizes = initialMode === 'preset' ? dbPresetSizes : dbNumericSizes;
-    setSelectedSize(initialSizes[0] || '');
+    const dbPresetSizes = (product.sizes || []).filter(size => isNaN(Number(size)));
+    const dbNumericSizes = (product.sizes || []).filter(size => !isNaN(Number(size)));
 
+    let targetSize = '';
+    let targetMode: SizeMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
+
+    if (product.has_price_variation) {
+      let validSizes = [...(product.sizes || [])];
+      
+      const getFinalPrice = (size: string) => {
+        const rawBasePrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+        const sizePricesObj = typeof product.size_prices === 'string'
+          ? JSON.parse(product.size_prices)
+          : (product.size_prices || {});
+        const currentRawPrice = sizePricesObj[size] ? Number(sizePricesObj[size]) : rawBasePrice;
+        const discount = product.discount_percentage || 0;
+        return discount > 0 ? Math.round(currentRawPrice - (currentRawPrice * (discount / 100))) : currentRawPrice;
+      };
+
+      const minParam = searchParams.get('min');
+      const maxParam = searchParams.get('max');
+
+      // URL এ রেঞ্জ থাকলে ফিল্টার, না থাকলে পুরোটা থেকেই Lowest খোঁজা হবে
+      if (minParam && maxParam) {
+        const minRange = Number(minParam);
+        const maxRange = Number(maxParam);
+        validSizes = validSizes.filter(size => {
+          const price = getFinalPrice(size);
+          return price >= minRange && price <= maxRange;
+        });
+      }
+
+      validSizes.sort((a, b) => getFinalPrice(a) - getFinalPrice(b));
+
+      if (validSizes.length > 0) {
+        targetSize = validSizes[0];
+        targetMode = isNaN(Number(targetSize)) ? 'preset' : 'number';
+      }
+    }
+
+    if (!targetSize) {
+      targetMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
+      const initialSizes = targetMode === 'preset' ? dbPresetSizes : dbNumericSizes;
+      targetSize = initialSizes[0] || '';
+    }
+
+    setSizeMode(targetMode);
+    setSelectedSize(targetSize);
     setQuantity(1);
     setOpenTab(0);
-  }, [product, dbPresetSizes.length, dbNumericSizes.length]);
-  
+  }, [product, searchParams]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isHoveringBtn) return;
     const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
@@ -326,22 +382,22 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
                 {product.category}
               </span>
               <div className="flex items-center gap-1">
-                
+
                 {/* --- 5 Stars Smart Fill System --- */}
                 <div className="flex items-center gap-0.5">
                   {[...Array(5)].map((_, i) => {
                     const currentRating = product.rating ?? 4.8;
                     // কত পার্সেন্ট ফিল হবে তা ক্যালকুলেট করা (0 থেকে 100 এর মধ্যে)
                     const fillPercentage = Math.max(0, Math.min(100, (currentRating - i) * 100));
-                    
+
                     return (
                       <div key={i} className="relative w-3.5 h-3.5">
                         {/* Background (Empty/Muted) Star */}
                         <Star className="absolute top-0 left-0 w-3.5 h-3.5 text-[#C25934]/30" />
-                        
+
                         {/* Foreground (Filled) Star with CSS Clip-Path */}
-                        <Star 
-                          className="absolute top-0 left-0 w-3.5 h-3.5 fill-[#C25934] text-[#C25934]" 
+                        <Star
+                          className="absolute top-0 left-0 w-3.5 h-3.5 fill-[#C25934] text-[#C25934]"
                           style={{ clipPath: `inset(0 ${100 - fillPercentage}% 0 0)` }}
                         />
                       </div>
@@ -365,7 +421,7 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
             <h1 className="font-heading text-3xl md:text-4xl font-bold uppercase tracking-[0.05em] text-[#17210C] mb-4 leading-tight">
               {product.name}
             </h1>
-            
+
             {/* Extended Pricing Details Section */}
             <div className="mb-6 flex items-center flex-wrap gap-4">
               <p className="font-sans text-2xl font-medium text-[#C25934] tracking-[0.05em]">
@@ -406,8 +462,8 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
                         }}
                         className={cn(
                           "w-8 h-8 rounded-full border shadow-sm transition-all duration-300 relative flex items-center justify-center cursor-pointer",
-                          swatch.isCurrent 
-                            ? "border-[#4A5D23] ring-2 ring-[#4A5D23]/30 scale-105" 
+                          swatch.isCurrent
+                            ? "border-[#4A5D23] ring-2 ring-[#4A5D23]/30 scale-105"
                             : "border-[#D4D7C9] hover:border-[#4A5D23] hover:scale-105"
                         )}
                         style={{ backgroundColor: swatch.color_hex }}
@@ -416,7 +472,7 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
                           <span className="w-2 h-2 rounded-full bg-white mix-blend-difference" />
                         )}
                       </button>
-                      
+
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#17210C] text-white text-[10px] font-sans rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-30 shadow-md">
                         {swatch.color_name}
                       </div>
@@ -632,10 +688,12 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
             {relatedProducts.map((item) => {
-              const itemRawPrice = Number(item.price.replace(/[^0-9.]/g, ''));
+              const itemRawPrice = typeof item.price === 'number'
+                ? item.price
+                : Number(String(item.price).replace(/[^0-9.]/g, ''));
               const itemHasDiscount = (item.discount_percentage ?? 0) > 0;
-              const itemDiscountedPrice = itemHasDiscount 
-                ? Math.round(itemRawPrice - (itemRawPrice * (item.discount_percentage! / 100))) 
+              const itemDiscountedPrice = itemHasDiscount
+                ? Math.round(itemRawPrice - (itemRawPrice * (item.discount_percentage! / 100)))
                 : itemRawPrice;
 
               return (
@@ -656,7 +714,7 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
                     <h3 className="font-heading text-[13px] font-bold uppercase tracking-wide text-[#1C221A] truncate">
                       {item.name}
                     </h3>
-                    
+
                     {/* Related Products Pricing Integration */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-sans text-[12px] font-medium text-[#C25934]">
@@ -689,7 +747,7 @@ export default function ProductDetailsClient({ product, relatedProducts, colorVa
             <p className="font-sans text-xs text-[#1C221A]/70 mb-6 px-2">
               You need to be logged in to save pieces to your curated wishlist.
             </p>
-            <button 
+            <button
               onClick={() => router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
               className="w-full py-3 bg-[#4A5D23] text-white rounded-xl font-sans text-[11px] font-medium uppercase tracking-[0.2em] shadow-lg hover:bg-[#3D4C1D] transition-colors cursor-pointer"
             >

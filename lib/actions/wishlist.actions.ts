@@ -43,7 +43,9 @@ export async function getUserWishlist(userId: string) {
         group_id: products.group_id,
         color_name: products.color_name,
         color_hex: products.color_hex,
-        category: categories.name, 
+        category: categories.name,
+        has_price_variation: products.has_price_variation,
+        size_prices: products.size_prices,
       }
     })
     .from(wishlists)

@@ -313,7 +313,7 @@ export const ADVANCED_TAILORING_OPTIONS: Record<string, TailoringOptionGroup[]> 
     { 
       id: 'pocket_secret', 
       title: 'Secret Pocket', 
-      choices: [['no_secret_pocket', '/New Ui Vectors/Pocket Options/Inside Secret Pocket.webp'], ['inside_secret_pocket', '/New Ui Vectors/Pocket Options/No Secret Pocket.webp']] 
+      choices: [['no_secret_pocket', '/New Ui Vectors/Pocket Options/No Secret Pocket.webp'], ['inside_secret_pocket', '/New Ui Vectors/Pocket Options/Inside Secret Pocket.webp']] 
     }
   ],
   shirt: [
@@ -337,7 +337,7 @@ export const ADVANCED_TAILORING_OPTIONS: Record<string, TailoringOptionGroup[]> 
     { 
       id: 'pocket_secret', 
       title: 'Secret Pocket', 
-      choices: [['no_secret_pocket', '/New Ui Vectors/Pocket Options/Inside Secret Pocket.webp'], ['inside_secret_pocket', '/New Ui Vectors/Pocket Options/No Secret Pocket.webp']] 
+      choices: [['no_secret_pocket', '/New Ui Vectors/Pocket Options/No Secret Pocket.webp'], ['inside_secret_pocket', '/New Ui Vectors/Pocket Options/Inside Secret Pocket.webp']] 
     }
   ],
   pant: [
@@ -383,7 +383,7 @@ export const ADVANCED_TAILORING_OPTIONS: Record<string, TailoringOptionGroup[]> 
     { 
       id: 'pocket_secret', 
       title: 'Secret Pocket', 
-      choices: [['no_secret_pocket', '/New Ui Vectors/Pocket Options/Inside Secret Pocket.webp'], ['inside_secret_pocket', '/New Ui Vectors/Pocket Options/No Secret Pocket.webp']] 
+      choices: [['no_secret_pocket', '/New Ui Vectors/Pocket Options/No Secret Pocket.webp'], ['inside_secret_pocket', '/New Ui Vectors/Pocket Options/Inside Secret Pocket.webp']] 
     }
   ]
 };

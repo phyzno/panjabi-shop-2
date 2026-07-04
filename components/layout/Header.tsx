@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { createClient } from "@/utils/supabase/client";
 import { useAuthStore } from "@/store/authStore";
-import { Search, User, ShoppingCart, Menu, X, LayoutDashboard, Package, Ruler, Heart, LogOut } from "lucide-react";
+import { User, ShoppingCart, Menu, X, LayoutDashboard, Package, Ruler, Heart, LogOut, PackageSearch, ArrowRight } from "lucide-react";
 
 export type HeaderVariant = "default" | "home";
 
@@ -32,6 +32,7 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const isHomePage = variant === "home";
   const isCustomizerPage = pathname?.startsWith("/customize");
   const navLinks = [
@@ -47,6 +48,11 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [showMobileAccount, setShowMobileAccount] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  const [isTrackOrderOpen, setIsTrackOrderOpen] = useState(false);
+  const [showTrackOrderModal, setShowTrackOrderModal] = useState(false);
+  const [trackOrderId, setTrackOrderId] = useState("");
+
   const handleLogout = async () => {
     setIsUserDropdownOpen(false);
     setShowMobileAccount(false);
@@ -62,10 +68,13 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
       if (isUserDropdownOpen && !(e.target as Element).closest('.user-dropdown-container')) {
         setIsUserDropdownOpen(false);
       }
+      if (isTrackOrderOpen && !(e.target as Element).closest('.track-order-container')) {
+        setIsTrackOrderOpen(false);
+      }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [isUserDropdownOpen]);
+  }, [isUserDropdownOpen, isTrackOrderOpen]);
 
   useEffect(() => {
     setMounted(true);
@@ -85,7 +94,7 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    if (isMobileMenuOpen) {
+    if (isMobileMenuOpen || showTrackOrderModal || showLoginModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -93,7 +102,17 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, showTrackOrderModal, showLoginModal]);
+
+  const handleTrackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (trackOrderId.trim()) {
+      setIsTrackOrderOpen(false);
+      setShowTrackOrderModal(false);
+      router.push(`/track-order?id=${trackOrderId.trim()}`);
+      setTrackOrderId("");
+    }
+  };
 
   const showScrolledStyle = !isHomePage || isScrolled;
 
@@ -134,7 +153,7 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
                 className={`font-heading text-2xl md:text-3xl font-bold tracking-[0.15em] flex items-center justify-center md:justify-start uppercase transition-colors duration-300 ${showScrolledStyle ? "text-primary" : "text-[#B5C18E]"
                   }`}
               >
-                Panjabi<span className="text-accent text-4xl leading-none font-sans">.</span>
+                Mens'O<span className="text-accent text-4xl leading-none font-sans">.</span>
               </Link>
             </div>
 
@@ -154,10 +173,37 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
 
             <div className={`flex flex-1 md:flex-none items-center justify-end space-x-5 sm:space-x-6 transition-colors duration-300 ${showScrolledStyle ? "text-foreground" : "text-white"
               }`}>
-              <button className={`transition-colors duration-300 hidden sm:block focus:outline-none ${showScrolledStyle ? "hover:text-primary" : "hover:text-neutral-300"
-                }`}>
-                <Search className="w-5 h-5 stroke-[1.5]" />
-              </button>
+              <div className="relative hidden sm:block track-order-container">
+                <button
+                  type="button"
+                  onClick={() => setIsTrackOrderOpen(!isTrackOrderOpen)}
+                  className={`transition-colors duration-300 focus:outline-none flex items-center cursor-pointer ${showScrolledStyle || isTrackOrderOpen ? "text-primary hover:text-primary/80" : "text-neutral-300 hover:text-white"
+                    }`}
+                  title="Track Order"
+                >
+                  <PackageSearch className="w-5 h-5 stroke-[1.5]"/>
+                </button>
+                
+                {isTrackOrderOpen && (
+                  <div className="absolute right-0 mt-5 w-72 bg-white rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.08)] border border-[#D4D7C9] p-4 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-[100]">
+                    <p className="font-heading text-sm font-bold text-[#17210C] uppercase tracking-wider mb-1">Track Order</p>
+                    <p className="font-sans text-[11px] text-[#1C221A]/60 mb-3">Enter your Order ID to check real-time status.</p>
+                    <form onSubmit={handleTrackSubmit} className="relative">
+                      <input
+                        type="text"
+                        value={trackOrderId}
+                        onChange={(e) => setTrackOrderId(e.target.value)}
+                        placeholder="e.g. ORD-12345"
+                        className="w-full bg-[#F8F9F5] border border-[#D4D7C9]/80 rounded-xl pl-3 pr-10 py-2.5 outline-none focus:border-[#4A5D23] font-mono text-xs text-[#17210C] transition-colors"
+                        required
+                      />
+                      <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#4A5D23] text-white rounded-lg hover:bg-[#3D4C1D] transition-colors cursor-pointer">
+                        <ArrowRight className="w-3.5 h-3.5"/>
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </div>
               <div className="relative hidden sm:block user-dropdown-container">
                 {!mounted ? (
                   <div className="w-5 h-5" />
@@ -329,9 +375,16 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
             </button>
           )}
 
-          <button className="flex flex-col items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/70 hover:text-primary">
-            <Search className="w-5 h-5 stroke-[1.5]" />
-            Search
+          <button 
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setTimeout(() => setShowTrackOrderModal(true), 150);
+            }}
+            className="flex flex-col items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-foreground/70 hover:text-primary cursor-pointer focus:outline-none"
+          >
+            <PackageSearch className="w-5 h-5 stroke-[1.5]"/>
+            Track
           </button>
         </div>
       </div>
@@ -357,6 +410,40 @@ export function Header({ activeOfferText, variant = "default" }: HeaderProps) {
             >
               Log In Now
             </Link>
+          </div>
+        </div>
+      )}
+
+      {showTrackOrderModal && (
+        <div className="fixed inset-0 z-[100000] flex items-center justify-center p-6" onClick={() => setShowTrackOrderModal(false)}>
+          <div className="absolute inset-0 bg-foreground/60 backdrop-blur-sm" />
+          <div
+            className="relative bg-background w-full max-w-sm rounded-3xl p-6 text-center shadow-2xl animate-in zoom-in-95 duration-200 border border-border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button onClick={() => setShowTrackOrderModal(false)} className="absolute top-4 right-4 p-2 bg-secondary/50 rounded-full text-foreground/60 hover:text-red-500 cursor-pointer transition-colors focus:outline-none">
+              <X className="w-4 h-4"/>
+            </button>
+            <div className="w-12 h-12 bg-[#4A5D23]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#4A5D23]/20 mt-2">
+              <PackageSearch className="w-6 h-6 text-[#4A5D23]"/>
+            </div>
+            <h3 className="font-heading text-lg font-bold text-foreground uppercase tracking-wide mb-2">Track Your Order</h3>
+            <p className="font-sans text-xs text-foreground/70 mb-6 px-2">
+              Enter your Order ID below to see the real-time status of your tailored items.
+            </p>
+            <form onSubmit={handleTrackSubmit} className="relative mb-2">
+              <input
+                type="text"
+                value={trackOrderId}
+                onChange={(e) => setTrackOrderId(e.target.value)}
+                placeholder="e.g. ORD-2026..."
+                className="w-full bg-[#F8F9F5] border border-border/80 rounded-xl pl-4 pr-12 py-3.5 outline-none focus:ring-2 focus:ring-[#4A5D23]/30 focus:border-[#4A5D23] font-mono text-xs text-foreground transition-all text-left"
+                required
+              />
+              <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#4A5D23] text-white rounded-xl hover:bg-[#3D4C1D] transition-colors cursor-pointer shadow-sm">
+                <ArrowRight className="w-4 h-4"/>
+              </button>
+            </form>
           </div>
         </div>
       )}

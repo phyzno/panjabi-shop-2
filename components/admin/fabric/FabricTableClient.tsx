@@ -156,7 +156,25 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
                         ID: {fabric.id}
                       </div>
                     </td>
-                    <td className="px-6 py-4 align-middle font-sans text-primary whitespace-nowrap">৳ {fabric.price}</td>
+                    <td className="px-6 py-4 align-middle font-sans whitespace-nowrap">
+                      {fabric.discount_percentage > 0 ? (
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[13px] text-muted-foreground line-through">
+                              ৳ {fabric.price}
+                            </span>
+                            <span className="text-[12px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                              -{fabric.discount_percentage}%
+                            </span>
+                          </div>
+                          <span className="text-primary font-medium text-base">
+                            ৳ {Math.round(fabric.price - (fabric.price * fabric.discount_percentage) / 100)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-primary">৳ {fabric.price}</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 align-middle text-right whitespace-nowrap">
                       <div className="flex justify-end gap-2">
                         <Link href={`/admin/fabrics/edit/${fabric.id}`} className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary rounded-md transition-colors cursor-pointer">
@@ -214,7 +232,26 @@ export default function FabricTableClient({ fabrics }: { fabrics: any[] }) {
                 <p className="text-xs text-muted-foreground mt-1">
                   ID: {fabric.id}
                 </p>
-                <p className="font-sans text-primary text-base mt-2">৳ {fabric.price}</p>
+                <div className="mt-2">
+                  {fabric.discount_percentage > 0 ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-sans text-primary text-base">
+                        ৳ {Math.round(fabric.price - (fabric.price * fabric.discount_percentage) / 100)}
+                      </span>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13px] text-muted-foreground line-through">
+                          ৳ {fabric.price}
+                        </span>
+                        <span className="text-[11px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                          -{fabric.discount_percentage}%
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="font-sans text-primary text-base">৳ {fabric.price}</p>
+                  )}
+                </div>
               </div>
 
               <div className="absolute top-2 right-2">

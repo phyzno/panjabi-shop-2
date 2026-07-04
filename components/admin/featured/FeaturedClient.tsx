@@ -7,12 +7,12 @@ import { useRouter } from "next/navigation";
 import { toggleProductFeatured } from "@/lib/actions/product.actions";
 import { toggleFabricFeatured } from "@/lib/actions/fabric.actions";
 
-export default function FeaturedClient({ 
-  initialProducts, 
+export default function FeaturedClient({
+  initialProducts,
   initialFabrics,
   categories
-}: { 
-  initialProducts: any[], 
+}: {
+  initialProducts: any[],
   initialFabrics: any[],
   categories: any[]
 }) {
@@ -77,23 +77,23 @@ export default function FeaturedClient({
     return matchesFeaturedAndSearch && allowedCategoryIds.includes(p.category_id);
   });
 
-  const displayedFeaturedFabrics = initialFabrics.filter(f => 
+  const displayedFeaturedFabrics = initialFabrics.filter(f =>
     f.is_featured && (f.name.toLowerCase().includes(searchTerm.toLowerCase()) || f.id.toString().includes(searchTerm))
   );
 
-  const modalAvailableProducts = initialProducts.filter(p => 
+  const modalAvailableProducts = initialProducts.filter(p =>
     !p.is_featured && (p.name.toLowerCase().includes(modalSearchTerm.toLowerCase()) || p.id.toString().includes(modalSearchTerm))
   );
-  const modalAvailableFabrics = initialFabrics.filter(f => 
+  const modalAvailableFabrics = initialFabrics.filter(f =>
     !f.is_featured && (f.name.toLowerCase().includes(modalSearchTerm.toLowerCase()) || f.id.toString().includes(modalSearchTerm))
   );
-  
+
   const featuredProductsCount = initialProducts.filter(p => p.is_featured).length;
   const featuredFabricsCount = initialFabrics.filter(f => f.is_featured).length;
 
   const handleRemoveFeatured = (id: string) => {
     if (!confirm("Are you sure you want to remove this from featured?")) return;
-    
+
     startTransition(async () => {
       if (activeTab === "products") {
         await toggleProductFeatured(id, false);
@@ -111,7 +111,7 @@ export default function FeaturedClient({
   };
 
   const toggleModalSelection = (id: string) => {
-    setSelectedToAdd(prev => 
+    setSelectedToAdd(prev =>
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
   };
@@ -130,7 +130,7 @@ export default function FeaturedClient({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      
+
       {/* Top Header and Control Panel */}
       <div className="bg-background border border-border p-6 rounded-lg shadow-sm space-y-5">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -142,7 +142,7 @@ export default function FeaturedClient({
               Manage items appearing on the homepage spotlight.
             </p>
           </div>
-          
+
           <div className="flex gap-4 text-xs font-sans uppercase tracking-wider bg-secondary/50 px-4 py-2 rounded-md border border-border w-full md:w-auto justify-center">
             <span className="text-primary">{featuredProductsCount} Products</span>
             <span className="text-border">|</span>
@@ -154,16 +154,16 @@ export default function FeaturedClient({
 
         {/* Controls Row: Tabs, Filters, Add Button, and Search Box */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-          
+
           {/* Tab Switcher */}
           <div className="flex bg-secondary p-1 rounded-md border border-border w-full sm:w-auto shrink-0 order-1">
-            <button 
+            <button
               onClick={() => { setActiveTab("products"); setSearchTerm(""); setSelectedCategoryId("all"); }}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded text-sm transition-colors ${activeTab === "products" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-primary cursor-pointer"}`}
             >
               <Shirt size={16} /> Products
             </button>
-            <button 
+            <button
               onClick={() => { setActiveTab("fabrics"); setSearchTerm(""); setSelectedCategoryId("all"); }}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded text-sm transition-colors ${activeTab === "fabrics" ? "bg-accent text-white shadow-sm" : "text-muted-foreground hover:text-primary cursor-pointer"}`}
             >
@@ -195,7 +195,7 @@ export default function FeaturedClient({
           )}
 
           {/* Add New Button - Placed before search on mobile layout order, pushes right on PC */}
-          <button 
+          <button
             onClick={openModal}
             disabled={isPending}
             className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition-all shadow-sm shrink-0 cursor-pointer disabled:opacity-50 order-3 sm:order-4 sm:h-10 active:scale-95"
@@ -206,9 +206,9 @@ export default function FeaturedClient({
           {/* Search Input Bar - Kept at absolute bottom on Mobile view via order-4 & sm:ml-auto for PC right-alignment */}
           <div className="relative w-full sm:w-64 order-4 sm:order-3 sm:ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <input 
-              type="text" 
-              placeholder={`Search featured ${activeTab}...`} 
+            <input
+              type="text"
+              placeholder={`Search featured ${activeTab}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-border rounded-md bg-secondary/50 outline-none focus:ring-2 focus:ring-primary font-sans text-sm h-10"
@@ -230,7 +230,7 @@ export default function FeaturedClient({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              
+
               {activeTab === "products" && displayedFeaturedProducts.map((product) => (
                 <tr key={product.id} className={`hover:bg-secondary/30 transition-colors ${isPending ? 'opacity-50' : ''}`}>
                   <td className="px-6 py-4 align-middle whitespace-nowrap">
@@ -250,11 +250,27 @@ export default function FeaturedClient({
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 align-middle font-sans text-primary whitespace-nowrap">
-                    ৳ {product.price}
+                  <td className="px-6 py-4 align-middle font-sans whitespace-nowrap">
+                    {product.discount_percentage > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] text-muted-foreground line-through">
+                            ৳ {product.price}
+                          </span>
+                          <span className="text-[12px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                            -{product.discount_percentage}%
+                          </span>
+                        </div>
+                        <span className="text-primary font-medium text-base">
+                          ৳ {Math.round(product.price - (product.price * product.discount_percentage) / 100)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-primary">৳ {product.price}</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 align-middle text-right whitespace-nowrap">
-                    <button 
+                    <button
                       onClick={() => handleRemoveFeatured(product.id)}
                       disabled={isPending}
                       className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md transition-colors cursor-pointer inline-flex disabled:opacity-50"
@@ -283,11 +299,27 @@ export default function FeaturedClient({
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 align-middle font-sans text-primary whitespace-nowrap">
-                    ৳ {fabric.price} / Yard
+                  <td className="px-6 py-4 align-middle font-sans whitespace-nowrap">
+                    {fabric.discount_percentage > 0 ? (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] text-muted-foreground line-through">
+                            ৳ {fabric.price}
+                          </span>
+                          <span className="text-[12px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                            -{fabric.discount_percentage}%
+                          </span>
+                        </div>
+                        <span className="text-primary font-medium text-base">
+                          ৳ {Math.round(fabric.price - (fabric.price * fabric.discount_percentage) / 100)} / Yard
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-primary">৳ {fabric.price} / Yard</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 align-middle text-right whitespace-nowrap">
-                    <button 
+                    <button
                       onClick={() => handleRemoveFeatured(fabric.id)}
                       disabled={isPending}
                       className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-md transition-colors inline-flex cursor-pointer disabled:opacity-50"
@@ -313,7 +345,7 @@ export default function FeaturedClient({
 
       {/* Mobile Card View */}
       <div className="block md:hidden space-y-4 overflow-x-auto overflow-y-auto max-h-[calc(100dvh-240px)] w-full">
-        
+
         {activeTab === "products" && (
           displayedFeaturedProducts.length === 0 ? (
             <div className="bg-background border border-border p-12 text-center rounded-lg shadow-sm">
@@ -321,8 +353,8 @@ export default function FeaturedClient({
             </div>
           ) : (
             displayedFeaturedProducts.map((product) => (
-              <div 
-                key={product.id} 
+              <div
+                key={product.id}
                 className={`bg-background border border-border rounded-lg p-4 flex gap-4 relative shadow-sm hover:border-muted-foreground/30 transition-colors ${isPending ? 'opacity-50' : ''}`}
               >
                 <div className="w-16 h-20 rounded-md overflow-hidden bg-secondary border border-border shrink-0 flex items-center justify-center relative">
@@ -340,11 +372,29 @@ export default function FeaturedClient({
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-xs text-muted-foreground font-mono">ID: {product.id}</p>
                   </div>
-                  <p className="font-sans text-primary text-base mt-2">৳ {product.price}</p>
+                  <div className="mt-2">
+                    {product.discount_percentage > 0 ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-sans text-primary text-base">
+                          ৳ {Math.round(product.price - (product.price * product.discount_percentage) / 100)}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] text-muted-foreground line-through">
+                            ৳ {product.price}
+                          </span>
+                          <span className="text-[11px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                            -{product.discount_percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="font-sans text-primary text-base font-bold">৳ {product.price}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="absolute top-2 right-2">
-                  <button 
+                  <button
                     onClick={() => handleRemoveFeatured(product.id)}
                     disabled={isPending}
                     className="p-2 text-muted-foreground hover:text-red-500 bg-secondary/50 rounded-md transition-colors cursor-pointer disabled:opacity-50"
@@ -364,8 +414,8 @@ export default function FeaturedClient({
             </div>
           ) : (
             displayedFeaturedFabrics.map((fabric) => (
-              <div 
-                key={fabric.id} 
+              <div
+                key={fabric.id}
                 className={`bg-background border border-border rounded-lg p-4 flex gap-4 relative shadow-sm hover:border-muted-foreground/30 transition-colors ${isPending ? 'opacity-50' : ''}`}
               >
                 <div className="w-16 h-20 rounded-md overflow-hidden bg-secondary border border-border shrink-0 flex items-center justify-center relative">
@@ -381,11 +431,29 @@ export default function FeaturedClient({
                     {fabric.name}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {fabric.id}</p>
-                  <p className="font-sans text-primary text-base mt-2">৳ {fabric.price} / Yard</p>
+                  <div className="mt-2">
+                    {fabric.discount_percentage > 0 ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-sans text-primary text-base">
+                          ৳ {Math.round(fabric.price - (fabric.price * fabric.discount_percentage) / 100)} / Yard
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] text-muted-foreground line-through">
+                            ৳ {fabric.price}
+                          </span>
+                          <span className="text-[11px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded-md">
+                            -{fabric.discount_percentage}%
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="font-sans text-primary text-base">৳ {fabric.price} / Yard</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="absolute top-2 right-2">
-                  <button 
+                  <button
                     onClick={() => handleRemoveFeatured(fabric.id)}
                     disabled={isPending}
                     className="p-2 text-muted-foreground hover:text-red-500 bg-secondary/50 rounded-md transition-colors cursor-pointer disabled:opacity-50"
@@ -403,7 +471,7 @@ export default function FeaturedClient({
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-background w-full max-w-lg border border-border rounded-xl shadow-2xl relative flex flex-col max-h-[85vh]">
-            
+
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-border shrink-0">
               <div>
                 <h2 className="font-heading font-bold text-lg text-primary">
@@ -419,16 +487,16 @@ export default function FeaturedClient({
             <div className="p-3 sm:p-4 border-b border-border bg-secondary/20 shrink-0">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <input 
-                  type="text" 
-                  placeholder={`Search available ${activeTab}...`} 
+                <input
+                  type="text"
+                  placeholder={`Search available ${activeTab}...`}
                   value={modalSearchTerm}
                   onChange={(e) => setModalSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 border border-border rounded-md bg-background outline-none focus:ring-2 focus:ring-primary font-sans text-sm"
                 />
               </div>
             </div>
-            
+
             <div className="overflow-y-auto p-2 flex-1">
               {activeTab === "products" && modalAvailableProducts.length === 0 && (
                 <div className="p-8 text-center text-sm text-muted-foreground">No available products found.</div>
@@ -442,22 +510,21 @@ export default function FeaturedClient({
                   const itemId = String(item.id);
                   const isSelected = selectedToAdd.includes(itemId);
                   return (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       onClick={() => !isPending && toggleModalSelection(itemId)}
-                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all border ${
-                        isSelected 
-                          ? "bg-primary/5 border-primary" 
-                          : "bg-transparent border-transparent hover:bg-secondary/50"
-                      } ${isPending ? 'opacity-50 pointer-events-none' : ''}`}
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all border ${isSelected
+                        ? "bg-primary/5 border-primary"
+                        : "bg-transparent border-transparent hover:bg-secondary/50"
+                        } ${isPending ? 'opacity-50 pointer-events-none' : ''}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 bg-secondary border border-border rounded flex items-center justify-center shrink-0 overflow-hidden relative">
-                           {activeTab === "products" ? (
-                              item.images && item.images[0] ? <Image src={item.images[0]} alt={item.name} width={40} height={40} className="w-full h-full object-cover z-10" /> : <Shirt size={16} className="text-muted-foreground z-0" />
-                           ) : (
-                              item.raw_image_url ? <Image src={item.raw_image_url} alt={item.name} width={40} height={40} className="w-full h-full object-cover z-10" /> : <Palette size={16} className="text-muted-foreground z-0" />
-                           )}
+                          {activeTab === "products" ? (
+                            item.images && item.images[0] ? <Image src={item.images[0]} alt={item.name} width={40} height={40} className="w-full h-full object-cover z-10" /> : <Shirt size={16} className="text-muted-foreground z-0" />
+                          ) : (
+                            item.raw_image_url ? <Image src={item.raw_image_url} alt={item.name} width={40} height={40} className="w-full h-full object-cover z-10" /> : <Palette size={16} className="text-muted-foreground z-0" />
+                          )}
                         </div>
                         <div className="min-w-0 pr-2">
                           <div className="font-sans text-sm text-foreground truncate">{item.name}</div>
@@ -465,9 +532,8 @@ export default function FeaturedClient({
                         </div>
                       </div>
 
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                        isSelected ? "border-primary bg-primary text-white" : "border-border text-transparent"
-                      }`}>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? "border-primary bg-primary text-white" : "border-border text-transparent"
+                        }`}>
                         <Check size={14} className={isSelected ? "opacity-100" : "opacity-0"} />
                       </div>
                     </div>
@@ -475,20 +541,20 @@ export default function FeaturedClient({
                 })}
               </div>
             </div>
-            
+
             <div className="p-4 sm:p-6 border-t border-border shrink-0 flex justify-between items-center bg-background rounded-b-xl">
               <span className="text-sm text-muted-foreground">
                 {selectedToAdd.length} selected
               </span>
               <div className="flex gap-2 sm:gap-3">
-                <button 
-                  onClick={() => setIsModalOpen(false)} 
+                <button
+                  onClick={() => setIsModalOpen(false)}
                   disabled={isPending}
                   className="px-3 sm:px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleAddSelected}
                   disabled={selectedToAdd.length === 0 || isPending}
                   className="px-4 sm:px-6 py-2 rounded-md text-sm text-white bg-primary disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-all shadow-sm cursor-pointer flex items-center gap-2"

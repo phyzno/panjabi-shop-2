@@ -40,6 +40,7 @@ export const getCachedFeaturedProducts = unstable_cache(
           video_url: products.video_url,
           description: products.description,
           categoryName: categories.name,
+          categoryId: products.category_id,
           sizes: products.sizes,
           stock: products.stock,
           group_id: products.group_id,
@@ -50,6 +51,8 @@ export const getCachedFeaturedProducts = unstable_cache(
           additional_details: products.additional_details,
           has_size_guide: products.has_size_guide,
           size_guide_template: products.size_guide_template,
+          has_price_variation: products.has_price_variation,
+          size_prices: products.size_prices,
         })
         .from(products)
         .leftJoin(categories, eq(products.category_id, categories.id))
@@ -85,6 +88,8 @@ export async function addProduct(data: {
   additional_details?: { title: string; content: string }[];
   has_size_guide?: boolean;
   size_guide_template?: string;
+  has_price_variation?: boolean;
+  size_prices?: Record<string, number>;
 }) {
   const cleanVideoUrl = extractVideoUrl(data.video_url ?? null);
   try {
@@ -108,6 +113,8 @@ export async function addProduct(data: {
       additional_details: data.additional_details || [],
       has_size_guide: data.has_size_guide ?? true,
       size_guide_template: data.size_guide_template || "panjabi",
+      has_price_variation: data.has_price_variation || false,
+      size_prices: data.size_prices || {},
     });
 
     revalidateTag('products');
@@ -140,6 +147,8 @@ export async function updateProduct(
     additional_details?: { title: string; content: string }[];
     has_size_guide?: boolean;
     size_guide_template?: string;
+    has_price_variation?: boolean;
+    size_prices?: Record<string, number>;
   }
 ) {
   const cleanVideoUrl = extractVideoUrl(data.video_url ?? null);
@@ -163,6 +172,8 @@ export async function updateProduct(
       additional_details: data.additional_details || [],
       has_size_guide: data.has_size_guide ?? true,
       size_guide_template: data.size_guide_template || "panjabi",
+      has_price_variation: data.has_price_variation || false,
+      size_prices: data.size_prices || {},
       updated_at: new Date(),
     }).where(eq(products.id, id));
 
@@ -311,6 +322,8 @@ export async function getCachedAllProducts() {
             additional_details: products.additional_details,
             has_size_guide: products.has_size_guide,
             size_guide_template: products.size_guide_template,
+            has_price_variation: products.has_price_variation,
+            size_prices: products.size_prices,
           })
           .from(products)
           .leftJoin(categories, eq(products.category_id, categories.id));
@@ -340,6 +353,7 @@ export async function getCachedProductById(id: string) {
             video_url: products.video_url,
             description: products.description,
             categoryName: categories.name,
+            categoryId: products.category_id,
             sizes: products.sizes,
             stock: products.stock,
             group_id: products.group_id,
@@ -350,6 +364,8 @@ export async function getCachedProductById(id: string) {
             additional_details: products.additional_details,
             has_size_guide: products.has_size_guide,
             size_guide_template: products.size_guide_template,
+            has_price_variation: products.has_price_variation,
+            size_prices: products.size_prices,
           })
           .from(products)
           .leftJoin(categories, eq(products.category_id, categories.id))

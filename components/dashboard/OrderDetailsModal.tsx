@@ -23,6 +23,14 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
 
   if (!isOpen || !order) return null;
 
+  const originalSubTotal = order.items?.reduce((acc: number, item: any) => {
+    const originalUnit = item.originalUnitPrice || item.unitPrice || 0;
+    const stitch = item.stitchingCharge || 0;
+    return acc + ((originalUnit + stitch) * item.quantity);
+  }, 0) || order.subTotal;
+
+  const totalSavings = originalSubTotal > order.subTotal ? originalSubTotal - order.subTotal : 0;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-[#111410]/60 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -113,24 +121,33 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
 
                           {/* 🎯 বেসিক স্টাইলস */}
                           {item.productStyles && Object.keys(item.productStyles).length > 0 && (
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
-                              {Object.entries(item.productStyles).map(([key, val]) => (
-                                <p key={key} className="text-[11px] text-[#1C221A]/70 flex items-center gap-1">
-                                  <span className="font-medium text-[#4A5D23]">{formatText(key)}:</span> {formatText(val as string)}
-                                </p>
-                              ))}
+                            <div className="mb-4">
+                              <p className="text-[9px] uppercase tracking-widest text-[#1C221A]/50 mb-2">Basic Styles</p>
+                              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                                {Object.entries(item.productStyles).map(([key, val]) => (
+                                  <div key={key} className="px-3 py-2 bg-white rounded-lg border border-[#D4D7C9]/60 shadow-sm flex flex-col justify-center sm:min-w-[120px]">
+                                    <span className="text-[9px] uppercase tracking-widest text-[#1C221A]/50 mb-0.5">{formatText(key)}</span>
+                                    <span className="text-[12px] text-[#17210C] capitalize">{formatText(val as string)}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
 
                           {/* 🎯 অ্যাডভান্সড স্পেকস */}
                           {item.tailoringDetails && Object.keys(item.tailoringDetails).length > 0 && (
-                            <div className="flex flex-wrap gap-x-3 gap-y-1.5 p-2 bg-[#4A5D23]/5 rounded-lg border border-[#4A5D23]/10 mb-2">
-                              <span className="w-full font-heading text-[9px] font-bold uppercase tracking-widest text-[#4A5D23] mb-0.5">Advanced Specs</span>
-                              {Object.entries(item.tailoringDetails).map(([key, val]) => (
-                                <p key={key} className="text-[11px] text-[#1C221A]/70 flex items-center gap-1">
-                                  <span className="font-medium text-[#4A5D23]">{formatText(key)}:</span> {formatText(val as string)}
-                                </p>
-                              ))}
+                            <div className="mb-4 p-3.5 bg-[#4A5D23]/[0.03] rounded-xl border border-[#4A5D23]/10">
+                              <p className="text-[9px] uppercase tracking-widest text-[#4A5D23]/70 mb-2.5 flex items-center gap-1.5">
+                                Advanced Specs
+                              </p>
+                              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                                {Object.entries(item.tailoringDetails).map(([key, val]) => (
+                                  <div key={key} className="px-3 py-2 bg-white/80 rounded-lg border border-[#4A5D23]/15 flex flex-col justify-center sm:min-w-[120px]">
+                                    <span className="text-[9px] uppercase tracking-widest text-[#4A5D23]/60 mb-0.5">{formatText(key)}</span>
+                                    <span className="text-[12px] text-[#17210C] capitalize">{formatText(val as string)}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
 
@@ -138,14 +155,23 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                           {item.measurements ? (
                             <>
                               <p><span className="text-[#17210C]">Size:</span> Custom</p>
-                              <div className="mt-2 mb-2 px-4 py-3 bg-white rounded-xl border border-[#D4D7C9]/40 shadow-sm w-fit">
-                                <p className="text-[10px] font-medium uppercase tracking-widest mb-1.5 text-[#4A5D23] flex items-center gap-1.5">
+                              <div className="mt-2 mb-2 py-3 bg-white rounded-xl border border-[#D4D7C9]/40 shadow-sm w-fit">
+                                <p className="px-4 text-[10px] font-medium uppercase tracking-widest mb-3 text-[#4A5D23] flex items-center gap-1.5">
                                   <Scissors className="w-3.5 h-3.5" /> Measurements
                                 </p>
-                                <div className="flex gap-4 font-mono text-xs text-[#1C221A]/80 divide-x divide-[#D4D7C9]/80">
-                                  {Object.entries(item.measurements).map(([key, val], i) => (
-                                    <div key={key} className={i !== 0 ? "pl-4" : ""}>
-                                      {formatText(key).slice(0, 3)}: {String(val)}"
+                                <div className={`grid grid-cols-3 ${Object.keys(item.measurements).length === 5 ? 'md:grid-cols-5' : 'md:grid-cols-6'} gap-y-3 font-mono`}>
+                                  {Object.entries(item.measurements).map(([key, val], i, arr) => (
+                                    <div
+                                      key={key}
+                                      className={`flex flex-col items-center justify-center px-4 border-[#D4D7C9]/80 border-r [&:nth-child(3n)]:border-r-0 ${arr.length === 5
+                                        ? 'md:border-r md:[&:nth-child(3n)]:border-r md:[&:nth-child(5n)]:border-r-0'
+                                        : 'md:border-r md:[&:nth-child(3n)]:border-r md:[&:nth-child(6n)]:border-r-0'
+                                        } [&:last-child]:border-r-0`}
+                                    >
+                                      <div className="text-[10px] text-[#1C221A]/60 capitalize mb-1 text-center leading-tight">
+                                        {key.replace(/_/g, ' ')}
+                                      </div>
+                                      <div className="text-[#17210C] text-[13px]">{String(val)}"</div>
                                     </div>
                                   ))}
                                 </div>
@@ -177,7 +203,7 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                           )}
 
                           {item.stitchingCharge > 0 && (
-                            <p className="text-[#C25934] mt-2 font-medium">
+                            <p className="text-primary mt-2 font-medium">
                               + Stitching Charge: ৳ {item.stitchingCharge.toLocaleString()} × {item.quantity}
                             </p>
                           )}
@@ -193,8 +219,41 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
                     </div>
 
                     <div className="text-right font-sans shrink-0 mt-2 md:mt-0 border-t md:border-t-0 border-[#D4D7C9]/40 pt-3 md:pt-0">
-                      <p className="text-[11px] text-[#1C221A]/60">Qty: {item.quantity} × ৳ {item.unitPrice.toLocaleString()}</p>
-                      <p className="text-[15px] text-[#17210C] mt-0.5">৳ {item.totalPrice.toLocaleString()}</p>
+                      {item.discountPercentage > 0 ? (
+                        <div className="flex flex-col items-end">
+                          {/* 🎯 ডিসকাউন্ট ব্যাজ */}
+                          <span className="inline-block px-1.5 py-0.5 mb-1.5 text-[10px] uppercase tracking-widest text-[#C25934] bg-[#C25934]/10 rounded border border-[#C25934]/20">
+                            {item.discountPercentage}% OFF
+                          </span>
+
+                          {/* 🎯 Qty × Unit Price (Original vs Discounted) */}
+                          <p className="text-[12px] text-[#1C221A]/60 flex items-center justify-end gap-1.5">
+                            Qty: {item.quantity} ×
+                            <span className="line-through decoration-[#C25934]/40 text-[#1C221A]/40">
+                              ৳{(item.originalUnitPrice || item.unitPrice).toLocaleString()}
+                            </span>
+                            <span className="font-medium text-[#17210C]">
+                              ৳{item.unitPrice.toLocaleString()}
+                            </span>
+                          </p>
+
+                          {/* 🎯 Total Price (Original vs Discounted) */}
+                          <div className="flex items-baseline justify-end gap-2 mt-1">
+                            <span className="text-[13px] text-[#1C221A]/40 line-through decoration-[#C25934]/40">
+                              {/* অরিজিনাল টোটাল = (অরিজিনাল প্রাইস + স্টিচিং চার্জ) × পরিমাণ */}
+                              ৳{(((item.originalUnitPrice || item.unitPrice) + (item.stitchingCharge || 0)) * item.quantity).toLocaleString()}
+                            </span>
+                            <span className="text-[15px] text-[#C25934]">
+                              ৳{item.totalPrice.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-[11px] text-[#1C221A]/60">Qty: {item.quantity} × ৳ {item.unitPrice.toLocaleString()}</p>
+                          <p className="text-[15px] text-[#17210C] mt-0.5 font-medium">৳ {item.totalPrice.toLocaleString()}</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -203,27 +262,47 @@ export default function OrderDetailsModal({ order, isOpen, onClose, onPrint }: {
           </div>
 
           <div className="flex justify-end pt-6 border-t border-[#D4D7C9]/40 font-sans">
-            <div className="w-full md:w-1/2 lg:w-1/3 space-y-2.5 text-xs">
-              <div className="flex justify-between text-[#1C221A]/70">
-                <span>Subtotal:</span>
-                <span>৳ {order.subTotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between text-[#1C221A]/70">
-                <span>Delivery Charge:</span>
-                <span>+ ৳ {order.deliveryCharge.toLocaleString()}</span>
-              </div>
-              {order.discount > 0 && (
-                <div className="flex justify-between text-[#4A5D23]">
-                  <span>Discount:</span>
-                  <span>- ৳ {order.discount.toLocaleString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center pt-3 mt-3 border-t border-[#D4D7C9]/60">
-                <span className="text-sm uppercase tracking-widest text-[#17210C]">Grand Total:</span>
-                <span className="text-[18px] text-[#C25934]">৳ {order.grandTotal.toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+  <div className="w-full md:w-1/2 lg:w-1/3 space-y-2.5 text-[13px] ">
+    
+    {/* 🎯 স্টাইল ১: টপ প্লেসমেন্ট ব্যাজ */}
+    {totalSavings > 0 && (
+      <div className="flex justify-end">
+        <span className="inline-flex items-center px-2 py-0.5 bg-[#4A5D23]/10 text-[#4A5D23] rounded text-[10px] font-medium uppercase tracking-wider border border-[#4A5D23]/20">
+          Total Savings: ৳ {totalSavings.toLocaleString()}
+        </span>
+      </div>
+    )}
+
+    <div className="flex justify-between items-center text-[#1C221A]/70">
+      <span>Subtotal:</span>
+      <div className="flex items-center gap-2">
+        {totalSavings > 0 && (
+          <span className="text-[12px] text-[#1C221A]/40 line-through">
+            ৳ {originalSubTotal.toLocaleString()}
+          </span>
+        )}
+        <span className="text-[#17210C]">৳ {order.subTotal.toLocaleString()}</span>
+      </div>
+    </div>
+
+    <div className="flex justify-between text-[#1C221A]/70">
+      <span>Delivery Charge:</span>
+      <span>+ ৳ {order.deliveryCharge.toLocaleString()}</span>
+    </div>
+    
+    {order.discount > 0 && (
+      <div className="flex justify-between text-[#4A5D23]">
+        <span>Discount:</span>
+        <span>- ৳ {order.discount.toLocaleString()}</span>
+      </div>
+    )}
+    
+    <div className="flex justify-between items-center pt-3 mt-3 border-t border-[#D4D7C9]/60">
+      <span className="text-sm uppercase tracking-widest text-[#17210C]">Grand Total:</span>
+      <span className="text-[18px] text-[#C25934]">৳ {order.grandTotal.toLocaleString()}</span>
+    </div>
+  </div>
+</div>
 
         </div>
       </div>

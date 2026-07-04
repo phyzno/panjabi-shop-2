@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Maximize2, PlayCircle, ShoppingCart, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCartStore } from '@/store/cartStore';
-import { getProductVariants, getProductById } from '@/lib/actions/product.actions';
+import { getProductVariants, getCachedProductById } from '@/lib/actions/product.actions';
 import type { CollectionProduct } from './ProductCard';
 
 type SizeMode = 'preset' | 'number';
@@ -39,6 +39,7 @@ interface CollectionQuickViewModalProps {
   isOpen: boolean;
   onClose: () => void;
   size?: CollectionQuickViewSizeProps;
+  activePriceRange?: [number, number];
 }
 
 export function CollectionQuickViewModal({
@@ -46,6 +47,7 @@ export function CollectionQuickViewModal({
   isOpen,
   onClose,
   size,
+  activePriceRange,
 }: CollectionQuickViewModalProps) {
   const [product, setProduct] = useState<ExtendedCollectionProduct | null>(null);
   const [isChangingVariant, setIsChangingVariant] = useState(false);
@@ -118,17 +120,59 @@ export function CollectionQuickViewModal({
     setIsHoveringBtn(false);
     setIsExpanded(false);
 
-    const allAvailableSizes = incomingProduct.sizes || [];
+    // 🎯 Final Price ক্যালকুলেট করার হেল্পার ফাংশন
+    const getFinalPrice = (size: string) => {
+      const rawBasePrice = Number(String(incomingProduct.price).replace(/[^0-9.]/g, ''));
+      const sizePricesObj = typeof incomingProduct.size_prices === 'string'
+        ? JSON.parse(incomingProduct.size_prices)
+        : (incomingProduct.size_prices || {});
+
+      const currentRawPrice = incomingProduct.has_price_variation && sizePricesObj[size]
+        ? Number(sizePricesObj[size])
+        : rawBasePrice;
+
+      const discount = incomingProduct.discount_percentage || 0;
+      return discount > 0 ? Math.round(currentRawPrice - (currentRawPrice * (discount / 100))) : currentRawPrice;
+    };
+
+    const allAvailableSizes = [...(incomingProduct.sizes || [])];
     const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
     const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
 
-    const initialMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
-    setSizeMode(initialMode);
+    let targetSize = '';
+    let targetMode: SizeMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
 
-    const initialSizes = initialMode === 'preset' ? dbPresetSizes : dbNumericSizes;
-    setSelectedSize(initialSizes[0] || '');
+    if (incomingProduct.has_price_variation) {
+      let validSizes = [...allAvailableSizes];
+      
+      // স্লাইডার রেঞ্জ থাকলে ফিল্টার করা, না থাকলে পুরো অ্যারে থেকেই লোয়েস্ট প্রাইস খোঁজা হবে
+      if (activePriceRange) {
+        const [minRange, maxRange] = activePriceRange;
+        validSizes = validSizes.filter(size => {
+          const price = getFinalPrice(size);
+          return price >= minRange && price <= maxRange;
+        });
+      }
 
-  }, [isOpen, incomingProduct]);
+      validSizes.sort((a, b) => getFinalPrice(a) - getFinalPrice(b));
+
+      if (validSizes.length > 0) {
+        targetSize = validSizes[0];
+        targetMode = isNaN(Number(targetSize)) ? 'preset' : 'number';
+      }
+    }
+
+    // ভ্যারিয়েশন না থাকলে বা কোনো সাইজ না পেলে ন্যাচারাল অর্ডারের প্রথমটি
+    if (!targetSize) {
+      targetMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
+      const initialSizes = targetMode === 'preset' ? dbPresetSizes : dbNumericSizes;
+      targetSize = initialSizes[0] || '';
+    }
+
+    setSizeMode(targetMode);
+    setSelectedSize(targetSize);
+
+  }, [isOpen, incomingProduct, activePriceRange]);
 
   useEffect(() => {
     if (isOpen) {
@@ -162,15 +206,26 @@ export function CollectionQuickViewModal({
     setModalImgIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1));
   };
 
-  // Pricing Logic Update
+  // 🎯 Pricing Logic Update - Dynamic based on selectedSize
   const parsePrice = (price: string | number) => {
     const numericPrice = typeof price === 'number'
       ? price
-      : Number(price.replace(/[^0-9.]/g, ''));
+      : Number(String(price).replace(/[^0-9.]/g, ''));
     return Number.isFinite(numericPrice) ? numericPrice : 0;
   };
 
-  const rawPrice = parsePrice(product.price);
+  const getDynamicRawPrice = () => {
+    const rawBasePrice = parsePrice(product.price);
+    if (product.has_price_variation && selectedSize) {
+      const sizePricesObj = typeof product.size_prices === 'string'
+        ? JSON.parse(product.size_prices)
+        : (product.size_prices || {});
+      return sizePricesObj[selectedSize] ? Number(sizePricesObj[selectedSize]) : rawBasePrice;
+    }
+    return rawBasePrice;
+  };
+
+  const rawPrice = getDynamicRawPrice();
   const hasDiscount = (product.discount_percentage ?? 0) > 0;
   const finalDiscountedPrice = hasDiscount
     ? Math.round(rawPrice - (rawPrice * (product.discount_percentage! / 100)))
@@ -184,13 +239,13 @@ export function CollectionQuickViewModal({
       productName: product.name,
       productType: 'readymade',
       image: product.images?.[0] || '',
-      
+
       // 🎯 নতুন প্রাইসিং ফিল্ডগুলো
       originalUnitPrice: rawPrice,
       discountPercentage: product.discount_percentage || 0,
       unitPrice: finalDiscountedPrice,
       stitchingCharge: 0,
-      
+
       sizeMode: sizeMode,
       sizeValue: selectedSize,
     });
@@ -204,7 +259,7 @@ export function CollectionQuickViewModal({
 
     try {
       // সার্ভার অ্যাকশন কল করে নতুন কালারের প্রোডাক্ট ডেটা আনা হচ্ছে
-      const res = await getProductById(swatchId);
+      const res = await getCachedProductById(swatchId);
 
       if (res && res.success && res.data) {
         const p = res.data;
@@ -213,13 +268,13 @@ export function CollectionQuickViewModal({
         const formattedProduct: ExtendedCollectionProduct = {
           id: p.id.toString(),
           name: p.name,
-          category: p.categoryName || p.category || 'Uncategorized',
+          category: p.categoryName || 'Uncategorized',
           price: `৳ ${p.price}`,
           discount_percentage: p.discount_percentage || 0,
-          images: p.images || [],
+          images: (p.images as string[]) || [],
           description: p.description || '',
           sizes: (p.sizes as string[]) || [],
-          stock: p.stock || {},
+          stock: (p.stock as Record<string, number>) || {},
           group_id: p.group_id || null,
           color_name: p.color_name || null,
           color_hex: p.color_hex || null,
@@ -249,7 +304,11 @@ export function CollectionQuickViewModal({
 
   const handleViewFullDetails = () => {
     onClose();
-    router.push(`/shop/${product.id}`);
+    let url = `/shop/${product.id}`;
+    if (product.has_price_variation && activePriceRange) {
+      url += `?min=${activePriceRange[0]}&max=${activePriceRange[1]}`;
+    }
+    router.push(url);
   };
 
   const getEmbedUrl = (url: string) => {

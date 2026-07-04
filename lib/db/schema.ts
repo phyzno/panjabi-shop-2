@@ -27,6 +27,9 @@ export const products = pgTable("products", {
   additional_details: jsonb("additional_details").default([]), 
   has_size_guide: boolean("has_size_guide").default(true),
   size_guide_template: text("size_guide_template").default("panjabi"),
+
+  has_price_variation: boolean("has_price_variation").default(false),
+  size_prices: jsonb("size_prices").default({}),
   
   // Multi-color Product Variants এর জন্য নতুন ৩টি কলাম
   group_id: text("group_id"), 

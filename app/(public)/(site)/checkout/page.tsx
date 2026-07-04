@@ -15,6 +15,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const toggleNote = (cartItemId: string) => {
     setExpandedNotes(prev => ({ ...prev, [cartItemId]: !prev[cartItemId] }));
@@ -49,6 +50,21 @@ export default function CheckoutPage() {
   if (!mounted) return null;
 
   if (items.length === 0) {
+    // যদি রিডাইরেক্ট হওয়ার প্রসেসে থাকে, তবে সুন্দর একটি লোডিং স্ক্রিন দেখাবে
+    if (isRedirecting) {
+      return (
+        <div className="min-h-screen bg-[#F8F9F5] flex flex-col items-center justify-center text-center px-4">
+          <Loader2 className="w-10 h-10 text-[#4A5D23] animate-spin mb-4" />
+          <h1 className="font-heading text-xl font-bold uppercase tracking-wider text-[#17210C] animate-pulse">
+            Finalizing your order...
+          </h1>
+          <p className="font-sans text-xs text-[#1C221A]/60 mt-2">
+            Please wait while we prepare your invoice.
+          </p>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[#F8F9F5] pt-32 pb-20 flex flex-col items-center justify-center text-center px-4">
         <div className="w-20 h-20 bg-[#EBECE3] rounded-full flex items-center justify-center mb-4">
@@ -116,6 +132,7 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         originalUnitPrice: item.originalUnitPrice,
+        discountPercentage: item.discountPercentage || 0,
         stitchingCharge: item.stitchingCharge || 0,
         totalPrice: item.totalPrice,
         sizeMode: item.sizeMode || null,
@@ -133,6 +150,7 @@ export default function CheckoutPage() {
     const result = await createOrder(payload);
 
     if (result.success) {
+      setIsRedirecting(true);
       clearCart();
       router.push(`/checkout/success?orderId=${result.orderId}`);
     } else {

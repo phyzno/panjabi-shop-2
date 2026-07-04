@@ -28,8 +28,8 @@ export default function ContactPage() {
               Flagship Studio
             </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold uppercase tracking-[0.1em] mb-6 text-[#17210C] leading-[1.15]">
-              Banani <br className="hidden lg:block" />
-              <span className="text-[#4A5D23]">Atelier</span>
+              Mens'O <br className="hidden lg:block" />
+              <span className="text-[#4A5D23]">Fashion</span>
             </h1>
             
             <p className="font-sans text-[#1C221A]/70 text-[14px] md:text-[15px] font-normal tracking-wide leading-relaxed mb-10 max-w-lg">

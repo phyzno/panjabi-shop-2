@@ -12,9 +12,10 @@ interface QuickAddModalProps {
   product: CollectionProduct | null;
   isOpen: boolean;
   onClose: () => void;
+  activePriceRange?: [number, number];
 }
 
-export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) {
+export function QuickAddModal({ product, isOpen, onClose, activePriceRange }: QuickAddModalProps) {
   const [sizeMode, setSizeMode] = useState<SizeMode>('preset');
   const [selectedSize, setSelectedSize] = useState<string>('');
   const addItem = useCartStore((state) => state.addItem);
@@ -24,9 +25,25 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
     ? JSON.parse(product.stock)
     : (product?.stock || {});
 
+  // 🎯 Final Price ক্যালকুলেট করার হেল্পার ফাংশন
+  const getFinalPrice = (size: string) => {
+    if (!product) return 0;
+    const rawBasePrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+    const sizePricesObj = typeof product.size_prices === 'string'
+      ? JSON.parse(product.size_prices)
+      : (product.size_prices || {});
+
+    const currentRawPrice = product.has_price_variation && sizePricesObj[size]
+      ? Number(sizePricesObj[size])
+      : rawBasePrice;
+
+    const discount = product.discount_percentage || 0;
+    return discount > 0 ? Math.round(currentRawPrice - (currentRawPrice * (discount / 100))) : currentRawPrice;
+  };
+
   const dbPresetSizes = allAvailableSizes.filter(size => isNaN(Number(size)));
   const dbNumericSizes = allAvailableSizes.filter(size => !isNaN(Number(size)));
-  
+
   const hasBothModes = dbPresetSizes.length > 0 && dbNumericSizes.length > 0;
   const activeSizes = sizeMode === 'preset' ? dbPresetSizes : dbNumericSizes;
 
@@ -35,27 +52,64 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
 
   useEffect(() => {
     if (isOpen && product) {
-      const initialMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
-      setSizeMode(initialMode);
-      const initialSizes = initialMode === 'preset' ? dbPresetSizes : dbNumericSizes;
-      setSelectedSize(initialSizes[0] || '');
+      let targetSize = '';
+      let targetMode: SizeMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
+
+      if (product.has_price_variation) {
+        let validSizes = [...allAvailableSizes];
+        
+        // স্লাইডার থাকলে রেঞ্জ অনুযায়ী ফিল্টার
+        if (activePriceRange) {
+          const [minRange, maxRange] = activePriceRange;
+          validSizes = validSizes.filter(size => {
+            const price = getFinalPrice(size);
+            return price >= minRange && price <= maxRange;
+          });
+        }
+        
+        // রেঞ্জ বা ওভারঅল থেকে সবচেয়ে কম দামের সাইজটি বের করা
+        validSizes.sort((a, b) => getFinalPrice(a) - getFinalPrice(b));
+
+        if (validSizes.length > 0) {
+          targetSize = validSizes[0];
+          targetMode = isNaN(Number(targetSize)) ? 'preset' : 'number';
+        }
+      }
+
+      // ভ্যারিয়েশন না থাকলে বা রেঞ্জে ম্যাচ না করলে ন্যাচারাল ডিফল্ট
+      if (!targetSize) {
+        targetMode = dbPresetSizes.length > 0 ? 'preset' : 'number';
+        const initialSizes = targetMode === 'preset' ? dbPresetSizes : dbNumericSizes;
+        targetSize = initialSizes[0] || '';
+      }
+
+      setSizeMode(targetMode);
+      setSelectedSize(targetSize);
     }
-  }, [isOpen, product, dbPresetSizes.length, dbNumericSizes.length]);
+  }, [isOpen, product, activePriceRange]);
 
   if (!product || !isOpen) return null;
 
+  // 🎯 Dynamic Raw Price (সিলেক্টেড সাইজের উপর ভিত্তি করে)
+  const getDynamicRawPrice = () => {
+    const rawBasePrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+    if (product.has_price_variation && selectedSize) {
+      const sizePricesObj = typeof product.size_prices === 'string'
+        ? JSON.parse(product.size_prices)
+        : (product.size_prices || {});
+      return sizePricesObj[selectedSize] ? Number(sizePricesObj[selectedSize]) : rawBasePrice;
+    }
+    return rawBasePrice;
+  };
+
+  const currentRawPrice = getDynamicRawPrice();
+  const discountPercent = product.discount_percentage || 0;
+  const currentFinalPrice = discountPercent > 0
+    ? Math.round(currentRawPrice - (currentRawPrice * (discountPercent / 100)))
+    : currentRawPrice;
+
   const handleAddToCart = () => {
     if (isOutOfStock || !selectedSize) return;
-
-    const numericPrice = typeof product.price === 'number' 
-      ? product.price 
-      : Number(String(product.price).replace(/[^0-9.]/g, ''));
-
-    // 🎯 ডাইনামিক প্রাইসিং ও ডিসকাউন্ট ক্যালকুলেশন
-    const discountPercent = product.discount_percentage || 0;
-    const discountedPrice = discountPercent > 0
-      ? Math.round(numericPrice - (numericPrice * (discountPercent / 100)))
-      : numericPrice;
 
     addItem({
       productId: String(product.id),
@@ -63,10 +117,10 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
       productType: 'readymade',
       image: product.images?.[0] || '',
       
-      // 🎯 নতুন প্রাইসিং ফিল্ডগুলো
-      originalUnitPrice: numericPrice,
+      // 🎯 ডাইনামিক প্রাইসিং কার্টে পাঠানো হচ্ছে
+      originalUnitPrice: currentRawPrice,
       discountPercentage: discountPercent,
-      unitPrice: discountedPrice,
+      unitPrice: currentFinalPrice,
       stitchingCharge: 0,
       
       sizeMode: sizeMode,
@@ -100,9 +154,17 @@ export function QuickAddModal({ product, isOpen, onClose }: QuickAddModalProps) 
             <h3 className="font-heading text-lg font-bold uppercase tracking-wider text-[#17210C] line-clamp-2 leading-tight">
               {product.name}
             </h3>
-            <p className="font-sans text-sm text-[#C25934] mt-1">
-              {product.price}
-            </p>
+            {/* 🎯 ডায়নামিক প্রাইস ডিসপ্লে */}
+            <div className="flex items-center flex-wrap gap-2 mt-1">
+              <p className="font-sans text-sm font-medium text-[#C25934]">
+                ৳ {currentFinalPrice}
+              </p>
+              {discountPercent > 0 && (
+                <span className="line-through text-[#1C221A]/40 text-xs font-sans">
+                  ৳ {currentRawPrice}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

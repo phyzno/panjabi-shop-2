@@ -106,26 +106,61 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
   const filteredProducts = useMemo(() => {
     let result = [...shopProducts];
 
+    // Helper function to get min and max FINAL prices (after discount) including variations
+    const getProductPriceRange = (product: CollectionProduct) => {
+      const rawBasePrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+      const discount = product.discount_percentage || 0;
+
+      // 🎯 Discount calculation helper (exactly like ProductCard)
+      const applyDiscount = (price: number) => 
+        discount > 0 ? Math.round(price - (price * (discount / 100))) : price;
+
+      const finalBasePrice = applyDiscount(rawBasePrice);
+      let min = finalBasePrice;
+      let max = finalBasePrice;
+
+      if (product.has_price_variation && product.size_prices) {
+        const sizePricesObj = typeof product.size_prices === 'string' 
+          ? JSON.parse(product.size_prices) 
+          : product.size_prices;
+          
+        const variantPrices = Object.values(sizePricesObj)
+          .map(val => Number(val))
+          .filter(n => !isNaN(n))
+          .map(price => applyDiscount(price));
+
+        if (variantPrices.length > 0) {
+          min = Math.min(finalBasePrice, ...variantPrices);
+          max = Math.max(finalBasePrice, ...variantPrices);
+        }
+      }
+      return { min, max };
+    };
+
+    // 1. Search Filter
     if (searchQuery) {
       result = result.filter((product) => product.name.toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
+    // 2. Category Filter
     if (activeCategoryId !== 'all') {
       const validCategoryIds = getDescendantIds(activeCategoryId as number);
       result = result.filter((product) => product.categoryId !== undefined && validCategoryIds.includes(product.categoryId));
     }
 
+    // 3. Price Range Filter (Overlapping Logic ONLY for Slider using FINAL price)
     result = result.filter((product) => {
-      const numericPrice = Number(product.price.replace(/[^0-9.]/g, ''));
-      return numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
+      const { min, max } = getProductPriceRange(product);
+      return max >= priceRange[0] && min <= priceRange[1];
     });
 
+    // 4. Sorting Logic (Strictly based on 'min' or Final Base Price for Visual Consistency)
     switch (sortBy) {
       case 'price-low':
-        result.sort((a, b) => Number(a.price.replace(/[^0-9.]/g, '')) - Number(b.price.replace(/[^0-9.]/g, '')));
+        result.sort((a, b) => getProductPriceRange(a).min - getProductPriceRange(b).min);
         break;
       case 'price-high':
-        result.sort((a, b) => Number(b.price.replace(/[^0-9.]/g, '')) - Number(a.price.replace(/[^0-9.]/g, '')));
+        result.sort((a, b) => getProductPriceRange(b).min - getProductPriceRange(a).min); 
         break;
       case 'newest':
       default:
@@ -379,6 +414,7 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
                     onQuickView={openQuickView}
                     className="w-full"
                     size={productCardSize}
+                    activePriceRange={priceRange}
                   />
                 ))}
               </div>
@@ -445,6 +481,7 @@ export default function ShopPage({ initialProducts, initialCategories }: ShopCli
         isOpen={Boolean(quickViewProduct)}
         onClose={closeQuickView}
         size={quickViewSize}
+        activePriceRange={priceRange}
       />
     </div>
   );

@@ -232,6 +232,11 @@ export function CustomizeClient({
       return;
     }
 
+    if (expandedStep === 2 && !selectedFabric) {
+      setShowFabricAlert(true);
+      return;
+    }
+
     const currentStepName = getStepName(expandedStep);
     if (currentStepName) {
       store.markStepCompleted(activeProductId, currentStepName);
@@ -320,6 +325,7 @@ export function CustomizeClient({
   const [activeBottomSheet, setActiveBottomSheet] = useState<'product' | 'fabric' | 'style' | 'advanced' | null>(null);
   const [mobileViewedSteps, setMobileViewedSteps] = useState<string[]>([]);
   const [furthestStepIndex, setFurthestStepIndex] = useState<number>(0);
+  const [showFabricAlert, setShowFabricAlert] = useState(false);
 
   // 🎯 Phase 3: Mobile Sequence & Auto-Scroll State
   const [mobileSequenceIndex, setMobileSequenceIndex] = useState(0);
@@ -1010,7 +1016,7 @@ export function CustomizeClient({
 
     const dynamicProductName = isTailoring
       ? `Custom Tailored ${motherCatName}${formattedSubCat ? ` - ${formattedSubCat}` : ''} - ${productIndex}`
-      : `Premium Fabric Bolt - ${selectedFabric?.name || 'Premium Fabric'}`;
+      : `Fabric Bolt - ${selectedFabric?.name || 'Premium Fabric'}`;
 
 
     // 🎯 4. Add to Cart with updated Name and Size Value
@@ -2626,6 +2632,33 @@ export function CustomizeClient({
                 Reset
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎯 Minimal Fabric Alert Modal */}
+      {showFabricAlert && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
+          <div 
+            className="absolute inset-0 bg-[#111410]/40 backdrop-blur-sm transition-opacity" 
+            onClick={() => setShowFabricAlert(false)} 
+          />
+          <div className="relative bg-white w-full max-w-[300px] rounded-2xl p-5 text-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 bg-[#C25934]/10 text-[#C25934] rounded-full flex items-center justify-center mx-auto mb-3">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <h3 className="font-heading text-[13px] font-bold text-[#17210C] uppercase tracking-wider mb-1.5">
+              Fabric Required
+            </h3>
+            <p className="font-sans text-[11px] text-[#1C221A]/70 mb-5">
+              Please select a fabric before proceeding to the next step.
+            </p>
+            <button
+              onClick={() => setShowFabricAlert(false)}
+              className="w-full py-2.5 bg-[#17210C] text-white rounded-xl font-sans text-[11px] font-medium uppercase tracking-[0.15em] hover:bg-[#4A5D23] transition-colors cursor-pointer shadow-md"
+            >
+              Okay, I'll select
+            </button>
           </div>
         </div>
       )}

@@ -43,7 +43,9 @@ export async function getAdminOrders() {
           stitchingCharge: item.stitching_charge ? Number(item.stitching_charge) : undefined,
           productStyles: item.product_styles || undefined,
           tailoringDetails: item.tailoring_details || undefined,
-          specialInstructions: item.special_instructions || undefined
+          specialInstructions: item.special_instructions || undefined,
+          originalUnitPrice: item.original_unit_price,
+          discountPercentage: item.discount_percentage
         }))
       };
     });
@@ -135,7 +137,9 @@ export async function getOrderById(orderId: string) {
         stitchingCharge: item.stitching_charge ? Number(item.stitching_charge) : undefined,
         productStyles: item.product_styles || undefined,
         tailoringDetails: item.tailoring_details || undefined,
-        specialInstructions: item.special_instructions || undefined
+        specialInstructions: item.special_instructions || undefined,
+        originalUnitPrice: item.original_unit_price,
+        discountPercentage: item.discount_percentage
       }))
     };
 

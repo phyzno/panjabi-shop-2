@@ -45,55 +45,78 @@ export default function WishlistClient({ userId, initialItems }: { userId: strin
     <div className="space-y-4">
       {items.length > 0 ? (
         <div className="flex flex-col gap-4">
-          {items.map(({ wishlist_id, product }) => (
-            <div 
-              key={wishlist_id} 
-              className="flex flex-row items-center gap-4 bg-white rounded-2xl p-3 sm:p-4 border border-[#D4D7C9]/50 shadow-[0_2px_10px_rgba(14,20,9,0.02)] hover:shadow-md transition-all group"
-            >
-              
-              <div className="relative w-20 h-24 sm:w-24 sm:h-28 bg-[#EBECE3] rounded-xl overflow-hidden shrink-0 cursor-pointer" onClick={() => handleQuickView(product)}>
-                <img 
-                  src={product.images?.[0] || '/placeholder.png'} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-              </div>
-              
-              <div className="flex-1 flex flex-col justify-center min-w-0">
-                <h3 
-                  onClick={() => handleQuickView(product)}
-                  className="font-heading text-sm sm:text-base font-bold uppercase tracking-wider text-[#17210C] truncate cursor-pointer hover:text-[#4A5D23] transition-colors"
-                >
-                  {product.name}
-                </h3>
-                <p className="font-sans text-xs sm:text-sm font-medium text-[#C25934] mt-1 tracking-widest">
-                  ৳ {product.price.toLocaleString()}
-                </p>
-                <span className="font-sans text-[10px] uppercase tracking-widest text-[#1C221A]/50 mt-1 sm:mt-2">
-                  {product.category || 'Apparel'}
-                </span>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 shrink-0 pr-2">
-                <button 
-                  onClick={() => handleQuickView(product)}
-                  className="w-8 h-8 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 flex items-center justify-center gap-2 bg-[#F8F9F5] border border-[#D4D7C9] text-[#1C221A] rounded-full sm:rounded-xl hover:bg-[#4A5D23] hover:text-white hover:border-[#4A5D23] transition-all cursor-pointer"
-                  title="Quick View"
-                >
-                  <Eye className="w-4 h-4" /> 
-                  <span className="hidden sm:inline font-sans text-[11px] uppercase tracking-widest font-medium">View</span>
-                </button>
+          {items.map(({ wishlist_id, product }) => {
+            // 🎯 Pricing & Discount Logic for Wishlist Item
+            const numericPrice = typeof product.price === 'number' 
+              ? product.price 
+              : Number(String(product.price).replace(/[^0-9.]/g, ''));
+            const rawPrice = Number.isFinite(numericPrice) ? numericPrice : 0;
+            const hasDiscount = (product.discount_percentage ?? 0) > 0;
+            const discountedPrice = hasDiscount 
+              ? Math.round(rawPrice - (rawPrice * (product.discount_percentage / 100))) 
+              : rawPrice;
+            const displayPricePrefix = product.has_price_variation ? "From ৳ " : "৳ ";
 
-                <button 
-                  onClick={() => setDeleteModal({ isOpen: true, productId: product.id, wishlistId: wishlist_id })}
-                  className="w-8 h-8 flex items-center justify-center text-accent hover:text-red-500 bg-[#F8F9F5] hover:bg-red-50 rounded-full sm:rounded-lg transition-colors border border-transparent hover:border-red-100 cursor-pointer"
-                  title="Remove from Wishlist"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+            return (
+              <div 
+                key={wishlist_id} 
+                className="flex flex-row items-center gap-4 bg-white rounded-2xl p-3 sm:p-4 border border-[#D4D7C9]/50 shadow-[0_2px_10px_rgba(14,20,9,0.02)] hover:shadow-md transition-all group"
+              >
+                
+                <div className="relative w-20 h-24 sm:w-24 sm:h-28 bg-[#EBECE3] rounded-xl overflow-hidden shrink-0 cursor-pointer" onClick={() => handleQuickView(product)}>
+                  <img 
+                    src={product.images?.[0] || '/placeholder.png'} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
+                
+                <div className="flex-1 flex flex-col justify-center min-w-0">
+                  <h3 
+                    onClick={() => handleQuickView(product)}
+                    className="font-heading text-sm sm:text-base font-bold uppercase tracking-wider text-[#17210C] truncate cursor-pointer hover:text-[#4A5D23] transition-colors"
+                  >
+                    {product.name}
+                  </h3>
+
+                  {/* 🎯 Updated Price Display */}
+                  <div className="flex items-center flex-wrap gap-1.5 mt-1">
+                    <p className="font-sans text-xs sm:text-sm font-medium text-[#C25934] tracking-widest">
+                      {displayPricePrefix}{discountedPrice.toLocaleString()}
+                    </p>
+                    {hasDiscount && (
+                      <span className="line-through text-[#1C221A]/40 text-[10px] font-sans">
+                        ৳ {rawPrice.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+
+                  <span className="font-sans text-[10px] uppercase tracking-widest text-[#1C221A]/50 mt-1 sm:mt-2">
+                    {product.category || 'Apparel'}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 shrink-0 pr-2">
+                  <button 
+                    onClick={() => handleQuickView(product)}
+                    className="w-8 h-8 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5 flex items-center justify-center gap-2 bg-[#F8F9F5] border border-[#D4D7C9] text-[#1C221A] rounded-full sm:rounded-xl hover:bg-[#4A5D23] hover:text-white hover:border-[#4A5D23] transition-all cursor-pointer"
+                    title="Quick View"
+                  >
+                    <Eye className="w-4 h-4" /> 
+                    <span className="hidden sm:inline font-sans text-[11px] uppercase tracking-widest font-medium">View</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setDeleteModal({ isOpen: true, productId: product.id, wishlistId: wishlist_id })}
+                    className="w-8 h-8 flex items-center justify-center text-accent hover:text-red-500 bg-[#F8F9F5] hover:bg-red-50 rounded-full sm:rounded-lg transition-colors border border-transparent hover:border-red-100 cursor-pointer"
+                    title="Remove from Wishlist"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-20 sm:py-24 bg-white rounded-2xl border border-[#D4D7C9]/50 shadow-sm">

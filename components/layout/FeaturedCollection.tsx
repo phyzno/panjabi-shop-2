@@ -17,7 +17,7 @@ export default async function FeaturedCollection() {
 
   const featuredProducts = dbProducts.map((p) => {
     let current = allCategories?.find((c) => {
-      if (p.category_id && c.id === p.category_id) return true;
+      if (p.categoryId && c.id === p.categoryId) return true;
       if (p.categoryName && c.name.toLowerCase() === p.categoryName.toLowerCase()) return true;
       return false;
     });
@@ -25,7 +25,7 @@ export default async function FeaturedCollection() {
     const path = [];
     while (current) {
       path.unshift(current);
-      current = current.parent_id ? categoryMap.get(current.parent_id) : null;
+      current = current.parent_id ? categoryMap.get(current.parent_id) : undefined;
     }
 
     const motherCategoryName = path[0] ? path[0].name : 'Uncategorized';
@@ -44,8 +44,10 @@ export default async function FeaturedCollection() {
       category: directCategoryName,
       motherCategory: motherCategoryName,
       price: `৳ ${p.price}`,
-      discount_percentage: p.discount_percentage || 0, // যুক্ত করা হয়েছে
-      images: p.images || [],
+      discount_percentage: p.discount_percentage || 0,
+      has_price_variation: p.has_price_variation || false,
+      size_prices: (p.size_prices as Record<string, number>) || {},
+      images: Array.isArray(p.images) ? (p.images as string[]) : [],
       description: p.description || '',
       sizes: (p.sizes as string[]) || [],
       stock: p.stock as Record<string, any> || {},

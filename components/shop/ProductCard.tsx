@@ -14,8 +14,10 @@ export type CollectionProduct = {
   name: string;
   category: string;
   categoryId?: number;
-  price: string;
+  price: string | number;
   discount_percentage?: number; // যুক্ত করা হয়েছে
+  has_price_variation?: boolean; // নতুন
+  size_prices?: Record<string, number> | string;
   images: string[];
   description: string;
   sizes?: string[];
@@ -47,6 +49,7 @@ export interface CollectionProductCardProps {
   onQuickView?: (product: CollectionProduct) => void;
   className?: string;
   size?: CollectionProductCardSizeProps;
+  activePriceRange?: [number, number];
 }
 
 export function CollectionProductCard({
@@ -54,6 +57,7 @@ export function CollectionProductCard({
   onQuickView,
   className,
   size,
+  activePriceRange,
 }: CollectionProductCardProps) {
   const router = useRouter();
   const { user } = useAuthStore();
@@ -72,15 +76,25 @@ export function CollectionProductCard({
   const totalStock = Object.values(productStock).reduce((sum: any, val: any) => sum + (Number(val) || 0), 0) as number;
   const isCompletelyOutOfStock = (product.sizes?.length ?? 0) > 0 && totalStock === 0;
 
-  // Pricing Logic
-  const rawPrice = Number(product.price.replace(/[^0-9.]/g, ''));
+  // 🎯 Updated Pricing Logic
+  const numericPrice = typeof product.price === 'number' 
+    ? product.price 
+    : Number(String(product.price).replace(/[^0-9.]/g, ''));
+    
+  const rawPrice = Number.isFinite(numericPrice) ? numericPrice : 0;
   const hasDiscount = (product.discount_percentage ?? 0) > 0;
   const discountedPrice = hasDiscount 
     ? Math.round(rawPrice - (rawPrice * (product.discount_percentage! / 100))) 
     : rawPrice;
 
+  const displayPricePrefix = product.has_price_variation ? "From ৳ " : "৳ ";
+
   const handleCardClick = () => {
-    router.push(`/shop/${product.id}`);
+    let url = `/shop/${product.id}`;
+    if (product.has_price_variation && activePriceRange) {
+      url += `?min=${activePriceRange[0]}&max=${activePriceRange[1]}`;
+    }
+    router.push(url);
   };
 
   const handleWishlistClick = async (e: React.MouseEvent) => {
@@ -221,7 +235,7 @@ export function CollectionProductCard({
                   size?.priceClassName,
                 )}
               >
-                ৳ {hasDiscount ? discountedPrice : rawPrice}
+                {displayPricePrefix}{hasDiscount ? discountedPrice : rawPrice}
               </span>
               {hasDiscount && (
                 <span className="line-through text-[#1C221A]/40 text-[11px] font-sans ml-1">
@@ -260,6 +274,7 @@ export function CollectionProductCard({
         product={product} 
         isOpen={isQuickAddOpen} 
         onClose={() => setIsQuickAddOpen(false)}
+        activePriceRange={activePriceRange}
       />
       {showLoginModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-6" onClick={(e) => e.stopPropagation()}>
