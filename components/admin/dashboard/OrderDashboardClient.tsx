@@ -651,55 +651,73 @@ export default function OrderDashboardClient() {
                 )}
 
                 {selectedOrderIds.length > 0 && mainView === "orders" && (
-    <div className="fixed bottom-4 left-4 right-4 md:bottom-8 md:right-8 md:left-auto md:w-auto z-50 animate-in slide-in-from-bottom-4 duration-300 print:hidden">
-        
-        {/* কন্টেইনার: মোবাইলে পুরো স্ক্রিন জুড়ে থাকবে (মার্জিন সহ), পিসিতে অটোমেটিক সাইজ হবে */}
-        <div className="bg-background border border-border shadow-2xl rounded-2xl md:rounded-full p-2.5 md:px-3 md:py-3 flex items-center justify-between md:justify-start gap-2 md:gap-4 max-w-sm mx-auto md:max-w-none">
-            
-            {/* সিলেক্টেড কাউন্ট: মোবাইলে একটু ছোট টেক্সট হবে */}
-            <span className="flex-shrink-0 text-[11px] md:text-sm font-sans font-medium text-primary bg-secondary px-2.5 py-2 md:px-3 md:py-1.5 rounded-xl md:rounded-full whitespace-nowrap">
-                <span className="sm:hidden">{selectedOrderIds.length} Sel</span>
-                <span className="hidden sm:inline">{selectedOrderIds.length} Selected</span>
+                    <div className="fixed bottom-4 left-4 right-4 md:bottom-8 md:right-8 md:left-auto md:w-auto z-50 animate-in slide-in-from-bottom-4 duration-300 print:hidden">
+
+                        {/* কন্টেইনার: মোবাইলে পুরো স্ক্রিন জুড়ে থাকবে (মার্জিন সহ), পিসিতে অটোমেটিক সাইজ হবে */}
+                        <div className="bg-background border border-border shadow-2xl rounded-2xl md:rounded-full p-2.5 md:px-3 md:py-3 flex items-center justify-between md:justify-start gap-2 md:gap-4 max-w-sm mx-auto md:max-w-none">
+
+                            {/* 🎯 UPDATE: Dynamic Select/Deselect All Checkbox */}
+{(() => {
+    const isAllSelected = filteredTableOrders.length > 0 && selectedOrderIds.length === filteredTableOrders.length;
+    
+    return (
+        <label className="flex-shrink-0 flex items-center gap-1.5 md:gap-2.5 bg-secondary/60 hover:bg-secondary border border-border/60 hover:border-primary/40 pl-2 pr-2.5 py-1.5 md:pl-2.5 md:pr-4 md:py-1.5 rounded-xl md:rounded-full cursor-pointer transition-all duration-300 shadow-sm group select-none">
+            <input
+                type="checkbox"
+                className="w-4 h-4 accent-primary rounded cursor-pointer transition-transform active:scale-90"
+                checked={isAllSelected}
+                onChange={() => toggleSelectAll(filteredTableOrders)}
+            />
+            {/* key প্রপার্টি ব্যবহার করে অ্যানিমেশন ট্রিগার করা হয়েছে */}
+            <span key={isAllSelected ? 'all' : 'none'} className="text-[11px] md:text-sm font-sans font-medium text-primary whitespace-nowrap transition-all duration-300 group-hover:text-primary/80 animate-in fade-in zoom-in-95">
+                <span className="sm:hidden">
+                    {isAllSelected ? `Unselect All (${selectedOrderIds.length})` : `Select All (${selectedOrderIds.length})`}
+                </span>
+                <span className="hidden sm:inline">
+                    {isAllSelected ? `Deselect All (${selectedOrderIds.length})` : `Select All (${selectedOrderIds.length})`}
+                </span>
             </span>
+        </label>
+    );
+})()}
 
-            {/* এক্সপোর্ট বাটন: মোবাইলে flex-1 দিয়ে জায়গা ভাগ করে নেবে */}
-            <button
-                onClick={() => {
-                    handleExportExcel().catch(err => {
-                        console.error("Error exporting to Excel:", err);
-                        alert("Failed to export. Please try again.");
-                    });
-                }}
-                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 md:px-5 py-2 rounded-xl md:rounded-full text-[11px] md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap bg-green-600 border border-green-600 text-white hover:bg-green-700"
-            >
-                <Download size={14} className="md:w-4 md:h-4" />
-                <span>Export</span>
-            </button>
+                            {/* এক্সপোর্ট বাটন: মোবাইলে flex-1 দিয়ে জায়গা ভাগ করে নেবে */}
+                            <button
+                                onClick={() => {
+                                    handleExportExcel().catch(err => {
+                                        console.error("Error exporting to Excel:", err);
+                                        alert("Failed to export. Please try again.");
+                                    });
+                                }}
+                                className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 md:px-5 py-2 rounded-xl md:rounded-full text-[11px] md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap bg-green-600 border border-green-600 text-white hover:bg-green-700"
+                            >
+                                <Download size={14} className="md:w-4 md:h-4" />
+                                <span>Export</span>
+                            </button>
 
-            {/* আর্কাইভ/রিস্টোর বাটন */}
-            <button
-                onClick={handleBulkAction}
-                className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 md:px-5 py-2 rounded-xl md:rounded-full text-[11px] md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap ${
-                    activeTab === "archived"
-                        ? "bg-blue-600 border border-blue-600 text-white hover:bg-blue-700"
-                        : "bg-amber-500 border border-amber-500 text-white hover:bg-amber-600"
-                }`}
-            >
-                <Archive size={14} className="md:w-4 md:h-4" />
-                <span>{activeTab === "archived" ? "Restore" : "Archive"}</span>
-            </button>
+                            {/* আর্কাইভ/রিস্টোর বাটন */}
+                            <button
+                                onClick={handleBulkAction}
+                                className={`flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3 md:px-5 py-2 rounded-xl md:rounded-full text-[11px] md:text-sm font-sans font-medium transition-all shadow-sm cursor-pointer whitespace-nowrap ${activeTab === "archived"
+                                        ? "bg-blue-600 border border-blue-600 text-white hover:bg-blue-700"
+                                        : "bg-amber-500 border border-amber-500 text-white hover:bg-amber-600"
+                                    }`}
+                            >
+                                <Archive size={14} className="md:w-4 md:h-4" />
+                                <span>{activeTab === "archived" ? "Restore" : "Archive"}</span>
+                            </button>
 
-            {/* ক্লিয়ার বাটন */}
-            <button
-                onClick={() => setSelectedOrderIds([])}
-                className="flex-shrink-0 p-2 md:p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 bg-secondary rounded-xl md:rounded-full transition-colors cursor-pointer"
-                title="Clear Selection"
-            >
-                <XCircle size={16} className="md:w-5 md:h-5" />
-            </button>
-        </div>
-    </div>
-)}
+                            {/* ক্লিয়ার বাটন */}
+                            <button
+                                onClick={() => setSelectedOrderIds([])}
+                                className="flex-shrink-0 p-2 md:p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 bg-secondary rounded-xl md:rounded-full transition-colors cursor-pointer"
+                                title="Clear Selection"
+                            >
+                                <XCircle size={16} className="md:w-5 md:h-5" />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {viewingOrder && (

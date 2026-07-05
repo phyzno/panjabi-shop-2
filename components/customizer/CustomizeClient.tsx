@@ -69,7 +69,7 @@ export function CustomizeClient({
   const productStyles = activeDraft?.productStyles || {};
   const yardage = activeDraft?.yardage || 0;
   const selectedFabricId = activeDraft?.fabricId || null;
-  const selectedProduct = activeProductId || 'panjabi_regular';
+  const selectedProduct = activeProductId || '';
   const specialInstructions = activeDraft?.specialInstructions || '';
 
   // Proxy Setters (Optimized with stable Zustand actions)
@@ -185,7 +185,7 @@ export function CustomizeClient({
   // 🎯 NEW: Helper to dynamically get active sequence
   const getActiveSequence = () => {
     const isFabricMode = store.orderMode === 'fabric';
-    const isPajamaProduct = (activeProductId || 'panjabi_regular').startsWith('pajama');
+    const isPajamaProduct = (activeProductId || '').startsWith('pajama');
 
     const steps = ['product', 'fabric'];
     if (!isFabricMode && !isPajamaProduct) steps.push('style');
