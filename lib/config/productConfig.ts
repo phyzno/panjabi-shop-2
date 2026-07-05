@@ -161,7 +161,7 @@ export const PANJABI_CANVAS_MAP: Record<string, Record<string, Record<string, Re
   kabuli: {
     band: {
       visible: {
-        double_flap: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Double Chest Flap Pocket/03 - Band Collar + Visible Placket + Double Chest Pocket-Photoroom.webp',
+        double_flap: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Double Chest Flap Pocket/03 - Band Collar - Visible Placket - Double Chest Pocket-Photoroom.webp',
         chest: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Single Pocket/04 - Band Collar + Visible Placket + Single Chest Pocket-Photoroom.webp',
       }
     },
