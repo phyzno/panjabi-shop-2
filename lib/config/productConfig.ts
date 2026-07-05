@@ -97,117 +97,117 @@ export const PANJABI_CANVAS_MAP: Record<string, Record<string, Record<string, Re
   regular: {
     band: {
       hidden: {
-        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/Chest Pocket/02 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/No Pocket/01 - Band Collar + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/No Pocket/01 - Band Collar + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/Chest Pocket/panjabi_regular_band_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/No Pocket/panjabi_regular_band_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Hidden Placket/No Pocket/panjabi_regular_band_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Visible Placket/Chest Pocket/04 - Band Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Visible Placket/No Pocket/03 - Band Collar + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Visible Placket/No Pocket/03 - Band Collar + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Visible Placket/Chest Pocket/panjabi_regular_band_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Visible Placket/No Pocket/panjabi_regular_band_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Band Collar/Visible Placket/No Pocket/panjabi_regular_band_visible_nopocket.webp',
       }
     },
     mandarin: {
       hidden: {
-        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Hidden Placket/Chest Pocket/06 - Mandarin Collar + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Hidden Placket/No Pocket/05 - Mandarin Collar + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Hidden Placket/No Pocket/05 - Mandarin Collar + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Hidden Placket/Chest Pocket/panjabi_regular_mandarin_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Hidden Placket/No Pocket/panjabi_regular_mandarin_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Hidden Placket/No Pocket/panjabi_regular_mandarin_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Visible Placket/Chest Pocket/08 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Visible Placket/No Pocket/07 - Mandarin Collar + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Visible Placket/No Pocket/07 - Mandarin Collar + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Visible Placket/Chest Pocket/panjabi_regular_mandarin_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Visible Placket/No Pocket/panjabi_regular_mandarin_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Mandarin Collar/Visible Placket/No Pocket/panjabi_regular_mandarin_visible_nopocket.webp',
       }
     },
     round: {
       hidden: {
-        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Hidden Placket/Chest Pocket/10 - Round Neck + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Hidden Placket/No Pocket/09 - Round Neck + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Hidden Placket/No Pocket/09 - Round Neck + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Hidden Placket/Chest Pocket/panjabi_regular_round_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Hidden Placket/No Pocket/panjabi_regular_round_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Hidden Placket/No Pocket/panjabi_regular_round_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Visible Placket/Chest Pocket/12 - Round Neck + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Visible Placket/No Pocket/11 - Round Neck + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Visible Placket/No Pocket/11 - Round Neck + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Visible Placket/Chest Pocket/panjabi_regular_round_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Visible Placket/No Pocket/panjabi_regular_round_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Regular-Classic Panjabi/Round Collar/Visible Placket/No Pocket/panjabi_regular_round_visible_nopocket.webp',
       }
     }
   },
   madani: {
     band: {
       hidden: {
-        chest: '/Canvas/Panjabi/Madani/Band Collar/Hidden Placket/Chest Pocket/06 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Madani/Band Collar/Hidden Placket/No Pocket & Side Pocket/05 - Band Collar + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Madani/Band Collar/Hidden Placket/No Pocket & Side Pocket/05 - Band Collar + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Madani/Band Collar/Hidden Placket/Chest Pocket/panjabi_madani_band_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Madani/Band Collar/Hidden Placket/No Pocket & Side Pocket/panjabi_madani_band_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Madani/Band Collar/Hidden Placket/No Pocket & Side Pocket/panjabi_madani_band_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Madani/Band Collar/Visible Placket/Chest Pocket/08 - Band Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Madani/Band Collar/Visible Placket/No Pocket & Side Pocket/07 - Band Collar + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Madani/Band Collar/Visible Placket/No Pocket & Side Pocket/07 - Band Collar + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Madani/Band Collar/Visible Placket/Chest Pocket/panjabi_madani_band_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Madani/Band Collar/Visible Placket/No Pocket & Side Pocket/panjabi_madani_band_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Madani/Band Collar/Visible Placket/No Pocket & Side Pocket/panjabi_madani_band_visible_nopocket.webp',
       }
     },
     round: {
       hidden: {
-        chest: '/Canvas/Panjabi/Madani/Round Neck Collar/Hidden Placket/Chest Pocket/02 - Round Neck + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Madani/Round Neck Collar/Hidden Placket/No Pocket & Side Pocket/01 - Round Neck + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Madani/Round Neck Collar/Hidden Placket/No Pocket & Side Pocket/01 - Round Neck + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Madani/Round Neck Collar/Hidden Placket/Chest Pocket/panjabi_madani_round_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Madani/Round Neck Collar/Hidden Placket/No Pocket & Side Pocket/panjabi_madani_round_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Madani/Round Neck Collar/Hidden Placket/No Pocket & Side Pocket/panjabi_madani_round_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Madani/Round Neck Collar/Visible Placket/Chest Pocket/04 - Round Neck + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Madani/Round Neck Collar/Visible Placket/No Pocket & Side Pocket/03 - Round Neck + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Madani/Round Neck Collar/Visible Placket/No Pocket & Side Pocket/03 - Round Neck + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Madani/Round Neck Collar/Visible Placket/Chest Pocket/panjabi_madani_round_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Madani/Round Neck Collar/Visible Placket/No Pocket & Side Pocket/panjabi_madani_round_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Madani/Round Neck Collar/Visible Placket/No Pocket & Side Pocket/panjabi_madani_round_visible_nopocket.webp',
       }
     }
   },
   kabuli: {
     band: {
       visible: {
-        double_flap: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Double Chest Flap Pocket/03 - Band Collar - Visible Placket - Double Chest Pocket-Photoroom.webp',
-        chest: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Single Pocket/04 - Band Collar + Visible Placket + Single Chest Pocket-Photoroom.webp',
+        double_flap: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Double Chest Flap Pocket/panjabi_kabuli_band_visible_double_flap.webp',
+        chest: '/Canvas/Panjabi/Kabuli/Band Collar/Visible Placket/Single Pocket/panjabi_kabuli_band_visible_chest.webp',
       }
     },
     shirt: {
       visible: {
-        double_flap: '/Canvas/Panjabi/Kabuli/Shirt Collar/Visible Placket/Double Chest Flap Pocket/01 - Shirt Collar + Visible Placket + Double Chest Pocket(with flaps)-Photoroom.webp',
-        chest: '/Canvas/Panjabi/Kabuli/Shirt Collar/Visible Placket/Single Pocket/02 - Shirt Collar + Visible Placket + Single Chest Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Kabuli/Shirt Collar/Visible Placket/Single Pocket/02 - Shirt Collar + Visible Placket + Single Chest Pocket-Photoroom.webp',
+        double_flap: '/Canvas/Panjabi/Kabuli/Shirt Collar/Visible Placket/Double Chest Flap Pocket/panjabi_kabuli_shirt_visible_double_flap.webp',
+        chest: '/Canvas/Panjabi/Kabuli/Shirt Collar/Visible Placket/Single Pocket/panjabi_kabuli_shirt_visible_chest.webp',
+        side: '/Canvas/Panjabi/Kabuli/Shirt Collar/Visible Placket/Single Pocket/panjabi_kabuli_shirt_visible_chest.webp',
       }
     }
   },
   short: {
     band: {
       hidden: {
-        chest: '/Canvas/Panjabi/Short Panjabi/Band Collar/Hidden Placket/Chest Pocket/08 - Band Collar + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Short Panjabi/Band Collar/Hidden Placket/No Pocket/07 - Band Collar + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Short Panjabi/Band Collar/Hidden Placket/No Pocket/07 - Band Collar + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Short Panjabi/Band Collar/Hidden Placket/Chest Pocket/panjabi_short_band_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Short Panjabi/Band Collar/Hidden Placket/No Pocket/panjabi_short_band_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Short Panjabi/Band Collar/Hidden Placket/No Pocket/panjabi_short_band_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Short Panjabi/Band Collar/Visible Placket/Chest Pocket/06 - Band Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Short Panjabi/Band Collar/Visible Placket/No Pocket/05 - Band Collar + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Short Panjabi/Band Collar/Visible Placket/No Pocket/05 - Band Collar + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Short Panjabi/Band Collar/Visible Placket/Chest Pocket/panjabi_short_band_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Short Panjabi/Band Collar/Visible Placket/No Pocket/panjabi_short_band_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Short Panjabi/Band Collar/Visible Placket/No Pocket/panjabi_short_band_visible_nopocket.webp',
       }
     },
     mandarin: {
       hidden: {
-        chest: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Hidden Placket/Chest Pocket/03 - Mandarin Collar + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Hidden Placket/No Pocket/04 - Mandarin Collar + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Hidden Placket/No Pocket/04 - Mandarin Collar + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Hidden Placket/Chest Pocket/panjabi_short_mandarin_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Hidden Placket/No Pocket/panjabi_short_mandarin_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Hidden Placket/No Pocket/panjabi_short_mandarin_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Visible Placket/Chest Pocket/01 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Visible Placket/No Pocket/02 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Visible Placket/No Pocket/02 - Mandarin Collar + Visible Placket + Chest Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Visible Placket/Chest Pocket/panjabi_short_mandarin_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Visible Placket/No Pocket/panjabi_short_mandarin_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Short Panjabi/Mandarin Collar/Visible Placket/No Pocket/panjabi_short_mandarin_visible_nopocket.webp',
       }
     },
     shirt: {
       hidden: {
-        chest: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Hidden Placket/Chest Pocket/12 - Shirt Collar + Hidden Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Hidden Placket/No Pocket/11 - Shirt Collar + Hidden Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Hidden Placket/No Pocket/11 - Shirt Collar + Hidden Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Hidden Placket/Chest Pocket/panjabi_short_shirt_hidden_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Hidden Placket/No Pocket/panjabi_short_shirt_hidden_nopocket.webp',
+        side: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Hidden Placket/No Pocket/panjabi_short_shirt_hidden_nopocket.webp',
       },
       visible: {
-        chest: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Visible Placket/Chest Pocket/10 - Shirt Collar + Visible Placket + Chest Pocket-Photoroom.webp',
-        no_pocket: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Visible Placket/No Pocket/09 - Shirt Collar + Visible Placket + No Pocket-Photoroom.webp',
-        side: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Visible Placket/No Pocket/09 - Shirt Collar + Visible Placket + No Pocket-Photoroom.webp',
+        chest: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Visible Placket/Chest Pocket/panjabi_short_shirt_visible_chest.webp',
+        no_pocket: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Visible Placket/No Pocket/panjabi_short_shirt_visible_nopocket.webp',
+        side: '/Canvas/Panjabi/Short Panjabi/Shirt Collar/Visible Placket/No Pocket/panjabi_short_shirt_visible_nopocket.webp',
       }
     }
   }
