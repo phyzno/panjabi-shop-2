@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Search, Package, CheckCircle2, Clock, XCircle, FileText, Loader2, ArrowLeft } from 'lucide-react';
 import { getOrderById } from '@/lib/actions/order.actions';
 import OrderDetailsModal from '@/components/dashboard/OrderDetailsModal';
-import PrintableInvoice from '@/components/admin/dashboard/PrintableInvoice';
+import InvoicePrintLayer from '@/components/dashboard/InvoicePrintLayer';
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
@@ -23,30 +23,6 @@ function TrackOrderContent() {
       handleTrackOrder(initialId);
     }
   }, [initialId]);
-
-  useEffect(() => {
-    let originalTitle = document.title;
-
-    if (printingOrder) {
-      document.title = `invoice-${printingOrder.id}`;
-      
-      setTimeout(() => {
-        window.print();
-      }, 150);
-    }
-
-    const handleAfterPrint = () => {
-      document.title = originalTitle;
-      setPrintingOrder(null);
-    };
-
-    window.addEventListener("afterprint", handleAfterPrint);
-
-    return () => {
-      document.title = originalTitle;
-      window.removeEventListener("afterprint", handleAfterPrint);
-    };
-  }, [printingOrder]);
 
   const handleTrackOrder = async (idToSearch: string) => {
     if (!idToSearch.trim()) {
@@ -203,11 +179,10 @@ function TrackOrderContent() {
         )}
       </div>
 
-      {printingOrder && (
-        <div className="hidden print:block w-full bg-white absolute top-0 left-0 z-50">
-          <PrintableInvoice order={printingOrder} />
-        </div>
-      )}
+      <InvoicePrintLayer
+        order={printingOrder}
+        onAfterPrint={() => setPrintingOrder(null)}
+      />
     </>
   );
 }

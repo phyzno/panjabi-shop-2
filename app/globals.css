@@ -134,9 +134,27 @@
     background-color: white !important;
   }
   html, body {
-    height: 100vh;
+    height: auto !important;
+    min-height: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: hidden; 
+    overflow: visible !important;
+  }
+  body.invoice-printing * {
+    visibility: hidden !important;
+  }
+  body.invoice-printing .invoice-print-root,
+  body.invoice-printing .invoice-print-root * {
+    visibility: visible !important;
+  }
+  body.invoice-printing .invoice-print-root {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
   }
 }

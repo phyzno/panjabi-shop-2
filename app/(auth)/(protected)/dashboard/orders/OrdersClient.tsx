@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Eye, Search, ShoppingBag } from 'lucide-react';
 import OrderDetailsModal from '@/components/dashboard/OrderDetailsModal';
-import PrintableInvoice from '@/components/admin/dashboard/PrintableInvoice';
+import InvoicePrintLayer from '@/components/dashboard/InvoicePrintLayer';
 
 export default function OrdersClient({ orders }: { orders: any[] }) {
   const [printingOrder, setPrintingOrder] = useState<any | null>(null);
@@ -23,30 +23,6 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
       default: return 'bg-[#F8F9F5] text-[#1C221A]/70 border-[#D4D7C9]/60';
     }
   };
-
-  useEffect(() => {
-    let originalTitle = document.title;
-
-    if (printingOrder) {
-      document.title = `invoice-${printingOrder.id}`;
-      
-      setTimeout(() => {
-        window.print();
-      }, 150);
-    }
-
-    const handleAfterPrint = () => {
-      document.title = originalTitle;
-      setPrintingOrder(null);
-    };
-
-    window.addEventListener("afterprint", handleAfterPrint);
-    
-    return () => {
-      document.title = originalTitle; 
-      window.removeEventListener("afterprint", handleAfterPrint);
-    };
-  }, [printingOrder]);
 
   return (
     <>
@@ -180,29 +156,10 @@ export default function OrdersClient({ orders }: { orders: any[] }) {
         />
       )}
 
-      {printingOrder && (
-        <>
-          <style dangerouslySetInnerHTML={{
-            __html: `
-          @media print {
-            body * { visibility: hidden !important; }
-            #printable-invoice-container, #printable-invoice-container * { visibility: visible !important; }
-            #printable-invoice-container { 
-              position: absolute !important; 
-              left: 0 !important; 
-              top: 0 !important; 
-              width: 100% !important;
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-          }
-        `}} />
-
-          <div id="printable-invoice-container" className="hidden print:block w-full bg-white z-[9999]">
-            <PrintableInvoice order={printingOrder} />
-          </div>
-        </>
-      )}
+      <InvoicePrintLayer
+        order={printingOrder}
+        onAfterPrint={() => setPrintingOrder(null)}
+      />
     </>
   );
 }

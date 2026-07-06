@@ -8,7 +8,7 @@ import {
     Truck, CheckCircle, XCircle, Clock, Printer, ChevronDown, LayoutList, BarChart3, Eye, X, Loader2, User, Phone, MapPin, Download
 } from "lucide-react";
 
-import PrintableInvoice from "./PrintableInvoice";
+import InvoicePrintLayer from "@/components/dashboard/InvoicePrintLayer";
 import {
     getAdminOrders,
     updateOrderStatus,
@@ -56,30 +56,6 @@ export default function OrderDashboardClient() {
         };
         fetchOrders();
     }, []);
-
-    useEffect(() => {
-        let originalTitle = document.title;
-
-        if (printingOrder) {
-            document.title = `invoice-${printingOrder.id}`;
-
-            setTimeout(() => {
-                window.print();
-            }, 150);
-        }
-
-        const handleAfterPrint = () => {
-            document.title = originalTitle;
-            setPrintingOrder(null);
-        };
-
-        window.addEventListener("afterprint", handleAfterPrint);
-
-        return () => {
-            document.title = originalTitle;
-            window.removeEventListener("afterprint", handleAfterPrint);
-        };
-    }, [printingOrder]);
 
     const timeFilteredOrders = useMemo(() => {
         if (timeFilter === "lifetime") return orders;
@@ -990,11 +966,10 @@ export default function OrderDashboardClient() {
                 </div>
             )}
 
-            {printingOrder && (
-                <div className="hidden print:block w-full bg-white absolute top-0 left-0 z-50">
-                    <PrintableInvoice order={printingOrder} />
-                </div>
-            )}
+            <InvoicePrintLayer
+                order={printingOrder}
+                onAfterPrint={() => setPrintingOrder(null)}
+            />
         </>
     );
 }
